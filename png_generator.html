@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ELFliq PNG Generator</title>
+</head>
+<body>
+    <canvas id="canvas" width="300" height="400" style="border:1px solid #000;"></canvas>
+    <br>
+    <button onclick="downloadPNG()">Скачать PNG</button>
+    
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Create gradient
+        const gradient = ctx.createLinearGradient(0, 0, 300, 400);
+        gradient.addColorStop(0, '#ff2d55');
+        gradient.addColorStop(1, '#ff6b6b');
+        
+        // Fill background
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, 300, 400);
+        
+        // Add cherry emoji
+        ctx.font = '60px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = 'white';
+        ctx.fillText('🍒', 150, 150);
+        
+        // Add brand text
+        ctx.font = 'bold 24px Arial';
+        ctx.fillText('ELFliq', 150, 220);
+        
+        ctx.font = '16px Arial';
+        ctx.fillText('Premium Liquid', 150, 250);
+        
+        function downloadPNG() {
+            const link = document.createElement('a');
+            link.download = 'elfliq_liquid.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+    </script>
+</body>
+</html>

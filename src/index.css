@@ -1,0 +1,172 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --blur-glass: 18px;
+  --border-glass: rgba(255,255,255,0.08);
+  --shadow-card: 0 12px 32px rgba(0,0,0,0.45);
+  --shadow-glow: 0 0 24px rgba(255,45,85,0.22);
+}
+
+.bg-app {
+  background: radial-gradient(1200px circle at 12% 12%, rgba(255,45,85,0.26) 0%, transparent 36%),
+    radial-gradient(1200px circle at 88% 22%, rgba(176,0,58,0.20) 0%, transparent 42%),
+    linear-gradient(180deg, #070607 0%, #0f070b 100%);
+  background-size: 140% 140%, 160% 160%, 100% 100%;
+  animation: bgShift 14s ease-in-out infinite;
+  color: #fff;
+}
+
+@keyframes bgShift {
+  0% {
+    background-position: 10% 10%, 90% 20%, 0% 0%;
+  }
+  50% {
+    background-position: 30% 25%, 70% 35%, 0% 0%;
+  }
+  100% {
+    background-position: 10% 10%, 90% 20%, 0% 0%;
+  }
+}
+
+.glass {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border-glass);
+  backdrop-filter: blur(var(--blur-glass));
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card), var(--shadow-glow);
+}
+
+.pill {
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 9999px;
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, #ff4d6d 0%, #b0003a 100%);
+  color: #fff;
+  border-radius: var(--radius-md);
+}
+
+.btn-secondary {
+  background: linear-gradient(180deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.08) 100%);
+  color: #fff;
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-md);
+}
+
+/* Safe area support for iPhone */
+@supports (padding: env(safe-area-inset-top)) {
+  :root {
+    --safe-area-top: env(safe-area-inset-top);
+    --safe-area-bottom: env(safe-area-inset-bottom);
+    --safe-area-left: env(safe-area-inset-left);
+    --safe-area-right: env(safe-area-inset-right);
+  }
+}
+
+/* Prevent bounce scrolling on iOS */
+html,
+body {
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Smooth scrolling */
+* {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom scrollbar for dark theme */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Skeleton loading animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.page-transition {
+  animation: pageEnter 240ms cubic-bezier(0.2, 0.9, 0.2, 1) both;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-transition {
+    animation: none;
+  }
+}
+
+/* Prevent text selection on buttons */
+button {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Improve touch targets */
+button,
+a {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Safe area utilities */
+.safe-top {
+  padding-top: var(--safe-area-top, 0px);
+}
+
+.safe-bottom {
+  padding-bottom: var(--safe-area-bottom, 0px);
+}
+
+.safe-left {
+  padding-left: var(--safe-area-left, 0px);
+}
+
+.safe-right {
+  padding-right: var(--safe-area-right, 0px);
+}
