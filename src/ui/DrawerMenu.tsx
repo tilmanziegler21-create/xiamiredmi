@@ -76,7 +76,9 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
           background: 'rgba(0,0,0,0.6)',
           zIndex: theme.zIndex.overlay,
         }}
-        onClick={onClose}
+        onPointerDown={(e) => {
+          if (e.target === e.currentTarget) onClose();
+        }}
       />
 
       {/* Drawer Panel */}

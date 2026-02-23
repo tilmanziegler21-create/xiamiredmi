@@ -43,6 +43,14 @@ function App() {
 
     let cancelled = false;
 
+    try {
+      const ua = navigator.userAgent || '';
+      const isTg = Boolean((window as any)?.Telegram?.WebApp) || /Telegram/i.test(ua);
+      if (isTg) document.documentElement.classList.add('tg-webview');
+      if (/Android/i.test(ua)) document.documentElement.classList.add('tg-android');
+    } catch {
+    }
+
     const withTimeout = async <T,>(promise: Promise<T>, ms: number) => {
       return await new Promise<T>((resolve, reject) => {
         const id = window.setTimeout(() => reject(new Error('AUTH_TIMEOUT')), ms);

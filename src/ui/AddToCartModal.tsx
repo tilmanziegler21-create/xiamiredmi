@@ -59,7 +59,9 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
         padding: theme.padding.screen,
         paddingBottom: `calc(${theme.padding.screen} + var(--safe-area-bottom, 0px))`,
       }}
-      onClick={onClose}
+      onPointerDown={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
     >
       <div
         style={{

@@ -376,7 +376,12 @@ const Catalog: React.FC = () => {
       />
 
       {showFilters ? (
-        <div style={styles.overlay} onClick={() => setShowFilters(false)}>
+        <div
+          style={styles.overlay}
+          onPointerDown={(e) => {
+            if (e.target === e.currentTarget) setShowFilters(false);
+          }}
+        >
           <div style={styles.sheet} onClick={(e) => e.stopPropagation()}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md }}>
               <div style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold }}>Фильтры</div>
