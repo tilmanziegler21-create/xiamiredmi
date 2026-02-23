@@ -88,13 +88,13 @@ const Catalog: React.FC = () => {
 
   useEffect(() => {
     if (!city) return;
-    loadCatalog(city);
     favorites.load(city);
+    loadFilters(city);
   }, [city]);
 
   useEffect(() => {
     if (!city) return;
-    loadCatalog(city);
+    const id = window.setTimeout(() => loadCatalog(city), 160);
     // Track filter usage
     if (filters.category) trackCategoryView(filters.category);
     if (filters.brand) trackFilterUse('brand', filters.brand);
@@ -103,6 +103,7 @@ const Catalog: React.FC = () => {
     if (filters.price_min || filters.price_max) {
       trackFilterUse('price_range', `${filters.price_min || 0}-${filters.price_max || '∞'}`);
     }
+    return () => window.clearTimeout(id);
   }, [city, filters]);
 
   const loadCatalog = async (selectedCity: string) => {
@@ -121,7 +122,9 @@ const Catalog: React.FC = () => {
     } catch (error) {
       console.error('Failed to load catalog:', error);
       try {
-        WebApp.showAlert('Ошибка загрузки каталога');
+        const status = (error as any)?.response?.status;
+        const msg = String((error as any)?.response?.data?.error || '');
+        WebApp.showAlert(`Ошибка загрузки каталога${status ? ` (${status})` : ''}${msg ? `: ${msg}` : ''}`);
       } catch {
         toast.push('Ошибка загрузки каталога', 'error');
       }
