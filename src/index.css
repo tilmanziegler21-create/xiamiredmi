@@ -96,11 +96,16 @@ html.tg-webview body {
   --shadow-card: none;
   --shadow-glow: none;
   overscroll-behavior-y: auto;
-  -webkit-overflow-scrolling: auto;
+  -webkit-overflow-scrolling: touch;
+  overflow-y: auto;
 }
 
 html.tg-webview * {
   -webkit-tap-highlight-color: transparent;
+}
+
+html.tg-webview body {
+  touch-action: pan-y;
 }
 
 /* Smooth scrolling */

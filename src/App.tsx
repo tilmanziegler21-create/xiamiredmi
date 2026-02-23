@@ -58,10 +58,6 @@ function App() {
           WebApp.expand();
         } catch {
         }
-        try {
-          (WebApp as any).disableVerticalSwipes?.();
-        } catch {
-        }
       }
     } catch {
     }
