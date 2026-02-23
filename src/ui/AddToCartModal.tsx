@@ -4,6 +4,7 @@ import { theme } from './theme';
 import { PrimaryButton } from './PrimaryButton';
 import { SecondaryButton } from './SecondaryButton';
 import { formatCurrency } from '../lib/currency';
+import { blurStyle } from './blur';
 
 export type AddToCartModalProduct = {
   id: string;
@@ -69,7 +70,7 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
           borderRadius: theme.radius.lg,
           border: '1px solid rgba(255,255,255,0.14)',
           background: 'rgba(12, 10, 26, 0.82)',
-          backdropFilter: `blur(${theme.blur.glass})`,
+          ...blurStyle(theme.blur.glass),
           boxShadow: theme.shadow.card,
           overflow: 'hidden',
         }}

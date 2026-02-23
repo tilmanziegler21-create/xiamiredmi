@@ -1,5 +1,6 @@
 import React from 'react';
 import { theme } from './theme';
+import { blurStyle } from './blur';
 
 interface IconButtonProps {
   icon: React.ReactNode;
@@ -37,7 +38,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
     glass: {
       background: 'rgba(255,255,255,0.05)',
       border: theme.border.glass,
-      backdropFilter: `blur(${theme.blur.glass})`,
+      ...blurStyle(theme.blur.glass),
     },
   };
 

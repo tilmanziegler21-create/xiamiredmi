@@ -11,17 +11,6 @@ export const useAnalytics = () => {
   const trackEvent = useCallback((event: string, params?: Record<string, any>) => {
     try {
       analyticsAPI.event(event, params).catch(() => {});
-
-      // Send to Telegram WebApp analytics
-      if (WebApp.sendData) {
-        WebApp.sendData(JSON.stringify({
-          type: 'analytics',
-          event,
-          params,
-          timestamp: Date.now(),
-          user_id: WebApp.initDataUnsafe?.user?.id
-        }));
-      }
     } catch (error) {
       console.error('Analytics tracking error:', error);
     }

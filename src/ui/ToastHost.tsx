@@ -1,6 +1,7 @@
 import React from 'react';
 import { theme } from './theme';
 import { useToastStore } from '../store/useToastStore';
+import { blurStyle } from './blur';
 
 export const ToastHost: React.FC = () => {
   const { toasts, remove } = useToastStore();
@@ -37,7 +38,7 @@ export const ToastHost: React.FC = () => {
             borderRadius: theme.radius.lg,
             border: '1px solid rgba(255,255,255,0.12)',
             background: 'rgba(12, 10, 26, 0.72)',
-            backdropFilter: `blur(${theme.blur.glass})`,
+            ...blurStyle(theme.blur.glass),
             boxShadow: theme.shadow.card,
             padding: `${theme.spacing.md} ${theme.spacing.lg}`,
             color: theme.colors.dark.text,
@@ -63,4 +64,3 @@ export const ToastHost: React.FC = () => {
     </div>
   );
 };
-

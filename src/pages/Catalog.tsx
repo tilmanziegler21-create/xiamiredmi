@@ -9,6 +9,7 @@ import { AddToCartModal, ProductCard, GlassCard, SecondaryButton, SectionDivider
 import { useToastStore } from '../store/useToastStore';
 import { useCityStore } from '../store/useCityStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
+import { blurStyle } from '../ui/blur';
 
 interface Product {
   id: string;
@@ -171,7 +172,7 @@ const Catalog: React.FC = () => {
       borderRadius: 999,
       border: '1px solid rgba(255,255,255,0.14)',
       background: 'rgba(255,255,255,0.06)',
-      backdropFilter: `blur(${theme.blur.glass})`,
+      ...blurStyle(theme.blur.glass),
       padding: '10px 14px',
       boxShadow: theme.shadow.card,
     },
@@ -204,7 +205,7 @@ const Catalog: React.FC = () => {
       borderRadius: theme.radius.lg,
       border: '1px solid rgba(255,255,255,0.14)',
       background: 'rgba(12, 10, 26, 0.78)',
-      backdropFilter: `blur(${theme.blur.glass})`,
+      ...blurStyle(theme.blur.glass),
       boxShadow: theme.shadow.card,
       padding: theme.spacing.lg,
     },

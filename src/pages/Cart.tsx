@@ -10,6 +10,7 @@ import { useToastStore } from '../store/useToastStore';
 import { formatCurrency } from '../lib/currency';
 import { useCityStore } from '../store/useCityStore';
 import { useConfigStore } from '../store/useConfigStore';
+import { blurStyle } from '../ui/blur';
 
 type Fulfillment = 'delivery' | 'pickup';
 
@@ -152,7 +153,7 @@ const Cart: React.FC = () => {
       overflow: 'hidden',
       border: '1px solid rgba(255,255,255,0.14)',
       background: 'rgba(12, 10, 26, 0.62)',
-      backdropFilter: `blur(${theme.blur.glass})`,
+      ...blurStyle(theme.blur.glass),
       boxShadow: theme.shadow.card,
       padding: theme.spacing.md,
       position: 'relative' as const,
@@ -256,7 +257,7 @@ const Cart: React.FC = () => {
       borderRadius: theme.radius.lg,
       border: '1px solid rgba(255,255,255,0.14)',
       background: 'rgba(255,255,255,0.06)',
-      backdropFilter: `blur(${theme.blur.glass})`,
+      ...blurStyle(theme.blur.glass),
       boxShadow: theme.shadow.card,
       padding: theme.spacing.md,
       display: 'grid',
@@ -288,7 +289,7 @@ const Cart: React.FC = () => {
     pickupInner: {
       padding: theme.spacing.lg,
       background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.70) 100%)',
-      backdropFilter: `blur(${theme.blur.glass})`,
+      ...blurStyle(theme.blur.glass),
     },
     pickupTitle: {
       fontSize: theme.typography.fontSize.xl,

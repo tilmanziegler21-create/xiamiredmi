@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { theme } from './theme';
 import { IconButton } from './IconButton';
 import { Menu, User, Coins, ShoppingCart, ArrowLeft, Settings } from 'lucide-react';
+import { blurStyle } from './blur';
 
 interface TopBarProps {
   onMenuClick: () => void;
@@ -65,7 +66,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       height: '64px',
       padding: `0 ${theme.padding.screen}`,
       background: 'rgba(12, 10, 26, 0.8)',
-      backdropFilter: `blur(${theme.blur.glass})`,
+      ...blurStyle(theme.blur.glass),
       borderBottom: theme.border.glass,
       display: 'flex',
       alignItems: 'center',

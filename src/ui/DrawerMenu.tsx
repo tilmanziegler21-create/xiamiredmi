@@ -7,6 +7,7 @@ import { formatCurrency } from '../lib/currency';
 import { MenuTileCard } from './MenuTileCard';
 import { menuTiles, adminTiles, courierTiles } from '../config/menuTiles';
 import { useAnalytics } from '../hooks/useAnalytics';
+import { blurStyle } from './blur';
 
 interface DrawerMenuProps {
   isOpen: boolean;
@@ -88,7 +89,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
         maxWidth: '320px',
         height: '100%',
         background: theme.colors.dark.bg,
-        backdropFilter: `blur(${theme.blur.glass})`,
+        ...blurStyle(theme.blur.glass),
         zIndex: theme.zIndex.drawer,
         padding: theme.padding.screen,
         overflowY: 'auto',
