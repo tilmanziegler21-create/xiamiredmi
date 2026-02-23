@@ -231,7 +231,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      {resolvedImage ? <img src={resolvedImage} alt="" style={styles.bgImage} /> : null}
+      {resolvedImage ? <img src={resolvedImage} alt="" style={styles.bgImage} loading="lazy" decoding="async" /> : null}
       <div style={styles.scrim} />
       <div style={styles.content}>
         {/* Stock Status Badge */}

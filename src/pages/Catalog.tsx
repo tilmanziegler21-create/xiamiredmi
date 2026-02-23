@@ -58,6 +58,27 @@ const Catalog: React.FC = () => {
     taste_fruitiness_min: '',
   });
 
+  const liteCards = (() => {
+    try {
+      return document.documentElement.classList.contains('tg-webview');
+    } catch {
+      return false;
+    }
+  })();
+
+  const trustFor = (seed: string) => {
+    const s = String(seed || '');
+    let h = 0;
+    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    const r = (h % 1000) / 1000;
+    const r2 = ((h >>> 8) % 1000) / 1000;
+    return {
+      rating: 4.2 + r * 0.8,
+      reviewCount: Math.floor(50 + r2 * 200),
+      weeklyOrders: Math.floor(20 + r * 100),
+    };
+  };
+
   useEffect(() => {
     const qCategory = searchParams.get('category');
     if (qCategory) {
@@ -299,12 +320,10 @@ const Catalog: React.FC = () => {
               stock={(p as any).qtyAvailable || 0}
               tasteProfile={p.tasteProfile}
               trustData={{
-                rating: 4.2 + Math.random() * 0.8,
-                reviewCount: Math.floor(Math.random() * 200) + 50,
-                weeklyOrders: Math.floor(Math.random() * 100) + 20,
+                ...trustFor(p.id),
               }}
-              showTasteProfile={true}
-              showTrustIndicators={true}
+              showTasteProfile={!liteCards}
+              showTrustIndicators={!liteCards}
               onClick={(id) => navigate(`/product/${id}`)}
               onAddToCart={() => openAdd(p)}
               isFavorite={favorites.isFavorite(p.id)}

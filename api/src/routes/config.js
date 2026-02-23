@@ -5,7 +5,7 @@ const router = express.Router();
 
 function listCities() {
   const raw = String(process.env.CITY_CODES || '').trim();
-  if (!raw) return [];
+  if (!raw) return ['MU'];
   return raw.split(',').map((s) => s.trim()).filter(Boolean);
 }
 
