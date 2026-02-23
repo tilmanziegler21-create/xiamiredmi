@@ -13,7 +13,18 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token');
+  let token: string | null = null;
+  try {
+    token = useAuthStore.getState().token;
+  } catch {
+  }
+  if (!token) {
+    try {
+      token = localStorage.getItem('token');
+    } catch {
+      token = null;
+    }
+  }
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -55,13 +66,6 @@ api.interceptors.response.use(
       if (status === 401) {
         try {
           useAuthStore.getState().logout();
-        } catch {
-        }
-        try {
-          if (!(window as any).__authReloadedOnce) {
-            (window as any).__authReloadedOnce = true;
-            window.location.reload();
-          }
         } catch {
         }
       }
