@@ -22,6 +22,14 @@ const Cart: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const { city } = useCityStore();
   const { config } = useConfigStore();
+  const ultraLite = (() => {
+    try {
+      const el = document.documentElement;
+      return el.classList.contains('tg-webview') && el.classList.contains('tg-ios');
+    } catch {
+      return false;
+    }
+  })();
   const pickupPoints = (config?.pickupPoints || []).map((p) => p.address);
   const [promoCode, setPromoCode] = React.useState('');
   const [fulfillment, setFulfillment] = React.useState<Fulfillment>('pickup');
@@ -283,7 +291,9 @@ const Cart: React.FC = () => {
       borderRadius: theme.radius.lg,
       overflow: 'hidden',
       border: '1px solid rgba(255,255,255,0.14)',
-      background: `linear-gradient(135deg, rgba(255,214,10,0.10) 0%, rgba(255,45,85,0.18) 100%), url(/assets/elfcherry/banners/banner-1.jpg) center/cover`,
+      background: ultraLite
+        ? `linear-gradient(135deg, rgba(255,214,10,0.10) 0%, rgba(255,45,85,0.18) 100%)`
+        : `linear-gradient(135deg, rgba(255,214,10,0.10) 0%, rgba(255,45,85,0.18) 100%), url(/assets/elfcherry/banners/banner-1.jpg) center/cover`,
       boxShadow: theme.shadow.card,
     },
     pickupInner: {

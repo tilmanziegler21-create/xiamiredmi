@@ -82,6 +82,8 @@ body {
 
 html.tg-webview .bg-app {
   animation: none;
+  background: #070607;
+  background-size: auto;
 }
 
 html.tg-webview .page-transition {
@@ -95,6 +97,10 @@ html.tg-webview body {
   --shadow-glow: none;
   overscroll-behavior-y: auto;
   -webkit-overflow-scrolling: auto;
+}
+
+html.tg-webview * {
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Smooth scrolling */

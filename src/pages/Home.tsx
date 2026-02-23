@@ -37,6 +37,15 @@ const Home: React.FC = () => {
   const favorites = useFavoritesStore();
   const { config } = useConfigStore();
 
+  const ultraLite = (() => {
+    try {
+      const el = document.documentElement;
+      return el.classList.contains('tg-webview') && el.classList.contains('tg-ios');
+    } catch {
+      return false;
+    }
+  })();
+
   const banners = (config?.banners || []).map((b) => ({
     title: b.title || '',
     subtitle: b.subtitle || '',
@@ -54,11 +63,13 @@ const Home: React.FC = () => {
   }));
 
   useEffect(() => {
+    if (ultraLite) return;
+    if (banners.length <= 1) return;
     const interval = setInterval(() => {
       setCurrentBanner((prev) => (banners.length ? (prev + 1) % banners.length : 0));
     }, 4000);
     return () => clearInterval(interval);
-  }, [banners.length]);
+  }, [banners.length, ultraLite]);
 
   const onBannerClick = () => {
     const b = banners[currentBanner];
@@ -282,10 +293,12 @@ const Home: React.FC = () => {
           onClick={onBannerClick}
           role="button"
         >
-          {banners[currentBanner].image ? (
+          {!ultraLite && banners[currentBanner].image ? (
             <img
               src={banners[currentBanner].image}
               alt=""
+              loading="lazy"
+              decoding="async"
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : null}
@@ -399,10 +412,12 @@ const Home: React.FC = () => {
             onClick={() => navigate(`/catalog?category=${encodeURIComponent(category.slug)}`)}
             role="button"
           >
-            {category.image ? (
+            {!ultraLite && category.image ? (
               <img
                 src={category.image}
                 alt=""
+                loading="lazy"
+                decoding="async"
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : null}
