@@ -35,21 +35,45 @@ function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function normalizeOriginValue(v) {
+  const raw = String(v || '').trim();
+  if (!raw) return '';
+  try {
+    return new URL(raw).origin;
+  } catch {
+    return raw.replace(/\/+$/, '');
+  }
+}
+
 function parseAllowedOrigins() {
   const raw = String(process.env.FRONTEND_URL || '').trim();
   if (!raw) return ['http://localhost:5173'];
   return raw
     .split(',')
-    .map((s) => String(s || '').trim())
+    .map((s) => normalizeOriginValue(s))
     .filter(Boolean);
 }
 
 function originAllowed(origin, allowedList) {
+  const originNormalized = normalizeOriginValue(origin);
+  let originHost = '';
+  let originHostname = '';
+  try {
+    const u = new URL(origin);
+    originHost = u.host;
+    originHostname = u.hostname;
+  } catch {
+  }
+
   for (const a of allowedList) {
-    if (a === origin) return true;
+    if (!a) continue;
+    if (a.includes('://') && a === originNormalized) return true;
+    if (!a.includes('://') && (a === originHost || a === originHostname)) return true;
     if (a.includes('*')) {
       const re = new RegExp(`^${escapeRegExp(a).replace(/\\\*/g, '.*')}$`);
-      if (re.test(origin)) return true;
+      if (re.test(originNormalized)) return true;
+      if (originHost && re.test(originHost)) return true;
+      if (originHostname && re.test(originHostname)) return true;
     }
   }
   return false;
