@@ -91,6 +91,8 @@ html.tg-webview .page-transition {
 html.tg-webview,
 html.tg-webview body {
   --blur-glass: 0px;
+  --shadow-card: none;
+  --shadow-glow: none;
   overscroll-behavior-y: auto;
   -webkit-overflow-scrolling: auto;
 }

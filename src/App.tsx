@@ -48,6 +48,21 @@ function App() {
       const isTg = Boolean((window as any)?.Telegram?.WebApp) || /Telegram/i.test(ua);
       if (isTg) document.documentElement.classList.add('tg-webview');
       if (/Android/i.test(ua)) document.documentElement.classList.add('tg-android');
+      if (/(iPhone|iPad|iPod)/i.test(ua)) document.documentElement.classList.add('tg-ios');
+      if (isTg) {
+        try {
+          WebApp.ready();
+        } catch {
+        }
+        try {
+          WebApp.expand();
+        } catch {
+        }
+        try {
+          (WebApp as any).disableVerticalSwipes?.();
+        } catch {
+        }
+      }
     } catch {
     }
 

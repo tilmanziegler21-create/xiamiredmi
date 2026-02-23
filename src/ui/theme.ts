@@ -5,14 +5,14 @@ export const theme = {
     lg: '22px',
   },
   blur: {
-    glass: '18px',
+    glass: 'var(--blur-glass)',
   },
   border: {
-    glass: '1px solid rgba(255,255,255,0.08)',
+    glass: '1px solid var(--border-glass)',
   },
   shadow: {
-    card: '0 12px 32px rgba(0,0,0,0.45)',
-    glow: '0 0 24px rgba(255,45,85,0.22)',
+    card: 'var(--shadow-card)',
+    glow: 'var(--shadow-glow)',
   },
   gap: '12px',
   padding: {
