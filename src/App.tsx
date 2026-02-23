@@ -27,6 +27,7 @@ import CourierRegistration from './pages/CourierRegistration';
 function App() {
   const { user, setUser, setLoading, isLoading } = useAuthStore();
   const authStartedRef = React.useRef(false);
+  const [authErrorDetails, setAuthErrorDetails] = React.useState<string>('');
 
   const safeAlert = (message: string) => {
     try {
@@ -61,6 +62,7 @@ function App() {
     const authenticate = async () => {
       setLoading(true);
       try {
+        setAuthErrorDetails('');
         const forceDevAuth = import.meta.env.DEV && String(import.meta.env?.VITE_FORCE_DEV_AUTH || '') === '1';
         const storedToken = (() => {
           try {
@@ -95,6 +97,19 @@ function App() {
               localStorage.setItem('token', response.data.token);
               return;
             } catch (e) {
+              try {
+                const status = (e as any)?.response?.status;
+                const msg = String((e as any)?.response?.data?.error || (e as any)?.message || '');
+                const origin = (() => {
+                  try {
+                    return window.location.origin;
+                  } catch {
+                    return '';
+                  }
+                })();
+                setAuthErrorDetails(`verify failed: status=${status || ''} ${msg || ''} origin=${origin}`);
+              } catch {
+              }
               if (!import.meta.env.DEV) throw e;
             }
           }
@@ -107,6 +122,7 @@ function App() {
             return;
           }
 
+          setAuthErrorDetails('No initData available (open inside Telegram Mini App, not a browser link)');
           throw new Error('No initData available');
         };
 
@@ -114,6 +130,14 @@ function App() {
 
       } catch (error) {
         console.error('Authentication failed:', error);
+        try {
+          const existing = String(authErrorDetails || '');
+          if (!existing) {
+            const msg = String((error as any)?.message || '');
+            setAuthErrorDetails(msg || 'Authentication failed');
+          }
+        } catch {
+        }
         if (String((error as any)?.message || '') === 'AUTH_TIMEOUT') {
           safeAlert('Сервер долго отвечает, попробуйте ещё раз');
         } else {
@@ -169,6 +193,11 @@ function App() {
         }}>
           <div style={{ textAlign: 'center' }}>
             <p style={{ color: '#ff3b30', marginBottom: '16px', fontSize: '16px' }}>Ошибка авторизации</p>
+            {authErrorDetails ? (
+              <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '16px', fontSize: '12px', maxWidth: 340, wordBreak: 'break-word' }}>
+                {authErrorDetails}
+              </p>
+            ) : null}
             <button 
               onClick={() => WebApp.close()}
               style={{
