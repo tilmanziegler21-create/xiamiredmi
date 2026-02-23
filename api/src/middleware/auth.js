@@ -29,10 +29,10 @@ export const verifyTelegramAuth = (req, res, next) => {
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
 
-    const secretKey = CryptoJS.HmacSHA256('WebAppData', botToken).toString();
-    const calculatedHash = CryptoJS.HmacSHA256(dataCheckString, secretKey).toString();
+    const secretKey = CryptoJS.HmacSHA256(botToken, 'WebAppData');
+    const calculatedHash = CryptoJS.HmacSHA256(dataCheckString, secretKey).toString(CryptoJS.enc.Hex);
 
-    if (calculatedHash !== hash) {
+    if (String(calculatedHash).toLowerCase() !== String(hash).toLowerCase()) {
       return res.status(401).json({ error: 'Invalid hash' });
     }
 
