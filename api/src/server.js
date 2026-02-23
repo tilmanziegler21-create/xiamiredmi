@@ -31,13 +31,37 @@ dotenv.config({ path: join(__dirname, '../../.env') });
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+function escapeRegExp(s) {
+  return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function parseAllowedOrigins() {
+  const raw = String(process.env.FRONTEND_URL || '').trim();
+  if (!raw) return ['http://localhost:5173'];
+  return raw
+    .split(',')
+    .map((s) => String(s || '').trim())
+    .filter(Boolean);
+}
+
+function originAllowed(origin, allowedList) {
+  for (const a of allowedList) {
+    if (a === origin) return true;
+    if (a.includes('*')) {
+      const re = new RegExp(`^${escapeRegExp(a).replace(/\\\*/g, '.*')}$`);
+      if (re.test(origin)) return true;
+    }
+  }
+  return false;
+}
+
 app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);
-      const allowed = String(process.env.FRONTEND_URL || 'http://localhost:5173');
-      if (origin === allowed) return callback(null, true);
+      const allowed = parseAllowedOrigins();
+      if (originAllowed(origin, allowed)) return callback(null, true);
       if (process.env.NODE_ENV !== 'production' && origin.startsWith('http://localhost:')) {
         return callback(null, true);
       }
