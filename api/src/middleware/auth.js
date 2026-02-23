@@ -29,7 +29,7 @@ export const verifyTelegramAuth = (req, res, next) => {
       .map(([key, value]) => `${key}=${value}`)
       .join('\n');
 
-    const secretKey = CryptoJS.HmacSHA256(botToken, 'WebAppData').toString();
+    const secretKey = CryptoJS.HmacSHA256('WebAppData', botToken).toString();
     const calculatedHash = CryptoJS.HmacSHA256(dataCheckString, secretKey).toString();
 
     if (calculatedHash !== hash) {
