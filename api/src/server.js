@@ -22,6 +22,7 @@ import fortuneRoutes from './routes/fortune.js';
 import cron from 'node-cron';
 import db from './services/database.js';
 import { updateOrderRowByOrderId } from './services/sheets.js';
+import { readSheetTable } from './services/sheets.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -114,6 +115,34 @@ app.use('/api/fortune', fortuneRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+app.get('/health/sheets', async (req, res) => {
+  try {
+    const city = String(req.query?.city || process.env.CITY_CODES || '').split(',')[0].trim();
+    const table = await readSheetTable('products', city);
+    const headers = Array.isArray(table.headers) ? table.headers : [];
+    const lower = new Set(headers.map((h) => String(h || '').trim().toLowerCase()));
+    const required = ['sku', 'name', 'price', 'stock', 'active'];
+    const missingHeaders = required.filter((h) => !lower.has(h));
+    res.json({
+      ok: true,
+      city,
+      sheet: table.sheet,
+      rowCount: Array.isArray(table.rows) ? table.rows.length : 0,
+      missingHeaders,
+    });
+  } catch (e) {
+    const status = Number(e?.status) || Number(e?.response?.status) || 500;
+    const payload = {
+      ok: false,
+      error: String(e?.message || 'Sheets error'),
+      code: e?.code,
+      missing: e?.missing,
+      status,
+    };
+    res.status(status).json(payload);
+  }
 });
 
 const server = app.listen(PORT, () => {
