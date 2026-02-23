@@ -51,7 +51,7 @@ router.get('/', requireAuth, async (req, res) => {
           tasteProfile: p.tasteProfile || null,
         };
       })
-      .filter((product) => product.active && product.qtyAvailable > 0);
+      .filter((product) => product.active);
 
     if (category) {
       filteredProducts = filteredProducts.filter(product => product.category === category);
@@ -103,7 +103,7 @@ router.get('/categories', requireAuth, async (req, res) => {
     const city = String(req.query.city || '');
     if (!city) return res.status(400).json({ error: 'City parameter is required' });
     const products = await getProducts(city);
-    const categories = Array.from(new Set(products.filter((p) => p.active && Number(p.stock) > 0).map((p) => p.category).filter(Boolean))).sort();
+    const categories = Array.from(new Set(products.filter((p) => p.active).map((p) => p.category).filter(Boolean))).sort();
     res.json({ categories });
   } catch (e) {
     console.error('Categories error:', e);
@@ -127,7 +127,7 @@ router.get('/brands', requireAuth, async (req, res) => {
     const city = String(req.query.city || '');
     if (!city) return res.status(400).json({ error: 'City parameter is required' });
     const products = await getProducts(city);
-    const brands = Array.from(new Set(products.filter((p) => p.active && Number(p.stock) > 0).map((p) => p.brand).filter(Boolean))).sort();
+    const brands = Array.from(new Set(products.filter((p) => p.active).map((p) => p.brand).filter(Boolean))).sort();
     res.json({ brands });
   } catch (e) {
     console.error('Brands error:', e);
