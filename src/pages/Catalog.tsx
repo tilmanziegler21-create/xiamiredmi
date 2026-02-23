@@ -44,6 +44,7 @@ const Catalog: React.FC = () => {
   const [query, setQuery] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [addProduct, setAddProduct] = useState<Product | null>(null);
+  const [visibleCount, setVisibleCount] = useState(40);
   
   const [filters, setFilters] = useState({
     category: '',
@@ -94,6 +95,7 @@ const Catalog: React.FC = () => {
 
   useEffect(() => {
     if (!city) return;
+    setVisibleCount(40);
     const id = window.setTimeout(() => loadCatalog(city), 160);
     // Track filter usage
     if (filters.category) trackCategoryView(filters.category);
@@ -177,6 +179,32 @@ const Catalog: React.FC = () => {
     );
     return result;
   }, [products, query]);
+
+  const visible = useMemo(() => {
+    return filtered.slice(0, Math.max(0, visibleCount));
+  }, [filtered, visibleCount]);
+
+  const loadMoreRef = React.useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+    if (visibleCount >= filtered.length) return;
+    if (typeof IntersectionObserver === 'undefined') return;
+
+    const obs = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) {
+            setVisibleCount((n) => Math.min(filtered.length, n + (liteCards ? 20 : 40)));
+            break;
+          }
+        }
+      },
+      { root: null, rootMargin: '400px', threshold: 0.01 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [filtered.length, liteCards, visibleCount]);
 
   const styles = {
     container: {
@@ -311,7 +339,7 @@ const Catalog: React.FC = () => {
         </div>
       ) : (
         <div style={styles.grid}>
-          {filtered.map((p) => (
+          {visible.map((p) => (
             <ProductCard
               key={p.id}
               id={p.id}
@@ -356,6 +384,9 @@ const Catalog: React.FC = () => {
               }}
             />
           ))}
+          {visibleCount < filtered.length ? (
+            <div ref={loadMoreRef} style={{ height: 1 }} />
+          ) : null}
         </div>
       )}
 
