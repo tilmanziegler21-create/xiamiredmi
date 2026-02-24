@@ -120,21 +120,7 @@ const Cart: React.FC = () => {
     }
     
     const subtotal = cart.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-    let total = subtotal;
-    let quantityDiscount = 0;
-    
-    // Apply quantity discount: 3+ items = 40€ per item
-    cart.items.forEach(item => {
-      if (item.quantity >= 3) {
-        const originalItemTotal = item.price * item.quantity;
-        const discountedItemTotal = 40 * item.quantity;
-        quantityDiscount += originalItemTotal - discountedItemTotal;
-      }
-    });
-    
-    total = subtotal - quantityDiscount;
-    
-    return { subtotal, discount: quantityDiscount, total, quantityDiscount };
+    return { subtotal, discount: 0, total: subtotal, quantityDiscount: 0 };
   };
 
   const pricing = calculatePricing();
@@ -354,7 +340,6 @@ const Cart: React.FC = () => {
       <div style={styles.list}>
         {cart.items.map((item) => (
           <div key={item.id} style={styles.itemCard}>
-            <div style={styles.sale}>SALE</div>
             <div style={styles.trash}>
               <button
                 onClick={() => removeItem(item.id)}
@@ -473,13 +458,6 @@ const Cart: React.FC = () => {
             <span style={{ fontSize: theme.typography.fontSize.sm }}>{formatCurrency(pricing.subtotal)}</span>
           </div>
           
-          {pricing.quantityDiscount > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm }}>
-              <span style={{ fontSize: theme.typography.fontSize.sm, color: '#4caf50' }}>Скидка за 3+ шт:</span>
-              <span style={{ fontSize: theme.typography.fontSize.sm, color: '#4caf50' }}>-{formatCurrency(pricing.quantityDiscount)}</span>
-            </div>
-          )}
-          
           <div style={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
@@ -493,20 +471,6 @@ const Cart: React.FC = () => {
               {formatCurrency(pricing.total)}
             </span>
           </div>
-          
-          {cart.items.some(item => item.quantity >= 3) && (
-            <div style={{ 
-              marginTop: theme.spacing.sm,
-              padding: theme.spacing.sm,
-              background: 'rgba(76,175,80,0.1)',
-              borderRadius: theme.radius.md,
-              fontSize: theme.typography.fontSize.xs,
-              color: '#4caf50',
-              textAlign: 'center' as const
-            }}>
-              💰 При покупке 3+ штук цена 40€ за штуку!
-            </div>
-          )}
         </GlassCard>
       </div>
 
