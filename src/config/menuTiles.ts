@@ -62,7 +62,6 @@ export const menuTiles: MenuTile[] = [
     route: "/cart",
     image: cartImg,
     focal: "center",
-    badgeText: "0",
     analyticsEvent: "menu_cart_click"
   },
   {

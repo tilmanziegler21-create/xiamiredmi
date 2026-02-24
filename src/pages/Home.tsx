@@ -62,6 +62,10 @@ const Home: React.FC = () => {
     badgeText: t.badgeText || '',
   }));
 
+  const qtyDiscount = config?.quantityDiscount;
+  const qtyDiscountMin = Number(qtyDiscount?.minQty || 3);
+  const qtyDiscountPrice = Number(qtyDiscount?.unitPrice || 40);
+
   useEffect(() => {
     if (ultraLite) return;
     if (banners.length <= 1) return;
@@ -510,7 +514,7 @@ const Home: React.FC = () => {
           >
             <div style={{ fontSize: 44, lineHeight: 1, marginBottom: theme.spacing.sm, opacity: 0.9 }}>i</div>
             <div style={{ textAlign: 'center', fontSize: theme.typography.fontSize.sm, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.9, marginBottom: theme.spacing.md }}>
-              При покупке 3 шт. цена за 1 шт. составит
+              При покупке {qtyDiscountMin}+ шт. цена за 1 шт. составит
             </div>
             <div style={{
               background: 'rgba(255,255,255,0.92)',
@@ -520,7 +524,7 @@ const Home: React.FC = () => {
               fontWeight: theme.typography.fontWeight.bold,
               boxShadow: '0 14px 30px rgba(0,0,0,0.35)',
             }}>
-              {formatCurrency(50)}
+              {formatCurrency(qtyDiscountPrice)}
             </div>
           </GlassCard>
         </div>

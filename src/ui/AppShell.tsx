@@ -28,6 +28,12 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
   const { city, setCity, ensureCity } = useCityStore();
   const [cityModalOpen, setCityModalOpen] = React.useState(false);
 
+  const cityTitle = React.useMemo(() => {
+    if (!city) return '';
+    const found = (config?.cities || []).find((c) => String(c.code) === String(city));
+    return String(found?.title || city);
+  }, [city, config?.cities]);
+
   // Determine if we should show back button
   const showBackButton = location.pathname !== '/home' && location.pathname !== '/';
 
@@ -77,6 +83,7 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
         onCartClick={() => navigate('/cart')}
         cartCount={cart?.items?.length || 0}
         userName={user?.firstName}
+        bonusMultiplier={config?.bonusMultiplier || 4}
         showBackButton={showBackButton}
         showSettings={user?.status === 'admin'}
         onSettingsClick={() => navigate('/admin')}
@@ -87,7 +94,7 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
         cartItemsCount={cart?.items?.length || 0}
         userBalance={user?.bonusBalance || 0}
         userStatus={user?.status}
-        city={city}
+        city={cityTitle || city}
         onCityClick={() => {
           setDrawerOpen(false);
           setCityModalOpen(true);

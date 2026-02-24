@@ -23,6 +23,11 @@ function currencySymbol() {
 router.get('/', (_req, res) => {
   const codes = listCities();
   const supportUrl = process.env.GROUP_URL || process.env.REVIEWS_URL || '';
+  const bonusMultiplier = Number(process.env.BONUS_MULTIPLIER || 4);
+  const quantityDiscount = {
+    minQty: Number(process.env.QUANTITY_DISCOUNT_MIN_QTY || 3),
+    unitPrice: Number(process.env.QUANTITY_DISCOUNT_UNIT_PRICE || 40),
+  };
   const now = Date.now();
   const promos = db.getPromos().filter((p) => {
     if (!p || !p.active) return false;
@@ -98,6 +103,8 @@ router.get('/', (_req, res) => {
       description: 'За каждых двух друзей, которые совершают покупку, вы получите бонус на баланс.',
       ctaText: 'ПРИГЛАСИТЬ ДРУГА',
     },
+    bonusMultiplier,
+    quantityDiscount,
     promos: promos.map((p) => ({
       id: String(p.id || ''),
       title: String(p.title || ''),

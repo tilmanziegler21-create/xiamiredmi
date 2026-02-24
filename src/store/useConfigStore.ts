@@ -9,6 +9,8 @@ export type AppConfig = {
   groupUrl: string;
   reviewsUrl: string;
   reservationTtlMs: number;
+  bonusMultiplier?: number;
+  quantityDiscount?: { minQty: number; unitPrice: number };
   support: {
     managerUsername: string;
     managerPhone: string;
