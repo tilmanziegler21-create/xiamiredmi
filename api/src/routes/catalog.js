@@ -24,17 +24,32 @@ function errorMessage(e) {
 
 router.get('/', requireAuth, async (req, res) => {
   try {
-    const { city, category, brand, price_min, price_max, discount, new: isNew } = req.query;
+    const { city, category, brand, price_min, price_max, discount, new: isNew, taste_sweetness_min, taste_sweetness_max, taste_coolness_min, taste_fruitiness_min } = req.query;
     
     if (!city) {
       return res.status(400).json({ error: 'City parameter is required' });
     }
 
     const sheetProducts = await getProducts(String(city));
+    const toNum = (v) => {
+      const n = Number(String(v || '').replace(',', '.'));
+      return Number.isFinite(n) ? n : NaN;
+    };
+    const tSweetMin = toNum(taste_sweetness_min);
+    const tSweetMax = toNum(taste_sweetness_max);
+    const tCoolMin = toNum(taste_coolness_min);
+    const tFruitMin = toNum(taste_fruitiness_min);
+
     let filteredProducts = sheetProducts
       .map((p) => {
         const activeRes = db.getActiveReservationsByProduct(p.sku).reduce((s, r) => s + r.qty, 0);
         const qtyAvailable = Math.max(0, Number(p.stock) - activeRes);
+        const tp = p.tasteProfile && typeof p.tasteProfile === 'object' ? p.tasteProfile : null;
+        const sweet = tp ? Number(tp.sweet || 0) : 0;
+        const sour = tp ? Number(tp.sour || 0) : 0;
+        const fruit = tp ? Number(tp.fruit || 0) : 0;
+        const cool = tp ? Number(tp.cool || 0) : 0;
+        const strength = tp ? Number(tp.strength || 0) : 0;
         return {
           id: p.sku,
           sku: p.sku,
@@ -48,10 +63,31 @@ router.get('/', requireAuth, async (req, res) => {
           discount: Number(p.discount || 0),
           image: p.image || '',
           description: p.description || '',
-          tasteProfile: p.tasteProfile || null,
+          tasteProfile: tp
+            ? {
+                sweetness: sweet,
+                sourness: sour,
+                fruitiness: fruit,
+                coolness: cool,
+                strength,
+              }
+            : null,
         };
       })
       .filter((product) => product.active);
+
+    if (Number.isFinite(tSweetMin)) {
+      filteredProducts = filteredProducts.filter((p) => Number(p.tasteProfile?.sweetness || 0) >= tSweetMin);
+    }
+    if (Number.isFinite(tSweetMax)) {
+      filteredProducts = filteredProducts.filter((p) => Number(p.tasteProfile?.sweetness || 0) <= tSweetMax);
+    }
+    if (Number.isFinite(tCoolMin)) {
+      filteredProducts = filteredProducts.filter((p) => Number(p.tasteProfile?.coolness || 0) >= tCoolMin);
+    }
+    if (Number.isFinite(tFruitMin)) {
+      filteredProducts = filteredProducts.filter((p) => Number(p.tasteProfile?.fruitiness || 0) >= tFruitMin);
+    }
 
     if (category) {
       filteredProducts = filteredProducts.filter(product => product.category === category);

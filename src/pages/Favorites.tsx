@@ -130,7 +130,7 @@ const Favorites: React.FC = () => {
 
       <AddToCartModal
         open={addOpen}
-        product={addItem ? { id: addItem.id, name: addItem.name, price: addItem.price, image: addItem.image, variants: ['Cool Menthol', 'Sour Strawberry Dragonfruit', 'Berry Ice'] } : null}
+        product={addItem ? { id: addItem.id, name: addItem.name, price: addItem.price, image: addItem.image } : null}
         onClose={() => setAddOpen(false)}
         onConfirm={async ({ quantity, variant }) => {
           if (!addItem) return;

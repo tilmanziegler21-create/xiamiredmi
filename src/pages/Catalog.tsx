@@ -117,6 +117,10 @@ const Catalog: React.FC = () => {
         brand: filters.brand,
         price_min: filters.price_min,
         price_max: filters.price_max,
+        taste_sweetness_min: filters.taste_sweetness_min,
+        taste_sweetness_max: filters.taste_sweetness_max,
+        taste_coolness_min: filters.taste_coolness_min,
+        taste_fruitiness_min: filters.taste_fruitiness_min,
         discount: filters.discount,
         new: filters.new
       });
@@ -260,6 +264,9 @@ const Catalog: React.FC = () => {
       ...blurStyle(theme.blur.glass),
       boxShadow: theme.shadow.card,
       padding: theme.spacing.lg,
+      maxHeight: '82vh',
+      overflowY: 'auto' as const,
+      WebkitOverflowScrolling: 'touch' as any,
     },
     label: {
       fontSize: theme.typography.fontSize.xs,
@@ -399,7 +406,6 @@ const Catalog: React.FC = () => {
                 name: addProduct.name,
                 price: addProduct.price,
                 image: addProduct.image,
-                variants: ['Cool Menthol', 'Sour Strawberry Dragonfruit', 'Berry Ice'],
               }
             : null
         }

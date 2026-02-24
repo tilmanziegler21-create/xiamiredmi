@@ -534,7 +534,7 @@ const Home: React.FC = () => {
 
       <AddToCartModal
         open={addOpen}
-        product={addProduct ? { id: addProduct.id, name: addProduct.name, price: addProduct.price, image: addProduct.image, variants: ['Cool Menthol', 'Sour Strawberry Dragonfruit', 'Berry Ice'] } : null}
+        product={addProduct ? { id: addProduct.id, name: addProduct.name, price: addProduct.price, image: addProduct.image } : null}
         onClose={() => setAddOpen(false)}
         onConfirm={async ({ quantity, variant }) => {
           if (!addProduct) return;

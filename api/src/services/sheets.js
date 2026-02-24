@@ -129,6 +129,8 @@ export async function getProducts(city) {
   const tasteSweetIdx = headerIndexAny(headers, ['sweet', 'sweetness']);
   const tasteSourIdx = headerIndexAny(headers, ['sour']);
   const tasteFruitIdx = headerIndexAny(headers, ['fruit', 'fruitiness']);
+  const tasteCoolIdx = headerIndexAny(headers, ['cool', 'coolness']);
+  const tasteStrengthIdx = headerIndexAny(headers, ['strength']);
 
   const products = [];
   for (let i = 0; i < rows.length; i++) {
@@ -149,6 +151,8 @@ export async function getProducts(city) {
       sweet: tasteSweetIdx >= 0 ? toNumber(r[tasteSweetIdx]) : 0,
       sour: tasteSourIdx >= 0 ? toNumber(r[tasteSourIdx]) : 0,
       fruit: tasteFruitIdx >= 0 ? toNumber(r[tasteFruitIdx]) : 0,
+      cool: tasteCoolIdx >= 0 ? toNumber(r[tasteCoolIdx]) : 0,
+      strength: tasteStrengthIdx >= 0 ? toNumber(r[tasteStrengthIdx]) : 0,
     };
     products.push({
       sku,

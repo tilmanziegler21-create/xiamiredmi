@@ -42,8 +42,6 @@ type SimilarProduct = {
   sku?: string;
 };
 
-const defaultFlavors = ['Cool Menthol', 'Sour Strawberry Dragonfruit', 'Berry Ice'];
-
 const assetUrl = (p: string) => {
   const base = String(import.meta.env.BASE_URL || '/');
   const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
@@ -116,8 +114,6 @@ const Product: React.FC = () => {
   const [similar, setSimilar] = React.useState<SimilarProduct[]>([]);
   const [loading, setLoading] = React.useState(true);
   const { city } = useCityStore();
-
-  const [flavor, setFlavor] = React.useState<string>(defaultFlavors[0]);
   const [addOpen, setAddOpen] = React.useState(false);
   const favorites = useFavoritesStore();
 
@@ -184,7 +180,7 @@ const Product: React.FC = () => {
       return;
     }
     try {
-      await cartAPI.addItem({ productId: product.id, quantity, city, variant: variant || flavor });
+      await cartAPI.addItem({ productId: product.id, quantity, city, variant });
       const cartResp = await cartAPI.getCart(city);
       setCart(cartResp.data.cart);
       trackAddToCart(product.id, product.name, product.price, quantity);
@@ -439,23 +435,6 @@ const Product: React.FC = () => {
           {product.description}
         </div>
 
-        <div style={styles.flavorRow}>
-          <div style={styles.flavorPill}>
-            <span style={{ opacity: 0.8 }}>🍃</span>
-            <span>{flavor}</span>
-            <span style={{ opacity: 0.8 }}>🧊</span>
-          </div>
-          <div style={styles.selectedPill}>выбран</div>
-        </div>
-
-        <div style={styles.flavorsWrap}>
-          {defaultFlavors.map((f) => (
-            <button key={f} onClick={() => setFlavor(f)} style={styles.chip(f === flavor)}>
-              {f}
-            </button>
-          ))}
-        </div>
-
         <button style={styles.goldButton} onClick={() => setAddOpen(true)}>
           Добавить заказ в корзину
         </button>
@@ -514,14 +493,9 @@ const Product: React.FC = () => {
 
       <AddToCartModal
         open={addOpen}
-        product={{ id: product.id, name: product.name, price: product.price, image: product.image, variants: defaultFlavors }}
+        product={{ id: product.id, name: product.name, price: product.price, image: product.image }}
         onClose={() => setAddOpen(false)}
         onConfirm={async ({ quantity, variant }) => {
-          if (!variant) {
-            toast.push('Выбери вкус', 'error');
-            return;
-          }
-          setFlavor(variant);
           await addToCart(quantity, variant);
         }}
       />
