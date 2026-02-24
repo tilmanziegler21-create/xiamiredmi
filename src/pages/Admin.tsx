@@ -91,7 +91,18 @@ const Admin: React.FC = () => {
       
       setOrders(ordersRes.data.orders || []);
       setCouriers(couriersRes.data.couriers || []);
-      setPromos(promosRes.data.promos || []);
+      const mappedPromos: Promo[] = (promosRes.data.promos || []).map((p: any) => ({
+        id: String(p.id || ''),
+        title: String(p.title || p.id || ''),
+        description: String(p.description || ''),
+        discount: Number(p.value || 0),
+        type: String(p.type || '') === 'percent' ? 'percentage' : 'fixed',
+        validUntil: String(p.endsAt || ''),
+        isActive: Boolean(p.active),
+        terms: [],
+        minOrderAmount: Number(p.minTotal || 0) || undefined,
+      }));
+      setPromos(mappedPromos);
       setStats(statsRes.data.stats || stats);
     } catch (error) {
       console.error('Failed to load admin data:', error);
@@ -135,6 +146,17 @@ const Admin: React.FC = () => {
     } catch (error) {
       console.error('Failed to toggle promo status:', error);
       toast.push('Ошибка обновления статуса акции', 'error');
+    }
+  };
+
+  const deletePromo = async (promoId: string) => {
+    try {
+      await adminAPI.deletePromo(promoId);
+      toast.push('Акция удалена', 'success');
+      loadData();
+    } catch (error) {
+      console.error('Failed to delete promo:', error);
+      toast.push('Ошибка удаления акции', 'error');
     }
   };
 
@@ -765,7 +787,7 @@ const Admin: React.FC = () => {
                     </SecondaryButton>
                     <SecondaryButton
                       size="sm"
-                      onClick={() => {/* TODO: Delete promo */}}
+                      onClick={() => deletePromo(promo.id)}
                       style={{ background: 'rgba(244,67,54,0.1)', color: '#f44336', borderColor: 'rgba(244,67,54,0.3)' }}
                     >
                       <Trash2 size={16} style={{ marginRight: '4px' }} />

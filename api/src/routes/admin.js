@@ -196,6 +196,14 @@ router.post('/promos/status', async (req, res) => {
   res.json({ ok: true });
 });
 
+router.delete('/promos/:promoId', async (req, res) => {
+  const promoId = String(req.params?.promoId || '').trim();
+  if (!promoId) return res.status(400).json({ error: 'promoId is required' });
+  const ok = db.deletePromo(promoId);
+  if (!ok) return res.status(404).json({ error: 'Promo not found' });
+  res.json({ ok: true });
+});
+
 router.post('/orders/status', async (req, res) => {
   try {
     const orderId = String(req.body?.orderId || '').trim();

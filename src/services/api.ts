@@ -155,6 +155,7 @@ export const adminAPI = {
   updateOrderStatus: (orderId: string, status: string, city: string) => api.post('/admin/orders/status', { orderId, status, city }),
   toggleCourierStatus: (courierId: string, active: boolean, city: string) => api.post('/admin/couriers/status', { courierId, active, city }),
   togglePromoStatus: (promoId: string, active: boolean) => api.post('/admin/promos/status', { promoId, active }),
+  deletePromo: (promoId: string) => api.delete(`/admin/promos/${encodeURIComponent(promoId)}`),
   addCourier: (payload: { city: string; courierId: string; name: string; tgId?: string; timeFrom?: string; timeTo?: string }) => api.post('/admin/couriers/add', payload),
 };
 

@@ -23,7 +23,15 @@ function currencySymbol() {
 router.get('/', (_req, res) => {
   const codes = listCities();
   const supportUrl = process.env.GROUP_URL || process.env.REVIEWS_URL || '';
-  const promos = db.getPromos().filter((p) => Boolean(p.active));
+  const now = Date.now();
+  const promos = db.getPromos().filter((p) => {
+    if (!p || !p.active) return false;
+    const s = p.startsAt ? Date.parse(String(p.startsAt)) : NaN;
+    const e = p.endsAt ? Date.parse(String(p.endsAt)) : NaN;
+    if (Number.isFinite(s) && s > now) return false;
+    if (Number.isFinite(e) && e < now) return false;
+    return true;
+  });
   res.json({
     cities: codes.map((code) => ({
       code,

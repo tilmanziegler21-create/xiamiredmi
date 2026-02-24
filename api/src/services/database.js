@@ -59,6 +59,12 @@ class InMemoryDB {
         if (!oi?.id || !oi?.order_id) continue;
         this.orderItems.set(String(oi.id), oi);
       }
+
+      const promos = Array.isArray(parsed.promos) ? parsed.promos : [];
+      for (const p of promos) {
+        if (!p?.id) continue;
+        this.promos.set(String(p.id), p);
+      }
     } catch {
       // ignore
     }
@@ -73,6 +79,7 @@ class InMemoryDB {
         bonusLedger: this.bonusLedger,
         orders: Array.from(this.orders.values()),
         orderItems: Array.from(this.orderItems.values()),
+        promos: Array.from(this.promos.values()),
       };
       fs.writeFileSync(this.dataFilePath, JSON.stringify(payload, null, 2), 'utf8');
     } catch {
@@ -385,6 +392,12 @@ class InMemoryDB {
   getPromoById(promoId) {
     const p = this.promos.get(String(promoId));
     return p || null;
+  }
+
+  deletePromo(promoId) {
+    const ok = this.promos.delete(String(promoId));
+    if (ok) this.persistState();
+    return ok;
   }
 
   getUser(tgId) {
