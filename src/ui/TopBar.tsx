@@ -76,6 +76,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       display: 'flex',
       alignItems: 'center',
       gap: theme.spacing.sm,
+      zIndex: 2,
     },
     centerSection: {
       position: 'absolute' as const,
@@ -84,6 +85,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       display: 'flex',
       alignItems: 'center',
       gap: theme.spacing.sm,
+      zIndex: 1,
     },
     brand: {
       fontSize: theme.typography.fontSize.lg,
@@ -117,6 +119,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       display: 'flex',
       alignItems: 'center',
       gap: theme.spacing.md,
+      zIndex: 2,
     },
     bonusPill: {
       display: 'flex',

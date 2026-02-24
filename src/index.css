@@ -103,9 +103,11 @@ html.tg-webview body {
 html.tg-webview * {
   -webkit-tap-highlight-color: transparent;
 }
-
-html.tg-webview body {
-  touch-action: pan-y;
+html.tg-webview button,
+html.tg-webview a,
+html.tg-webview [role='button'] {
+  touch-action: manipulation;
+  cursor: pointer;
 }
 
 /* Smooth scrolling */

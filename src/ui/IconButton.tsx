@@ -50,6 +50,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
     color: theme.colors.dark.text,
     cursor: 'pointer',
     transition: 'all 0.2s ease',
+    touchAction: 'manipulation' as const,
     ...sizeStyles[size],
     ...variantStyles[variant],
   };

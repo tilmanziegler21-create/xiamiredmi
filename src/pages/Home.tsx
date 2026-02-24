@@ -149,6 +149,8 @@ const Home: React.FC = () => {
       position: 'relative' as const,
       boxShadow: theme.shadow.card,
       border: '1px solid rgba(255,255,255,0.14)',
+      cursor: 'pointer',
+      touchAction: 'manipulation' as const,
     },
     bannerContent: {
       position: 'absolute' as const,
@@ -192,6 +194,8 @@ const Home: React.FC = () => {
       color: theme.colors.dark.text,
       textDecoration: 'none',
       transition: 'all 0.2s ease',
+      cursor: 'pointer',
+      touchAction: 'manipulation' as const,
     },
     quickActionIcon: {
       width: 32,
@@ -222,6 +226,7 @@ const Home: React.FC = () => {
       color: theme.colors.dark.textSecondary,
       cursor: 'pointer',
       transition: 'all 0.2s ease',
+      touchAction: 'manipulation' as const,
     },
     categoryGrid: {
       padding: `0 ${theme.padding.screen}`,
@@ -237,6 +242,8 @@ const Home: React.FC = () => {
       position: 'relative' as const,
       boxShadow: theme.shadow.card,
       border: '1px solid rgba(255,255,255,0.14)',
+      cursor: 'pointer',
+      touchAction: 'manipulation' as const,
     },
     categoryTitle: {
       position: 'absolute' as const,
@@ -276,6 +283,7 @@ const Home: React.FC = () => {
       cursor: 'pointer',
       margin: `0 ${theme.padding.screen} ${theme.spacing.lg}`,
       transition: 'all 0.2s ease',
+      touchAction: 'manipulation' as const,
     },
   };
 
@@ -302,7 +310,7 @@ const Home: React.FC = () => {
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
             />
           ) : null}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.55) 100%)', pointerEvents: 'none' }} />
           <div style={styles.bannerContent}>
             <h2 style={styles.bannerTitle}>{banners[currentBanner].title}</h2>
             <p style={styles.bannerSubtitle}>{banners[currentBanner].subtitle}</p>
@@ -421,7 +429,7 @@ const Home: React.FC = () => {
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
               />
             ) : null}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)' }} />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
             {category.badgeText ? (
               <div style={{ position: 'absolute', top: theme.spacing.md, right: theme.spacing.md }}>
                 <ChipBadge variant="new" size="sm">{category.badgeText}</ChipBadge>
