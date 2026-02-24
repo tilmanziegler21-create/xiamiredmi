@@ -47,7 +47,6 @@ const AgeVerify: React.FC = () => {
       if (import.meta.env.DEV) {
         const response = await authAPI.dev();
         setUser(response.data.user, response.data.token);
-        localStorage.setItem('token', response.data.token);
         setAgeVerified(true);
         safeAlert('Возраст подтвержден!');
         setTimeout(() => navigate('/home', { replace: true }), 100);

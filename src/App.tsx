@@ -113,7 +113,6 @@ function App() {
               const response = await authAPI.verify(initData);
               if (cancelled) return;
               setUser(response.data.user, response.data.token);
-              localStorage.setItem('token', response.data.token);
               return;
             } catch (e) {
               try {
@@ -137,7 +136,6 @@ function App() {
             const response = await authAPI.dev();
             if (cancelled) return;
             setUser(response.data.user, response.data.token);
-            localStorage.setItem('token', response.data.token);
             return;
           }
 

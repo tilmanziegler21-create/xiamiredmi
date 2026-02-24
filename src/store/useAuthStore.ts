@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 
+const STORAGE_KEY = 'token';
+
 interface User {
   tgId: string;
   username: string;
@@ -19,17 +21,33 @@ interface AuthState {
   setLoading: (loading: boolean) => void;
 }
 
+function readInitialToken(): string | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? String(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  token: null,
+  token: readInitialToken(),
   isLoading: false,
-  setUser: (user, token) => set({ user, token }),
+  setUser: (user, token) => {
+    try {
+      localStorage.setItem(STORAGE_KEY, token);
+    } catch {
+      // ignore
+    }
+    set({ user, token });
+  },
   setAgeVerified: (verified) => set((state) => ({
     user: state.user ? { ...state.user, ageVerified: verified } : null
   })),
   logout: () => {
     try {
-      localStorage.removeItem('token');
+      localStorage.removeItem(STORAGE_KEY);
     } catch {
       // ignore
     }
