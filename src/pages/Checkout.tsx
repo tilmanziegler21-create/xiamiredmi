@@ -131,28 +131,23 @@ const Checkout: React.FC = () => {
       return;
     }
 
-    if (!phone.trim()) {
-      toast.push('Укажи телефон', 'error');
-      return;
-    }
-
+    const errors: string[] = [];
+    if (!phone.trim()) errors.push('Укажи телефон');
     if (deliveryMethod === 'courier') {
-      if (!address.trim()) {
-        toast.push('Укажи адрес доставки', 'error');
-        return;
-      }
-      if (!courierId) {
-        toast.push('Выбери курьера', 'error');
-        return;
-      }
-      if (!deliveryDate) {
-        toast.push('Выбери дату', 'error');
-        return;
-      }
-      if (!deliveryTime) {
-        toast.push('Выбери время', 'error');
-        return;
-      }
+      if (!address.trim()) errors.push('Укажи адрес доставки');
+      if (!courierId) errors.push('Выбери курьера');
+      if (!deliveryDate) errors.push('Выбери дату');
+      if (!deliveryTime) errors.push('Выбери время');
+    } else {
+      if (!pickupPoint.trim()) errors.push('Выбери точку самовывоза');
+    }
+    const wantBonus = Math.max(0, Number(String(bonusWant || '').replace(',', '.')) || 0);
+    if (wantBonus > 0 && wantBonus > bonusBalance) {
+      errors.push('Бонусов больше, чем на балансе');
+    }
+    if (errors.length) {
+      toast.push(errors.join(' • '), 'error');
+      return;
     }
 
     setLoading(true);
@@ -166,29 +161,30 @@ const Checkout: React.FC = () => {
       const orderData = {
         city,
         items: cart.items.map((item) => ({ productId: item.productId, quantity: item.quantity, variant: item.variant || '' })),
-        promoCode,
+        promoCode: String(promoCode || '').trim(),
       };
 
       const createResp = await orderAPI.createOrder(orderData, idempotencyKeyRef.current);
       const { orderId, orderText, totalAmount } = createResp.data;
 
       let applied = 0;
-      try {
-        const want = Math.max(0, Number(bonusWant || 0));
-        if (want > 0) {
+      const want = wantBonus;
+      if (want > 0) {
+        try {
           const resp = await bonusesAPI.apply(want);
           applied = Number(resp.data.applied || 0);
+        } catch (e) {
+          console.error('Bonuses apply failed:', e);
+          toast.push('Не удалось применить бонусы', 'error');
+          return;
         }
-      } catch (e) {
-        console.error('Bonuses apply failed:', e);
-        toast.push('Не удалось применить бонусы', 'error');
       }
 
       await orderAPI.confirmOrder({
         orderId,
         deliveryMethod,
         city,
-        promoCode,
+        promoCode: String(promoCode || '').trim(),
         courier_id: deliveryMethod === 'courier' ? courierId : '',
         delivery_date: deliveryMethod === 'courier' ? deliveryDate : '',
         delivery_time: deliveryMethod === 'courier' ? deliveryTime : '',
@@ -214,8 +210,8 @@ const Checkout: React.FC = () => {
 
       const msg = String(orderText || '').trim();
       try {
-        if (supportUrl && WebApp.openTelegramLink) {
-          WebApp.openTelegramLink(`https://t.me/share/url?text=${encodeURIComponent(msg)}`);
+        if (supportUrl && WebApp.openTelegramLink && /^https:\/\/t\.me\//i.test(supportUrl)) {
+          WebApp.openTelegramLink(supportUrl);
         }
       } catch (e) {
         console.error('Open chat failed:', e);
@@ -223,6 +219,7 @@ const Checkout: React.FC = () => {
       }
 
       navigate('/orders');
+      idempotencyKeyRef.current = '';
     } catch (e) {
       console.error('Failed to create order:', e);
       try {
@@ -232,7 +229,6 @@ const Checkout: React.FC = () => {
       }
     } finally {
       setLoading(false);
-      idempotencyKeyRef.current = '';
     }
   };
 
@@ -297,6 +293,17 @@ const Checkout: React.FC = () => {
     }
     const subtotal = (cart?.items || []).reduce((s, it) => s + Number(it.price || 0) * Number(it.quantity || 0), 0);
     return { subtotal, discount: 0, total: subtotal };
+  })();
+
+  const canSubmit = (() => {
+    if (loading) return false;
+    if (!cart?.items?.length) return false;
+    if (!city) return false;
+    if (!phone.trim()) return false;
+    const wantBonus = Math.max(0, Number(String(bonusWant || '').replace(',', '.')) || 0);
+    if (wantBonus > bonusBalance) return false;
+    if (deliveryMethod === 'pickup') return Boolean(pickupPoint.trim());
+    return Boolean(address.trim() && courierId && deliveryDate && deliveryTime);
   })();
 
   if (!cart?.items?.length) {
@@ -386,7 +393,7 @@ const Checkout: React.FC = () => {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.md }}>
                 <div>
                   <div style={styles.label}>Дата</div>
-                  <input value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} placeholder="YYYY-MM-DD" style={styles.input} />
+                  <input value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} type="date" style={styles.input} min={new Date().toISOString().slice(0, 10)} />
                 </div>
                 <div>
                   <div style={styles.label}>Время</div>
@@ -429,7 +436,7 @@ const Checkout: React.FC = () => {
             <span>{formatCurrency(bonusBalance)}</span>
           </div>
           <div style={styles.label}>Сколько списать</div>
-          <input value={bonusWant} onChange={(e) => setBonusWant(e.target.value)} placeholder="0" style={styles.input} inputMode="numeric" />
+          <input value={bonusWant} onChange={(e) => setBonusWant(e.target.value)} placeholder="0" style={styles.input} inputMode="decimal" />
         </GlassCard>
       </div>
 
@@ -440,16 +447,26 @@ const Checkout: React.FC = () => {
           <textarea value={comment} onChange={(e) => setComment(e.target.value)} maxLength={500} placeholder="Комментарий к заказу" style={{ ...styles.input, minHeight: 90, resize: 'none' }} />
           <div style={{ height: theme.spacing.md }} />
           <div style={styles.label}>Телефон</div>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+49 ..." style={styles.input} maxLength={40} />
+          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+49 ..." style={styles.input} maxLength={40} inputMode="tel" />
         </GlassCard>
       </div>
 
       <SectionDivider title="Оплата" />
       <div style={styles.pillRow}>
-        <SecondaryButton fullWidth onClick={() => setPaymentMethod('cash')} disabled={loading || paymentMethod === 'cash'}>
+        <SecondaryButton
+          fullWidth
+          onClick={() => setPaymentMethod('cash')}
+          disabled={loading}
+          style={{ borderRadius: 999, opacity: paymentMethod === 'cash' ? 1 : 0.7 }}
+        >
           Наличные
         </SecondaryButton>
-        <SecondaryButton fullWidth onClick={() => setPaymentMethod('card')} disabled={loading || paymentMethod === 'card'}>
+        <SecondaryButton
+          fullWidth
+          onClick={() => setPaymentMethod('card')}
+          disabled={loading}
+          style={{ borderRadius: 999, opacity: paymentMethod === 'card' ? 1 : 0.7 }}
+        >
           Карта / Онлайн
         </SecondaryButton>
       </div>
@@ -459,7 +476,7 @@ const Checkout: React.FC = () => {
       <div style={styles.summary}>
         <GlassCard padding="lg" variant="elevated">
           <div style={styles.summaryRow}>
-            <span style={styles.muted}>Subtotal</span>
+            <span style={styles.muted}>Подытог</span>
             <span>{formatCurrency(pricing.subtotal)}</span>
           </div>
           {pricing.discount ? (
@@ -480,7 +497,7 @@ const Checkout: React.FC = () => {
       </div>
 
       <div style={{ padding: `0 ${theme.padding.screen}` }}>
-        <PrimaryButton fullWidth onClick={createOrder} disabled={loading}>
+        <PrimaryButton fullWidth onClick={createOrder} disabled={!canSubmit}>
           {loading ? 'Оформление…' : 'Оформление заказа'}
         </PrimaryButton>
       </div>
