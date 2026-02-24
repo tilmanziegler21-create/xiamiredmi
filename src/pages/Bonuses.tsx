@@ -68,12 +68,12 @@ const Bonuses: React.FC = () => {
       if (user && token) setUser({ ...user, bonusBalance: balance }, token);
 
       const events = Array.isArray(hist.data?.history) ? hist.data.history : [];
-      const mapped: BonusTransaction[] = events.map((e: any) => {
+      const mapped: BonusTransaction[] = events.map((e: any, i: number) => {
         const amount = Number(e?.amount || 0);
         const type: BonusTransaction['type'] =
           amount < 0 ? 'spent' : String(e?.type || '') === 'expire' ? 'expired' : 'earned';
         return {
-          id: String(e?.id || e?._id || e?.created_at || Math.random()),
+          id: String(e?.id || e?._id || e?.created_at || `row_${i}`),
           type,
           amount,
           description: String(e?.type || 'Операция'),

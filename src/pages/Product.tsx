@@ -42,6 +42,34 @@ type SimilarProduct = {
   sku?: string;
 };
 
+const seed2 = (seed: string) => {
+  const s = String(seed || '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  const r = (h % 1000) / 1000;
+  const r2 = ((h >>> 8) % 1000) / 1000;
+  return { r, r2 };
+};
+
+const trustFor = (seed: string) => {
+  const { r, r2 } = seed2(seed);
+  return {
+    rating: 4.2 + r * 0.8,
+    reviewCount: Math.floor(50 + r2 * 200),
+    weeklyOrders: Math.floor(20 + r * 100),
+  };
+};
+
+const tasteFor = (seed: string) => {
+  const { r, r2 } = seed2(seed);
+  const r3 = ((Math.floor(r * 1000) ^ Math.floor(r2 * 1000)) % 1000) / 1000;
+  return {
+    sweetness: Math.floor(1 + r * 5),
+    fruitiness: Math.floor(1 + r2 * 5),
+    coolness: Math.floor(1 + r3 * 3),
+  };
+};
+
 const assetUrl = (p: string) => {
   const base = String(import.meta.env.BASE_URL || '/');
   const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
@@ -471,16 +499,8 @@ const Product: React.FC = () => {
                 price={p.price}
                 image={p.image}
                 brand={p.brand} // Add brand prop
-                tasteProfile={{
-                  sweetness: Math.floor(Math.random() * 5) + 1,
-                  fruitiness: Math.floor(Math.random() * 5) + 1,
-                  coolness: Math.floor(Math.random() * 3) + 1,
-                }}
-                trustData={{
-                  rating: 4.2 + Math.random() * 0.8,
-                  reviewCount: Math.floor(Math.random() * 200) + 50,
-                  weeklyOrders: Math.floor(Math.random() * 100) + 20,
-                }}
+                tasteProfile={tasteFor(p.id)}
+                trustData={trustFor(p.id)}
                 showTasteProfile={true}
                 showTrustIndicators={true}
                 onClick={(pid) => navigate(`/product/${pid}`)}

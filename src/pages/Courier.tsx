@@ -348,8 +348,8 @@ const Courier: React.FC = () => {
 
               {/* Items List */}
               <div style={styles.itemsList}>
-                {order.items?.slice(0, 3).map((item, index) => (
-                  <div key={index} style={styles.item}>
+                {order.items?.slice(0, 3).map((item) => (
+                  <div key={`${item.name}_${item.quantity}_${item.price}`} style={styles.item}>
                     <div style={styles.itemName}>{item.name}</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
                       <span style={styles.itemQuantity}>x{item.quantity}</span>
