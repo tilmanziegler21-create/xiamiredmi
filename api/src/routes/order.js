@@ -7,6 +7,12 @@ import { normalizeOrderStatus } from '../domain/orderStatus.js';
 const router = express.Router();
 
 const idempotency = new Map();
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, v] of idempotency.entries()) {
+    if (Number(v?.expiresAt || 0) <= now) idempotency.delete(k);
+  }
+}, 5 * 60 * 1000);
 
 function generateOrderId() {
   return 'ORD-' + Date.now().toString(36).toUpperCase();

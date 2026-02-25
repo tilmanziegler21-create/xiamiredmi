@@ -98,6 +98,24 @@ const OrderDetails: React.FC = () => {
   const subtotal = items.reduce((s, it) => s + Number(it.price || 0) * Number(it.quantity || 0), 0);
   const bonusApplied = Number(order.bonusApplied || 0);
   const finalAmount = Number(order.finalAmount || 0) || Math.max(0, Number(order.totalAmount || 0) - bonusApplied);
+  const getStatusText = (s: string) => {
+    const map: Record<string, string> = {
+      buffer: 'В обработке',
+      pending: 'Ожидает',
+      assigned: 'Курьер назначен',
+      picked_up: 'В пути',
+      delivered: 'Доставлен',
+      cancelled: 'Отменён',
+    };
+    const key = String(s || '').toLowerCase();
+    return map[key] ?? (s || '—');
+  };
+  const getDeliveryText = (s: string) => {
+    const key = String(s || '').toLowerCase();
+    if (key === 'courier') return 'Курьер';
+    if (key === 'pickup') return 'Самовывоз';
+    return s || '—';
+  };
 
   return (
     <div>
@@ -129,8 +147,8 @@ const OrderDetails: React.FC = () => {
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>{order.createdAt ? new Date(order.createdAt).toLocaleString() : ''}</div>
           </div>
           <div style={{ display: 'grid', gap: 6, color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-            <div>Статус: <span style={{ color: theme.colors.dark.text }}>{order.status}</span></div>
-            <div>Доставка: <span style={{ color: theme.colors.dark.text }}>{order.deliveryMethod || '—'}</span></div>
+            <div>Статус: <span style={{ color: theme.colors.dark.text }}>{getStatusText(order.status)}</span></div>
+            <div>Доставка: <span style={{ color: theme.colors.dark.text }}>{getDeliveryText(order.deliveryMethod || '')}</span></div>
             <div>Оплата: <span style={{ color: theme.colors.dark.text }}>{order.paymentMethod || '—'}</span></div>
             {order.deliveryAddress ? (
               <div>Адрес: <span style={{ color: theme.colors.dark.text }}>{order.deliveryAddress}</span></div>
@@ -183,7 +201,7 @@ const OrderDetails: React.FC = () => {
         <GlassCard padding="lg" variant="elevated">
           <div style={{ display: 'grid', gap: 8, fontSize: theme.typography.fontSize.sm }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              <span style={{ color: theme.colors.dark.textSecondary }}>Subtotal</span>
+              <span style={{ color: theme.colors.dark.textSecondary }}>Подытог</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>

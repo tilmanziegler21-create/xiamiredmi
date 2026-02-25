@@ -30,6 +30,7 @@ router.get('/', requireAuth, async (req, res) => {
         total: 0
       };
       db.carts.set(cartId, newCart);
+      db.persistState();
       cart = newCart;
     }
 
@@ -150,6 +151,7 @@ router.post('/add', requireAuth, async (req, res) => {
       price: Number(p.price)
     };
     db.cartItems.set(itemId, newItem);
+    db.persistState();
 
     res.json({ success: true, message: 'Product added to cart' });
   } catch (error) {
@@ -166,7 +168,8 @@ router.post('/remove', requireAuth, (req, res) => {
       return res.status(400).json({ error: 'Item ID is required' });
     }
 
-    db.cartItems.delete(itemId);
+    const ok = db.cartItems.delete(itemId);
+    if (ok) db.persistState();
     
     res.json({ success: true, message: 'Item removed from cart' });
   } catch (error) {
@@ -187,6 +190,7 @@ router.post('/update', requireAuth, async (req, res) => {
 
     if (qty <= 0) {
       db.cartItems.delete(itemId);
+      db.persistState();
       return res.json({ success: true });
     }
 
@@ -203,6 +207,7 @@ router.post('/update', requireAuth, async (req, res) => {
 
     item.quantity = qty;
     db.cartItems.set(itemId, item);
+    db.persistState();
     return res.json({ success: true });
   } catch (error) {
     console.error('Update cart item error:', error);
@@ -222,6 +227,7 @@ router.post('/clear', requireAuth, (req, res) => {
     for (const [id, item] of db.cartItems.entries()) {
       if (item.cart_id === cart.id) db.cartItems.delete(id);
     }
+    db.persistState();
 
     res.json({ success: true });
   } catch (e) {

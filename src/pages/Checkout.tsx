@@ -37,6 +37,7 @@ const Checkout: React.FC = () => {
   const { city } = useCityStore();
   const { config } = useConfigStore();
   const [loading, setLoading] = React.useState(false);
+  const [cartLoading, setCartLoading] = React.useState(true);
   const [deliveryMethod, setDeliveryMethod] = React.useState<DeliveryMethod>(state.fulfillment === 'pickup' ? 'pickup' : 'courier');
   const [pickupPoint, setPickupPoint] = React.useState(state.pickup || '');
   const [promoCode, setPromoCode] = React.useState(state.promoCode || '');
@@ -70,6 +71,7 @@ const Checkout: React.FC = () => {
   React.useEffect(() => {
     (async () => {
       try {
+        setCartLoading(true);
         if (!city) {
           toast.push('Выберите город', 'error');
           return;
@@ -79,6 +81,8 @@ const Checkout: React.FC = () => {
       } catch (e) {
         console.error('Checkout cart load failed:', e);
         toast.push('Ошибка загрузки корзины', 'error');
+      } finally {
+        setCartLoading(false);
       }
     })();
   }, [city]);
@@ -149,6 +153,8 @@ const Checkout: React.FC = () => {
     if (!deliveryTime) errors.push('Выбери время');
     if (deliveryMethod === 'pickup') {
       if (!pickupPoint.trim()) errors.push('Выбери точку самовывоза');
+    } else {
+      if (!address.trim()) errors.push('Укажи адрес доставки');
     }
     const wantBonus = Math.max(0, Number(String(bonusWant || '').replace(',', '.')) || 0);
     if (wantBonus > 0 && wantBonus > bonusBalance) {
@@ -198,7 +204,7 @@ const Checkout: React.FC = () => {
         delivery_date: deliveryDate,
         delivery_time: deliveryTime,
         courierData: {
-          address: deliveryMethod === 'pickup' ? pickupPoint : address || pickupPoint,
+          address: deliveryMethod === 'pickup' ? pickupPoint : address,
           comment: String(comment || '').slice(0, 500),
           user: {
             tgId: user?.tgId || '',
@@ -311,8 +317,19 @@ const Checkout: React.FC = () => {
     if (wantBonus > bonusBalance) return false;
     if (!courierId || !deliveryTime) return false;
     if (deliveryMethod === 'pickup') return Boolean(pickupPoint.trim());
+    if (!address.trim()) return false;
     return true;
   })();
+
+  if (cartLoading) {
+    return (
+      <div style={{ padding: theme.padding.screen }}>
+        <GlassCard padding="lg" variant="elevated">
+          <div style={{ height: 64 }} className="animate-pulse" />
+        </GlassCard>
+      </div>
+    );
+  }
 
   if (!cart?.items?.length) {
     return (
@@ -334,36 +351,28 @@ const Checkout: React.FC = () => {
       <SectionDivider title="Способ получения" />
 
       <div style={styles.pillRow}>
-        <SecondaryButton
-          fullWidth
-          onClick={() => setDeliveryMethod('courier')}
-          style={{
-            borderRadius: 999,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: theme.spacing.sm,
-            opacity: deliveryMethod === 'courier' ? 1 : 0.7,
-          }}
-        >
-          <Truck size={18} />
-          Доставка
-        </SecondaryButton>
-        <SecondaryButton
-          fullWidth
-          onClick={() => setDeliveryMethod('pickup')}
-          style={{
-            borderRadius: 999,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: theme.spacing.sm,
-            opacity: deliveryMethod === 'pickup' ? 1 : 0.7,
-          }}
-        >
-          <Store size={18} />
-          Самовывоз
-        </SecondaryButton>
+        {deliveryMethod === 'courier' ? (
+          <PrimaryButton fullWidth onClick={() => setDeliveryMethod('courier')} style={{ borderRadius: 999 }}>
+            <Truck size={18} />
+            Доставка
+          </PrimaryButton>
+        ) : (
+          <SecondaryButton fullWidth onClick={() => setDeliveryMethod('courier')} style={{ borderRadius: 999, opacity: 0.7 }}>
+            <Truck size={18} />
+            Доставка
+          </SecondaryButton>
+        )}
+        {deliveryMethod === 'pickup' ? (
+          <PrimaryButton fullWidth onClick={() => setDeliveryMethod('pickup')} style={{ borderRadius: 999 }}>
+            <Store size={18} />
+            Самовывоз
+          </PrimaryButton>
+        ) : (
+          <SecondaryButton fullWidth onClick={() => setDeliveryMethod('pickup')} style={{ borderRadius: 999, opacity: 0.7 }}>
+            <Store size={18} />
+            Самовывоз
+          </SecondaryButton>
+        )}
       </div>
 
       <div style={styles.row}>
@@ -381,7 +390,7 @@ const Checkout: React.FC = () => {
             </>
           ) : (
             <>
-              <div style={styles.label}>Адрес доставки (опционально)</div>
+              <div style={styles.label}>Адрес доставки *</div>
               <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Введите адрес" style={styles.input} />
             </>
           )}
@@ -433,7 +442,7 @@ const Checkout: React.FC = () => {
         <GlassCard padding="lg" variant="elevated">
           <div style={{ ...styles.summaryRow, marginBottom: theme.spacing.sm }}>
             <span style={styles.muted}>Баланс</span>
-            <span>{formatCurrency(bonusBalance)}</span>
+            <span>{bonusBalance.toLocaleString()} 🍒</span>
           </div>
           <div style={styles.label}>Сколько списать</div>
           <input value={bonusWant} onChange={(e) => setBonusWant(e.target.value)} placeholder="0" style={styles.input} inputMode="decimal" />
@@ -455,22 +464,24 @@ const Checkout: React.FC = () => {
 
       <SectionDivider title="Оплата" />
       <div style={styles.pillRow}>
-        <SecondaryButton
-          fullWidth
-          onClick={() => setPaymentMethod('cash')}
-          disabled={loading}
-          style={{ borderRadius: 999, opacity: paymentMethod === 'cash' ? 1 : 0.7 }}
-        >
-          Наличные
-        </SecondaryButton>
-        <SecondaryButton
-          fullWidth
-          onClick={() => setPaymentMethod('card')}
-          disabled={loading}
-          style={{ borderRadius: 999, opacity: paymentMethod === 'card' ? 1 : 0.7 }}
-        >
-          Карта / Онлайн
-        </SecondaryButton>
+        {paymentMethod === 'cash' ? (
+          <PrimaryButton fullWidth onClick={() => setPaymentMethod('cash')} disabled={loading} style={{ borderRadius: 999 }}>
+            Наличные
+          </PrimaryButton>
+        ) : (
+          <SecondaryButton fullWidth onClick={() => setPaymentMethod('cash')} disabled={loading} style={{ borderRadius: 999, opacity: 0.7 }}>
+            Наличные
+          </SecondaryButton>
+        )}
+        {paymentMethod === 'card' ? (
+          <PrimaryButton fullWidth onClick={() => setPaymentMethod('card')} disabled={loading} style={{ borderRadius: 999 }}>
+            Карта / Онлайн
+          </PrimaryButton>
+        ) : (
+          <SecondaryButton fullWidth onClick={() => setPaymentMethod('card')} disabled={loading} style={{ borderRadius: 999, opacity: 0.7 }}>
+            Карта / Онлайн
+          </SecondaryButton>
+        )}
       </div>
 
       <SectionDivider title="Итоги" />

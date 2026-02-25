@@ -60,6 +60,22 @@ class InMemoryDB {
         this.orderItems.set(String(oi.id), oi);
       }
 
+      const carts = Array.isArray(parsed.carts) ? parsed.carts : [];
+      for (const c of carts) {
+        if (!c?.id || !c?.user_id || !c?.city) continue;
+        this.carts.set(String(c.id), c);
+      }
+      const cartItems = Array.isArray(parsed.cartItems) ? parsed.cartItems : [];
+      for (const ci of cartItems) {
+        if (!ci?.id || !ci?.cart_id || !ci?.product_id) continue;
+        this.cartItems.set(String(ci.id), ci);
+      }
+      const reservations = Array.isArray(parsed.reservations) ? parsed.reservations : [];
+      for (const r of reservations) {
+        if (!r?.id || !r?.order_id || !r?.product_id) continue;
+        this.reservations.set(String(r.id), r);
+      }
+
       const promos = Array.isArray(parsed.promos) ? parsed.promos : [];
       for (const p of promos) {
         if (!p?.id) continue;
@@ -79,6 +95,9 @@ class InMemoryDB {
         bonusLedger: this.bonusLedger,
         orders: Array.from(this.orders.values()),
         orderItems: Array.from(this.orderItems.values()),
+        carts: Array.from(this.carts.values()),
+        cartItems: Array.from(this.cartItems.values()),
+        reservations: Array.from(this.reservations.values()),
         promos: Array.from(this.promos.values()),
       };
       fs.writeFileSync(this.dataFilePath, JSON.stringify(payload, null, 2), 'utf8');
@@ -320,12 +339,18 @@ class InMemoryDB {
       expiry_ms: now + ttlMs,
       released: false,
     });
+    this.persistState();
     return id;
   }
   releaseReservationsByOrder(orderId) {
+    let changed = false;
     for (const r of this.reservations.values()) {
-      if (r.order_id === orderId) r.released = true;
+      if (r.order_id === orderId && r.released === false) {
+        r.released = true;
+        changed = true;
+      }
     }
+    if (changed) this.persistState();
   }
 
 
@@ -337,12 +362,15 @@ class InMemoryDB {
   cleanupExpiredReservations() {
     const now = Date.now();
     const expiredOrders = new Set();
+    let changed = false;
     for (const r of this.reservations.values()) {
       if (r.released === false && r.expiry_ms <= now) {
         r.released = true;
         expiredOrders.add(r.order_id);
+        changed = true;
       }
     }
+    if (changed) this.persistState();
     return { expiredOrders: Array.from(expiredOrders) };
   }
 

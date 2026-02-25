@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import dotenv from 'dotenv';
+import rateLimit from 'express-rate-limit';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -28,6 +29,11 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 dotenv.config({ path: join(__dirname, '../../.env') });
+
+if (!process.env.JWT_SECRET && String(process.env.NODE_ENV || '') === 'production') {
+  console.error('FATAL: JWT_SECRET is not set in production');
+  process.exit(1);
+}
 
 const app = express();
 const PORT = process.env.PORT || 8080;
@@ -81,6 +87,8 @@ function originAllowed(origin, allowedList) {
 }
 
 app.use(helmet());
+const limiter = rateLimit({ windowMs: 60_000, max: 60 });
+app.use('/api/', limiter);
 app.use(
   cors({
     origin(origin, callback) {
@@ -148,6 +156,19 @@ app.get('/health/sheets', async (req, res) => {
 const server = app.listen(PORT, () => {
   const actualPort = server.address().port;
   console.log(`🚀 Server running on port ${actualPort}`);
+});
+
+server.on('listening', async () => {
+  const cities = String(process.env.CITY_CODES || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  for (const c of cities) {
+    try {
+      await readSheetTable('products', c);
+    } catch {
+    }
+  }
 });
 
 cron.schedule('*/1 * * * *', () => {

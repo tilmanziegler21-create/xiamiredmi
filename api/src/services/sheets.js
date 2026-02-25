@@ -63,6 +63,13 @@ function headerIndexAny(headers, names) {
   return -1;
 }
 
+function colLetter(idx) {
+  const i = Number(idx);
+  if (!Number.isFinite(i) || i < 0) return 'A';
+  if (i < 26) return String.fromCharCode(65 + i);
+  return String.fromCharCode(65 + Math.floor(i / 26) - 1) + String.fromCharCode(65 + (i % 26));
+}
+
 function toBool(v) {
   const s = String(v || '').trim().toLowerCase();
   if (['1', 'true', 'yes', 'y', 'да'].includes(s)) return true;
@@ -86,6 +93,7 @@ function sheetCandidates(base, city) {
 }
 
 const cache = new Map();
+const inflight = new Map();
 function cacheGet(key) {
   const ttl = Number(getEnv('SHEETS_CACHE_TTL_SECONDS', '600')) * 1000;
   const v = cache.get(key);
@@ -154,26 +162,37 @@ export async function readSheetTable(baseName, city) {
     const key = `${spreadsheetId}:${name}`;
     const cached = cacheGet(key);
     if (cached) return cached;
+    if (inflight.has(key)) return inflight.get(key);
     const stale = cacheGetStale(key);
+    const promise = (async () => {
+      try {
+        const range = `${name}!A:AZ`;
+        const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
+        const values = resp.data.values || [];
+        const headers = (values[0] || []).map((x) => String(x));
+        const rows = values.slice(1);
+        const out = { sheet: name, headers, rows };
+        cacheSet(key, out);
+        return out;
+      } catch (e) {
+        const msg = String(e?.message || '');
+        if (msg.includes('ERR_OSSL_UNSUPPORTED') || msg.includes('DECODER routines')) {
+          const err = new Error('Sheets auth key format not supported');
+          err.status = 503;
+          err.code = 'SHEETS_KEY_UNSUPPORTED';
+          throw err;
+        }
+        if (stale) return stale;
+        throw e;
+      } finally {
+        inflight.delete(key);
+      }
+    })();
+    inflight.set(key, promise);
     try {
-      const range = `${name}!A:Z`;
-      const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
-      const values = resp.data.values || [];
-      const headers = (values[0] || []).map((x) => String(x));
-      const rows = values.slice(1);
-      const out = { sheet: name, headers, rows };
-      cacheSet(key, out);
-      return out;
+      return await promise;
     } catch (e) {
       lastErr = e;
-      const msg = String(e?.message || '');
-      if (msg.includes('ERR_OSSL_UNSUPPORTED') || msg.includes('DECODER routines')) {
-        const err = new Error('Sheets auth key format not supported');
-        err.status = 503;
-        err.code = 'SHEETS_KEY_UNSUPPORTED';
-        throw err;
-      }
-      if (stale) return stale;
     }
   }
 
@@ -252,8 +271,8 @@ export async function updateProductStock(product, newStock, newActive) {
   if (activeIdx < 0) throw new Error('Active column not found in products sheet');
 
   const row = product._rowIndex;
-  const stockCol = String.fromCharCode('A'.charCodeAt(0) + stockIdx);
-  const activeCol = String.fromCharCode('A'.charCodeAt(0) + activeIdx);
+  const stockCol = colLetter(stockIdx);
+  const activeCol = colLetter(activeIdx);
 
   await api.spreadsheets.values.batchUpdate({
     spreadsheetId,
@@ -266,7 +285,7 @@ export async function updateProductStock(product, newStock, newActive) {
     },
   });
 
-  cache.clear();
+  cache.delete(`${spreadsheetId}:${String(product._sheet || '')}`);
 }
 
 export async function appendOrderRow(city, orderRow) {
@@ -283,13 +302,13 @@ export async function appendOrderRow(city, orderRow) {
 
   await api.spreadsheets.values.append({
     spreadsheetId,
-    range: `${sheet}!A:Z`,
+    range: `${sheet}!A:AZ`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [values] },
   });
 
-  cache.clear();
+  cache.delete(`${spreadsheetId}:${String(sheet || '')}`);
 }
 
 export async function appendCourierRow(city, courierRow) {
@@ -306,13 +325,13 @@ export async function appendCourierRow(city, courierRow) {
 
   await api.spreadsheets.values.append({
     spreadsheetId,
-    range: `${sheet}!A:Z`,
+    range: `${sheet}!A:AZ`,
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [values] },
   });
 
-  cache.clear();
+  cache.delete(`${spreadsheetId}:${String(sheet || '')}`);
 }
 
 export async function updateOrderRowByOrderId(city, orderId, patch) {
@@ -336,7 +355,7 @@ export async function updateOrderRowByOrderId(city, orderId, patch) {
   for (const [k, v] of Object.entries(patch)) {
     const colIdx = headerIndex(headers, k);
     if (colIdx < 0) continue;
-    const col = String.fromCharCode('A'.charCodeAt(0) + colIdx);
+    const col = colLetter(colIdx);
     updates.push({ range: `${sheet}!${col}${targetRowIndex}`, values: [[v == null ? '' : String(v)]] });
   }
   if (updates.length === 0) return true;
@@ -346,7 +365,7 @@ export async function updateOrderRowByOrderId(city, orderId, patch) {
     requestBody: { valueInputOption: 'RAW', data: updates },
   });
 
-  cache.clear();
+  cache.delete(`${spreadsheetId}:${String(sheet || '')}`);
   return true;
 }
 

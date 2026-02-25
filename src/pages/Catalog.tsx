@@ -18,6 +18,8 @@ interface Product {
   brand: string;
   price: number;
   qtyAvailable: number;
+  discount?: number;
+  isNew?: boolean;
   description: string;
   image: string;
   tasteProfile?: {
@@ -36,6 +38,7 @@ const Catalog: React.FC = () => {
   const { city } = useCityStore();
   const favorites = useFavoritesStore();
   const [searchParams] = useSearchParams();
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
@@ -87,16 +90,67 @@ const Catalog: React.FC = () => {
     }
   }, [searchParams]);
 
+  const applyFilters = (source: Product[]) => {
+    const toNum = (v: string) => {
+      const n = Number(String(v || '').replace(',', '.'));
+      return Number.isFinite(n) ? n : NaN;
+    };
+    const priceMin = toNum(filters.price_min);
+    const priceMax = toNum(filters.price_max);
+    const tSweetMin = toNum(filters.taste_sweetness_min);
+    const tSweetMax = toNum(filters.taste_sweetness_max);
+    const tCoolMin = toNum(filters.taste_coolness_min);
+    const tFruitMin = toNum(filters.taste_fruitiness_min);
+
+    let out = source.slice();
+    if (filters.category) out = out.filter((p) => String(p.category) === String(filters.category));
+    if (filters.brand) out = out.filter((p) => String(p.brand) === String(filters.brand));
+    if (Number.isFinite(priceMin)) out = out.filter((p) => Number(p.price || 0) >= priceMin);
+    if (Number.isFinite(priceMax)) out = out.filter((p) => Number(p.price || 0) <= priceMax);
+    if (filters.discount) out = out.filter((p) => Number((p as any).discount || 0) > 0);
+    if (filters.new) out = out.filter((p) => Boolean((p as any).isNew));
+    if (Number.isFinite(tSweetMin)) out = out.filter((p) => Number(p.tasteProfile?.sweetness || 0) >= tSweetMin);
+    if (Number.isFinite(tSweetMax)) out = out.filter((p) => Number(p.tasteProfile?.sweetness || 0) <= tSweetMax);
+    if (Number.isFinite(tCoolMin)) out = out.filter((p) => Number(p.tasteProfile?.coolness || 0) >= tCoolMin);
+    if (Number.isFinite(tFruitMin)) out = out.filter((p) => Number(p.tasteProfile?.fruitiness || 0) >= tFruitMin);
+    return out;
+  };
+
   useEffect(() => {
     if (!city) return;
     favorites.load(city);
-    loadFilters(city);
+    (async () => {
+      try {
+        setLoading(true);
+        const response = await catalogAPI.getProducts({ city });
+        const list: Product[] = response.data.products || [];
+        setAllProducts(list);
+        setProducts(applyFilters(list));
+        setCategories(Array.from(new Set(list.map((p) => String(p.category || '')).filter(Boolean))).sort());
+        setBrands(Array.from(new Set(list.map((p) => String(p.brand || '')).filter(Boolean))).sort());
+      } catch (error) {
+        console.error('Failed to load catalog:', error);
+        try {
+          const status = (error as any)?.response?.status;
+          const msg = String((error as any)?.response?.data?.error || '');
+          WebApp.showAlert(`Ошибка загрузки каталога${status ? ` (${status})` : ''}${msg ? `: ${msg}` : ''}`);
+        } catch {
+          toast.push('Ошибка загрузки каталога', 'error');
+        }
+        setAllProducts([]);
+        setProducts([]);
+        setCategories([]);
+        setBrands([]);
+      } finally {
+        setLoading(false);
+      }
+    })();
   }, [city]);
 
   useEffect(() => {
     if (!city) return;
     setVisibleCount(40);
-    const id = window.setTimeout(() => loadCatalog(city), 160);
+    const id = window.setTimeout(() => setProducts(applyFilters(allProducts)), 60);
     // Track filter usage
     if (filters.category) trackCategoryView(filters.category);
     if (filters.brand) trackFilterUse('brand', filters.brand);
@@ -106,51 +160,7 @@ const Catalog: React.FC = () => {
       trackFilterUse('price_range', `${filters.price_min || 0}-${filters.price_max || '∞'}`);
     }
     return () => window.clearTimeout(id);
-  }, [city, filters]);
-
-  const loadCatalog = async (selectedCity: string) => {
-    try {
-      setLoading(true);
-      const response = await catalogAPI.getProducts({
-        city: selectedCity,
-        category: filters.category,
-        brand: filters.brand,
-        price_min: filters.price_min,
-        price_max: filters.price_max,
-        taste_sweetness_min: filters.taste_sweetness_min,
-        taste_sweetness_max: filters.taste_sweetness_max,
-        taste_coolness_min: filters.taste_coolness_min,
-        taste_fruitiness_min: filters.taste_fruitiness_min,
-        discount: filters.discount,
-        new: filters.new
-      });
-      setProducts(response.data.products);
-    } catch (error) {
-      console.error('Failed to load catalog:', error);
-      try {
-        const status = (error as any)?.response?.status;
-        const msg = String((error as any)?.response?.data?.error || '');
-        WebApp.showAlert(`Ошибка загрузки каталога${status ? ` (${status})` : ''}${msg ? `: ${msg}` : ''}`);
-      } catch {
-        toast.push('Ошибка загрузки каталога', 'error');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadFilters = async (selectedCity: string) => {
-    try {
-      const [categoriesRes, brandsRes] = await Promise.all([
-        catalogAPI.getCategories(selectedCity),
-        catalogAPI.getBrands(selectedCity)
-      ]);
-      setCategories(categoriesRes.data.categories);
-      setBrands(brandsRes.data.brands);
-    } catch (error) {
-      console.error('Failed to load filters:', error);
-    }
-  };
+  }, [city, filters, allProducts]);
 
   const openAdd = (product: Product) => {
     setAddProduct(product);
