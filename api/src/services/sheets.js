@@ -74,8 +74,46 @@ function cacheGet(key) {
   return v.data;
 }
 
+function cacheGetStale(key) {
+  const v = cache.get(key);
+  if (!v) return null;
+  return v.data;
+}
+
 function cacheSet(key, data) {
   cache.set(key, { ts: Date.now(), data });
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function errStatus(e) {
+  const direct = Number(e?.status);
+  if (Number.isFinite(direct) && direct > 0) return direct;
+  const code = Number(e?.code);
+  if (Number.isFinite(code) && code > 0) return code;
+  const resp = Number(e?.response?.status);
+  if (Number.isFinite(resp) && resp > 0) return resp;
+  const deep = Number(e?.response?.data?.error?.code);
+  if (Number.isFinite(deep) && deep > 0) return deep;
+  return 0;
+}
+
+async function withRetry(fn) {
+  let last;
+  for (let i = 0; i < 3; i++) {
+    try {
+      return await fn();
+    } catch (e) {
+      last = e;
+      const st = errStatus(e);
+      const retryable = st === 429 || st >= 500 || st === 0;
+      if (!retryable || i === 2) break;
+      await sleep(400 * Math.pow(2, i));
+    }
+  }
+  throw last;
 }
 
 export async function readSheetTable(baseName, city) {
@@ -96,9 +134,10 @@ export async function readSheetTable(baseName, city) {
     const key = `${spreadsheetId}:${name}`;
     const cached = cacheGet(key);
     if (cached) return cached;
+    const stale = cacheGetStale(key);
     try {
       const range = `${name}!A:Z`;
-      const resp = await api.spreadsheets.values.get({ spreadsheetId, range });
+      const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
       const values = resp.data.values || [];
       const headers = (values[0] || []).map((x) => String(x));
       const rows = values.slice(1);
@@ -107,6 +146,7 @@ export async function readSheetTable(baseName, city) {
       return out;
     } catch (e) {
       lastErr = e;
+      if (stale) return stale;
     }
   }
 

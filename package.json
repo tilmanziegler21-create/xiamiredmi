@@ -12,6 +12,7 @@
     "dev:frontend": "vite --config miniapp/frontend/vite.config.ts --port 5173",
     "dev:bot": "PORT=3001 pnpm exec tsx src/index.ts",
     "start": "node api/src/server.js",
+    "worker:keepalive": "node api/src/worker/keepalive.js",
     "build": "vite build",
     "lint": "eslint api/src",
     "typecheck": "tsc --noEmit",
