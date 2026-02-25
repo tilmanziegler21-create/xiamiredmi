@@ -6,10 +6,27 @@ function getEnv(name, fallback = '') {
   return (process.env[name] || fallback || '').toString();
 }
 
+function normalizePrivateKey(raw) {
+  let v = String(raw || '');
+  v = v.trim();
+  if (!v) return '';
+  if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+    v = v.slice(1, -1);
+  }
+  if (!v.includes('BEGIN') && /^[A-Za-z0-9+/=]+$/.test(v) && v.length > 128) {
+    try {
+      v = Buffer.from(v, 'base64').toString('utf8');
+    } catch {
+    }
+  }
+  v = v.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n');
+  return v.trim();
+}
+
 function getServiceAccount() {
   const email = getEnv('GOOGLE_SHEETS_CLIENT_EMAIL', getEnv('GOOGLE_SERVICE_ACCOUNT_EMAIL'));
   const rawKey = getEnv('GOOGLE_SHEETS_PRIVATE_KEY', getEnv('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY'));
-  const key = rawKey.replace(/\\n/g, '\n');
+  const key = normalizePrivateKey(rawKey);
   if (!email || !key) {
     const err = new Error('Sheets not configured');
     err.status = 503;
@@ -23,10 +40,13 @@ function getServiceAccount() {
   return { email, key };
 }
 
+let cachedSheets = null;
 function sheetsApi() {
+  if (cachedSheets) return cachedSheets;
   const { email, key } = getServiceAccount();
   const auth = new google.auth.JWT({ email, key, scopes: SCOPES });
-  return google.sheets({ version: 'v4', auth });
+  cachedSheets = google.sheets({ version: 'v4', auth });
+  return cachedSheets;
 }
 
 function headerIndex(headers, name) {
@@ -146,6 +166,13 @@ export async function readSheetTable(baseName, city) {
       return out;
     } catch (e) {
       lastErr = e;
+      const msg = String(e?.message || '');
+      if (msg.includes('ERR_OSSL_UNSUPPORTED') || msg.includes('DECODER routines')) {
+        const err = new Error('Sheets auth key format not supported');
+        err.status = 503;
+        err.code = 'SHEETS_KEY_UNSUPPORTED';
+        throw err;
+      }
       if (stale) return stale;
     }
   }
