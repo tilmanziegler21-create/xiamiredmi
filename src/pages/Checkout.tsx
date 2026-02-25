@@ -18,6 +18,9 @@ type LocationState = {
   fulfillment?: 'delivery' | 'pickup';
   pickup?: string;
   promoCode?: string;
+  courierId?: string;
+  deliveryTime?: string;
+  deliveryDate?: string;
 };
 
 type PaymentMethod = 'cash' | 'card';
@@ -43,11 +46,10 @@ const Checkout: React.FC = () => {
   const idempotencyKeyRef = React.useRef<string>('');
 
   const [address, setAddress] = React.useState('');
-  const [phone, setPhone] = React.useState('');
   const [couriers, setCouriers] = React.useState<Array<{ courier_id: string; name: string; tg_id: string; time_from?: string; time_to?: string }>>([]);
-  const [courierId, setCourierId] = React.useState('');
-  const [deliveryDate, setDeliveryDate] = React.useState('');
-  const [deliveryTime, setDeliveryTime] = React.useState('');
+  const [courierId, setCourierId] = React.useState(state.courierId || '');
+  const [deliveryDate, setDeliveryDate] = React.useState(state.deliveryDate || new Date().toISOString().slice(0, 10));
+  const [deliveryTime, setDeliveryTime] = React.useState(state.deliveryTime || '');
 
   const [bonusBalance, setBonusBalance] = React.useState(0);
   const [bonusWant, setBonusWant] = React.useState('');
@@ -104,6 +106,12 @@ const Checkout: React.FC = () => {
     })();
   }, [city]);
 
+  React.useEffect(() => {
+    if (courierId) return;
+    const first = couriers[0]?.courier_id;
+    if (first) setCourierId(first);
+  }, [courierId, couriers]);
+
   const timeOptions = React.useMemo(() => {
     const c = couriers.find((x) => x.courier_id === courierId);
     const from = String(c?.time_from || '').trim();
@@ -125,6 +133,11 @@ const Checkout: React.FC = () => {
     return out;
   }, [courierId, couriers]);
 
+  React.useEffect(() => {
+    if (deliveryTime) return;
+    if (timeOptions.length) setDeliveryTime(timeOptions[0]);
+  }, [deliveryTime, timeOptions]);
+
   const createOrder = async () => {
     if (!cart?.items?.length) {
       toast.push('Корзина пуста', 'error');
@@ -132,13 +145,9 @@ const Checkout: React.FC = () => {
     }
 
     const errors: string[] = [];
-    if (!phone.trim()) errors.push('Укажи телефон');
-    if (deliveryMethod === 'courier') {
-      if (!address.trim()) errors.push('Укажи адрес доставки');
-      if (!courierId) errors.push('Выбери курьера');
-      if (!deliveryDate) errors.push('Выбери дату');
-      if (!deliveryTime) errors.push('Выбери время');
-    } else {
+    if (!courierId) errors.push('Выбери курьера');
+    if (!deliveryTime) errors.push('Выбери время');
+    if (deliveryMethod === 'pickup') {
       if (!pickupPoint.trim()) errors.push('Выбери точку самовывоза');
     }
     const wantBonus = Math.max(0, Number(String(bonusWant || '').replace(',', '.')) || 0);
@@ -185,12 +194,11 @@ const Checkout: React.FC = () => {
         deliveryMethod,
         city,
         promoCode: String(promoCode || '').trim(),
-        courier_id: deliveryMethod === 'courier' ? courierId : '',
-        delivery_date: deliveryMethod === 'courier' ? deliveryDate : '',
-        delivery_time: deliveryMethod === 'courier' ? deliveryTime : '',
+        courier_id: courierId,
+        delivery_date: deliveryDate,
+        delivery_time: deliveryTime,
         courierData: {
-          address: deliveryMethod === 'courier' ? address : pickupPoint,
-          phone,
+          address: deliveryMethod === 'pickup' ? pickupPoint : address || pickupPoint,
           comment: String(comment || '').slice(0, 500),
           user: {
             tgId: user?.tgId || '',
@@ -299,11 +307,11 @@ const Checkout: React.FC = () => {
     if (loading) return false;
     if (!cart?.items?.length) return false;
     if (!city) return false;
-    if (!phone.trim()) return false;
     const wantBonus = Math.max(0, Number(String(bonusWant || '').replace(',', '.')) || 0);
     if (wantBonus > bonusBalance) return false;
+    if (!courierId || !deliveryTime) return false;
     if (deliveryMethod === 'pickup') return Boolean(pickupPoint.trim());
-    return Boolean(address.trim() && courierId && deliveryDate && deliveryTime);
+    return true;
   })();
 
   if (!cart?.items?.length) {
@@ -373,42 +381,34 @@ const Checkout: React.FC = () => {
             </>
           ) : (
             <>
-              <div style={styles.label}>Адрес доставки</div>
+              <div style={styles.label}>Адрес доставки (опционально)</div>
               <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Введите адрес" style={styles.input} />
-
-              <div style={{ height: theme.spacing.md }} />
-
-              <div style={styles.label}>Курьер</div>
-              <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.input}>
-                <option value="">Выберите курьера</option>
-                {couriers.map((c) => (
-                  <option key={c.courier_id} value={c.courier_id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-
-              <div style={{ height: theme.spacing.md }} />
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.md }}>
-                <div>
-                  <div style={styles.label}>Дата</div>
-                  <input value={deliveryDate} onChange={(e) => setDeliveryDate(e.target.value)} type="date" style={styles.input} min={new Date().toISOString().slice(0, 10)} />
-                </div>
-                <div>
-                  <div style={styles.label}>Время</div>
-                  <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.input}>
-                    <option value="">Выберите</option>
-                    {timeOptions.map((t) => (
-                      <option key={t} value={t}>
-                        {t}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
             </>
           )}
+
+          <div style={{ height: theme.spacing.md }} />
+
+          <div style={styles.label}>Курьер</div>
+          <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.input}>
+            <option value="">Выберите курьера</option>
+            {couriers.map((c) => (
+              <option key={c.courier_id} value={c.courier_id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+
+          <div style={{ height: theme.spacing.md }} />
+
+          <div style={styles.label}>Время</div>
+          <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.input} disabled={!courierId}>
+            <option value="">Выберите</option>
+            {timeOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </GlassCard>
       </div>
 
@@ -447,7 +447,9 @@ const Checkout: React.FC = () => {
           <textarea value={comment} onChange={(e) => setComment(e.target.value)} maxLength={500} placeholder="Комментарий к заказу" style={{ ...styles.input, minHeight: 90, resize: 'none' }} />
           <div style={{ height: theme.spacing.md }} />
           <div style={styles.label}>Телефон</div>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+49 ..." style={styles.input} maxLength={40} inputMode="tel" />
+          <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+            Телефон не требуется
+          </div>
         </GlassCard>
       </div>
 

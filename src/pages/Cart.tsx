@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
 import { Minus, Plus, Trash2, Truck, Store } from 'lucide-react';
-import { cartAPI } from '../services/api';
+import { cartAPI, couriersAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { GlassCard, PrimaryButton, SecondaryButton, SectionDivider, theme } from '../ui';
@@ -34,10 +34,52 @@ const Cart: React.FC = () => {
   const [promoCode, setPromoCode] = React.useState('');
   const [fulfillment, setFulfillment] = React.useState<Fulfillment>('pickup');
   const [pickup, setPickup] = React.useState('');
+  const [couriers, setCouriers] = React.useState<Array<{ courier_id: string; name: string; tg_id: string; time_from?: string; time_to?: string }>>([]);
+  const [courierId, setCourierId] = React.useState('');
+  const [deliveryTime, setDeliveryTime] = React.useState('');
 
   React.useEffect(() => {
     if (!pickup && pickupPoints.length) setPickup(pickupPoints[0]);
   }, [pickup, pickupPoints.join('|')]);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        if (!city) return;
+        const resp = await couriersAPI.list(city);
+        const list = resp.data.couriers || [];
+        setCouriers(list);
+        if (!courierId && list.length) setCourierId(String(list[0].courier_id || ''));
+      } catch {
+        setCouriers([]);
+      }
+    })();
+  }, [city]);
+
+  const timeOptions = React.useMemo(() => {
+    const c = couriers.find((x) => x.courier_id === courierId);
+    const from = String(c?.time_from || '').trim();
+    const to = String(c?.time_to || '').trim();
+    const toMin = (t: string) => {
+      const [h, m] = t.split(':').map((x) => Number(x));
+      if (!Number.isFinite(h) || !Number.isFinite(m)) return null;
+      return h * 60 + m;
+    };
+    const fm = toMin(from);
+    const tm = toMin(to);
+    if (fm == null || tm == null || tm <= fm) return [];
+    const out: string[] = [];
+    for (let m = fm; m <= tm - 30; m += 30) {
+      const hh = String(Math.floor(m / 60)).padStart(2, '0');
+      const mm = String(m % 60).padStart(2, '0');
+      out.push(`${hh}:${mm}`);
+    }
+    return out;
+  }, [courierId, couriers]);
+
+  React.useEffect(() => {
+    if (!deliveryTime && timeOptions.length) setDeliveryTime(timeOptions[0]);
+  }, [deliveryTime, timeOptions.join('|')]);
 
   const load = async () => {
     try {
@@ -100,10 +142,17 @@ const Cart: React.FC = () => {
     }
   };
 
+  const canCheckout = Boolean(cart?.items?.length && city && courierId && deliveryTime && (fulfillment !== 'pickup' || pickup));
+
   const goCheckout = () => {
     if (!cart?.items?.length) return;
+    if (!canCheckout) {
+      toast.push('Выберите курьера и время', 'error');
+      return;
+    }
     trackCheckout(cart.items, cart.total);
-    navigate('/checkout', { state: { fulfillment, pickup, promoCode } });
+    const today = new Date().toISOString().slice(0, 10);
+    navigate('/checkout', { state: { fulfillment, pickup, promoCode, courierId, deliveryTime, deliveryDate: today } });
   };
 
   // Calculate pricing with quantity discounts
@@ -304,6 +353,24 @@ const Cart: React.FC = () => {
       outline: 'none',
       marginBottom: theme.spacing.md,
     },
+    courierBox: {
+      margin: `0 ${theme.padding.screen} ${theme.spacing.md}`,
+      borderRadius: theme.radius.lg,
+      border: '1px solid rgba(255,255,255,0.14)',
+      background: 'rgba(12, 10, 26, 0.62)',
+      ...blurStyle(theme.blur.glass),
+      boxShadow: theme.shadow.card,
+      padding: theme.spacing.lg,
+    },
+    courierSelect: {
+      width: '100%',
+      borderRadius: 999,
+      border: '1px solid rgba(255,255,255,0.14)',
+      background: 'rgba(255,255,255,0.06)',
+      color: theme.colors.dark.text,
+      padding: '10px 14px',
+      outline: 'none',
+    },
     checkout: {
       padding: `0 ${theme.padding.screen}`,
       marginBottom: theme.spacing.xl,
@@ -442,6 +509,29 @@ const Cart: React.FC = () => {
         </div>
       ) : null}
 
+      <div style={styles.courierBox}>
+        <div style={styles.pickupTitle}>Курьер и время</div>
+        <div style={{ color: theme.colors.dark.textSecondary, marginBottom: theme.spacing.sm }}>Выберите курьера и слот доставки</div>
+        <div style={{ display: 'grid', gap: theme.spacing.sm }}>
+          <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.courierSelect}>
+            <option value="">Выберите курьера</option>
+            {couriers.map((c) => (
+              <option key={c.courier_id} value={c.courier_id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.courierSelect} disabled={!courierId}>
+            <option value="">Выберите время</option>
+            {timeOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
+
       {/* Total and Pricing */}
       <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
         <GlassCard padding="md" variant="elevated">
@@ -467,7 +557,7 @@ const Cart: React.FC = () => {
       </div>
 
       <div style={styles.checkout}>
-        <PrimaryButton fullWidth onClick={goCheckout}>
+        <PrimaryButton fullWidth onClick={goCheckout} disabled={!canCheckout}>
           Оформление заказа
         </PrimaryButton>
       </div>
