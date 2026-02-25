@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { theme } from './theme';
 import { IconButton } from './IconButton';
-import { Menu, User, Coins, ShoppingCart, ArrowLeft, Settings } from 'lucide-react';
+import { Menu, User, Coins, ShoppingCart, ArrowLeft, Settings, ShoppingBag } from 'lucide-react';
 import { blurStyle } from './blur';
 
 interface TopBarProps {
@@ -36,6 +36,7 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [duckBroken, setDuckBroken] = React.useState(false);
 
   const handleLogoClick = () => {
     navigate('/home');
@@ -162,19 +163,6 @@ export const TopBar: React.FC<TopBarProps> = ({
       color: theme.colors.dark.text,
       position: 'relative' as const,
     },
-    livePill: {
-      position: 'absolute' as const,
-      bottom: -8,
-      left: '50%',
-      transform: 'translateX(-50%)',
-      padding: '2px 8px',
-      borderRadius: 999,
-      background: 'rgba(0,0,0,0.55)',
-      border: '1px solid rgba(255,255,255,0.12)',
-      fontSize: 10,
-      letterSpacing: '0.16em',
-      textTransform: 'uppercase' as const,
-    },
     duckAvatar: {
       width: 32,
       height: 32,
@@ -216,14 +204,16 @@ export const TopBar: React.FC<TopBarProps> = ({
           />
         )}
         <div style={styles.duckAvatar}>
-          <img
-            src="/assets/elfcherry/ui/duck-avatar.png"
-            alt="avatar"
-            style={styles.duckImg}
-            onError={(e) => {
-              (e.currentTarget as HTMLImageElement).style.display = 'none';
-            }}
-          />
+          {!duckBroken ? (
+            <img
+              src="/assets/elfcherry/ui/duck-avatar.png"
+              alt=""
+              style={styles.duckImg}
+              onError={() => setDuckBroken(true)}
+            />
+          ) : (
+            <ShoppingBag size={18} />
+          )}
         </div>
       </div>
 
@@ -270,7 +260,6 @@ export const TopBar: React.FC<TopBarProps> = ({
         ) : (
           <div style={{ ...styles.avatar, cursor: 'pointer' }} onClick={handleProfileClick} role="button" tabIndex={0}>
             {!avatarUrl && <User size={20} />}
-            <div style={styles.livePill}>LIVE</div>
           </div>
         )}
       </div>

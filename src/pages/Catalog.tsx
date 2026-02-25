@@ -5,7 +5,7 @@ import WebApp from '@twa-dev/sdk';
 import { catalogAPI, cartAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { AddToCartModal, ProductCard, GlassCard, SecondaryButton, SectionDivider, theme } from '../ui';
+import { AddToCartModal, ProductCard, GlassCard, SecondaryButton, PrimaryButton, SectionDivider, theme } from '../ui';
 import { useToastStore } from '../store/useToastStore';
 import { useCityStore } from '../store/useCityStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
@@ -297,6 +297,22 @@ const Catalog: React.FC = () => {
       color: theme.colors.dark.text,
       fontSize: theme.typography.fontSize.sm,
     },
+    togglePill: (active: boolean) => ({
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: theme.spacing.sm,
+      padding: '10px 12px',
+      borderRadius: 999,
+      cursor: 'pointer',
+      userSelect: 'none' as const,
+      background: active ? 'rgba(255,45,85,0.2)' : 'rgba(255,255,255,0.06)',
+      border: active ? '1px solid rgba(255,45,85,0.5)' : '1px solid rgba(255,255,255,0.14)',
+      color: active ? '#ff2d55' : theme.colors.dark.text,
+      fontSize: theme.typography.fontSize.sm,
+      letterSpacing: '0.06em',
+      textTransform: 'uppercase' as const,
+    }),
   };
 
   return (
@@ -528,23 +544,29 @@ const Catalog: React.FC = () => {
               </div>
 
               <div style={styles.checkboxRow}>
-                <label style={styles.check}>
-                  <input type="checkbox" checked={filters.discount} onChange={(e) => setFilters({ ...filters, discount: e.target.checked })} />
+                <button
+                  type="button"
+                  style={styles.togglePill(filters.discount)}
+                  onClick={() => setFilters({ ...filters, discount: !filters.discount })}
+                >
                   Скидки
-                </label>
-                <label style={styles.check}>
-                  <input type="checkbox" checked={filters.new} onChange={(e) => setFilters({ ...filters, new: e.target.checked })} />
+                </button>
+                <button
+                  type="button"
+                  style={styles.togglePill(filters.new)}
+                  onClick={() => setFilters({ ...filters, new: !filters.new })}
+                >
                   Новинки
-                </label>
+                </button>
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.md, marginTop: theme.spacing.md }}>
                 <SecondaryButton fullWidth onClick={resetFilters}>
                   Сбросить
                 </SecondaryButton>
-                <SecondaryButton fullWidth onClick={() => setShowFilters(false)}>
+                <PrimaryButton fullWidth onClick={() => setShowFilters(false)}>
                   Применить
-                </SecondaryButton>
+                </PrimaryButton>
               </div>
             </div>
           </div>

@@ -390,36 +390,28 @@ const Cart: React.FC = () => {
       <SectionDivider title="Оформление заказа" />
 
       <div style={styles.toggles}>
-        <SecondaryButton
-          fullWidth
-          onClick={() => setFulfillment('delivery')}
-          style={{
-            borderRadius: 999,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: theme.spacing.sm,
-            opacity: fulfillment === 'delivery' ? 1 : 0.7,
-          }}
-        >
-          <Truck size={18} />
-          Доставка
-        </SecondaryButton>
-        <SecondaryButton
-          fullWidth
-          onClick={() => setFulfillment('pickup')}
-          style={{
-            borderRadius: 999,
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: theme.spacing.sm,
-            opacity: fulfillment === 'pickup' ? 1 : 0.7,
-          }}
-        >
-          <Store size={18} />
-          Самовывоз
-        </SecondaryButton>
+        {fulfillment === 'delivery' ? (
+          <PrimaryButton fullWidth onClick={() => setFulfillment('delivery')} style={{ borderRadius: 999, opacity: 1 }}>
+            <Truck size={18} />
+            Доставка
+          </PrimaryButton>
+        ) : (
+          <SecondaryButton fullWidth onClick={() => setFulfillment('delivery')} style={{ borderRadius: 999, opacity: 0.5 }}>
+            <Truck size={18} />
+            Доставка
+          </SecondaryButton>
+        )}
+        {fulfillment === 'pickup' ? (
+          <PrimaryButton fullWidth onClick={() => setFulfillment('pickup')} style={{ borderRadius: 999, opacity: 1 }}>
+            <Store size={18} />
+            Самовывоз
+          </PrimaryButton>
+        ) : (
+          <SecondaryButton fullWidth onClick={() => setFulfillment('pickup')} style={{ borderRadius: 999, opacity: 0.5 }}>
+            <Store size={18} />
+            Самовывоз
+          </SecondaryButton>
+        )}
       </div>
 
       <div style={styles.promoRow}>

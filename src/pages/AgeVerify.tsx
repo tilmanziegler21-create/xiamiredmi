@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/useAuthStore';
 import { authAPI } from '../services/api';
 import WebApp from '@twa-dev/sdk';
+import { GlassCard, PrimaryButton, SecondaryButton, theme } from '../ui';
+import { blurStyle } from '../ui/blur';
 
 const AgeVerify: React.FC = () => {
   const navigate = useNavigate();
@@ -62,44 +64,97 @@ const AgeVerify: React.FC = () => {
     }
   };
 
+  const styles = {
+    page: {
+      minHeight: '100vh',
+      color: theme.colors.dark.text,
+      fontFamily: theme.typography.fontFamily,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      padding: theme.padding.screen,
+      background:
+        'radial-gradient(1200px 800px at 20% 10%, rgba(255,45,85,0.16) 0%, rgba(0,0,0,0) 60%), radial-gradient(1200px 800px at 80% 40%, rgba(255,168,0,0.10) 0%, rgba(0,0,0,0) 62%), linear-gradient(180deg, #070607 0%, #0f070b 100%)',
+    },
+    card: {
+      width: '100%',
+      maxWidth: 420,
+      borderRadius: 22,
+      background: 'rgba(28,10,16,0.64)',
+      border: '1px solid rgba(255,255,255,0.08)',
+      ...blurStyle('18px'),
+      boxShadow: theme.shadow.card,
+    },
+    iconWrap: {
+      width: 80,
+      height: 80,
+      borderRadius: 999,
+      background: 'rgba(255,45,85,0.15)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      margin: '0 auto',
+      border: '1px solid rgba(255,255,255,0.08)',
+    },
+    title: {
+      fontSize: theme.typography.fontSize['2xl'],
+      fontWeight: theme.typography.fontWeight.bold,
+      letterSpacing: '0.06em',
+      textTransform: 'uppercase' as const,
+      textAlign: 'center' as const,
+      marginTop: theme.spacing.lg,
+      marginBottom: theme.spacing.sm,
+    },
+    text: {
+      color: theme.colors.dark.textSecondary,
+      textAlign: 'center' as const,
+      marginBottom: theme.spacing.lg,
+      fontSize: theme.typography.fontSize.sm,
+      lineHeight: 1.45,
+    },
+    warn: {
+      marginTop: theme.spacing.lg,
+      padding: theme.spacing.md,
+      background: 'rgba(255,214,10,0.12)',
+      border: '1px solid rgba(255,214,10,0.3)',
+      borderRadius: theme.radius.md,
+      color: 'rgba(255,255,255,0.88)',
+      fontSize: theme.typography.fontSize.sm,
+      lineHeight: 1.35,
+    },
+    decline: {
+      background: 'rgba(255,255,255,0.08)',
+      color: theme.colors.dark.text,
+      borderColor: 'rgba(255,255,255,0.14)',
+    },
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-        <div className="mb-6">
-          <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <span className="text-3xl">🔞</span>
+    <div style={styles.page}>
+      <GlassCard padding="lg" variant="elevated" style={styles.card}>
+        <div style={{ textAlign: 'center' as const }}>
+          <div style={styles.iconWrap}>
+            <span style={{ fontSize: 32, lineHeight: 1 }}>🔞</span>
           </div>
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">
-            Подтверждение возраста
-          </h1>
-          <p className="text-gray-600 mb-6">
+          <div style={styles.title}>Подтверждение возраста</div>
+          <div style={styles.text}>
             Для продолжения работы с магазином электронных сигарет подтвердите, что вам исполнилось 18 лет
-          </p>
+          </div>
         </div>
 
-        <div className="space-y-4">
-          <button
-            onClick={handleAgeVerification}
-            disabled={isLoading}
-            className="w-full bg-rose-500 hover:bg-rose-600 disabled:bg-gray-300 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-          >
-            {isLoading ? 'Подтверждение...' : 'Мне исполнилось 18 лет'}
-          </button>
-          
-          <button
-            onClick={safeClose}
-            className="w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold py-3 px-6 rounded-lg transition-colors duration-200"
-          >
+        <div style={{ display: 'grid', gap: theme.spacing.md }}>
+          <PrimaryButton fullWidth onClick={handleAgeVerification} disabled={isLoading}>
+            {isLoading ? 'Подтверждение…' : 'Мне исполнилось 18 лет'}
+          </PrimaryButton>
+          <SecondaryButton fullWidth onClick={safeClose} style={styles.decline}>
             Мне нет 18 лет
-          </button>
+          </SecondaryButton>
         </div>
 
-        <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
-          <p className="text-sm text-yellow-800">
-            ⚠️ Продажа электронных сигарет лицам младше 18 лет запрещена законом
-          </p>
+        <div style={styles.warn}>
+          ⚠️ Продажа электронных сигарет лицам младше 18 лет запрещена законом
         </div>
-      </div>
+      </GlassCard>
     </div>
   );
 };

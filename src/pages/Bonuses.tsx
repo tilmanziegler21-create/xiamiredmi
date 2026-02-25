@@ -4,7 +4,6 @@ import { theme, GlassCard, SectionDivider, PrimaryButton, SecondaryButton } from
 import { useAuthStore } from '../store/useAuthStore';
 import { useToastStore } from '../store/useToastStore';
 import { Gift, TrendingUp, Users, History, Crown, Star } from 'lucide-react';
-import { formatCurrency } from '../lib/currency';
 import { bonusesAPI, referralAPI } from '../services/api';
 
 interface BonusTransaction {
@@ -245,7 +244,7 @@ const Bonuses: React.FC = () => {
       {/* Balance Card */}
       <div style={styles.balanceCard}>
         <div style={styles.balanceAmount}>
-          {formatCurrency(bonusBalance)} 🍒
+          {bonusBalance.toLocaleString()} 🍒
         </div>
         <div style={styles.balanceLabel}>Доступно бонусов</div>
         <div style={{ display: 'flex', gap: theme.spacing.sm, marginTop: theme.spacing.lg }}>
@@ -295,7 +294,7 @@ const Bonuses: React.FC = () => {
         {nextStatus && (
           <div>
             <div style={{ fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.sm }}>
-              До {nextStatus.name}: {formatCurrency(nextStatus.minBonus - bonusBalance)}
+              До {nextStatus.name}: {(nextStatus.minBonus - bonusBalance).toLocaleString()} 🍒
             </div>
             <div style={styles.progressBar}>
               <div style={{...styles.progressFill, width: `${Math.min(progressToNext, 100)}%`}} />

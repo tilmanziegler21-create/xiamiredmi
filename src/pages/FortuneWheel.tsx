@@ -37,6 +37,11 @@ const FortuneWheel: React.FC = () => {
     { id: '8', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.12, color: '#ffc107' },
   ];
 
+  const sectorAngle = 360 / prizes.length;
+  const wheelGradient = `conic-gradient(${prizes
+    .map((p, i) => `${p.color} ${i * sectorAngle}deg ${(i + 1) * sectorAngle}deg`)
+    .join(', ')})`;
+
   useEffect(() => {
     (async () => {
       try {
@@ -121,21 +126,21 @@ const FortuneWheel: React.FC = () => {
       border: '4px solid rgba(255,255,255,0.2)',
       transition: 'transform 3s cubic-bezier(0.25, 0.1, 0.25, 1)',
     },
-    sector: {
+    label: (angle: number) => ({
       position: 'absolute' as const,
-      width: '50%',
-      height: '50%',
-      transformOrigin: 'right bottom',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      top: '50%',
+      left: '50%',
+      width: 120,
+      transform: `translate(-50%, -50%) rotate(${angle}deg) translate(0, -106px) rotate(${-angle}deg)`,
+      textAlign: 'center' as const,
       fontSize: theme.typography.fontSize.xs,
       fontWeight: theme.typography.fontWeight.bold,
       color: '#ffffff',
-      textAlign: 'center' as const,
-      padding: '8px',
       lineHeight: '1.2',
-    },
+      textShadow: '0 6px 18px rgba(0,0,0,0.55)',
+      pointerEvents: 'none' as const,
+      padding: '0 6px',
+    }),
     pointer: {
       position: 'absolute' as const,
       top: '-20px',
@@ -233,22 +238,14 @@ const FortuneWheel: React.FC = () => {
           style={{
             ...styles.wheel,
             transform: `rotate(${rotation}deg)`,
+            background: wheelGradient,
           }}
         >
           {prizes.map((prize, index) => {
-            const angle = (360 / prizes.length) * index;
+            const a = index * sectorAngle + sectorAngle / 2;
             return (
-              <div
-                key={prize.id}
-                style={{
-                  ...styles.sector,
-                  backgroundColor: prize.color,
-                  transform: `rotate(${angle}deg)`,
-                }}
-              >
-                <div style={{ transform: `rotate(${360 / prizes.length / 2}deg)` }}>
-                  {prize.name}
-                </div>
+              <div key={prize.id} style={styles.label(a)}>
+                {prize.name}
               </div>
             );
           })}

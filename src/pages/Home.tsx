@@ -5,7 +5,7 @@ import { theme, GlassCard, PrimaryButton, SecondaryButton, ChipBadge, ProductCar
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { cartAPI, catalogAPI } from '../services/api';
-import { Grid, Package, Gift, Star, Search, ShoppingCart, User, Phone, History } from 'lucide-react';
+import { Grid, Package, Gift, Star, Search, ShoppingCart, User, Phone, History, Info } from 'lucide-react';
 import { useToastStore } from '../store/useToastStore';
 import { formatCurrency } from '../lib/currency';
 import { useCityStore } from '../store/useCityStore';
@@ -158,7 +158,7 @@ const Home: React.FC = () => {
     },
     bannerContent: {
       position: 'absolute' as const,
-      bottom: theme.spacing.lg,
+      bottom: 40,
       left: theme.spacing.lg,
       right: theme.spacing.lg,
       zIndex: 2,
@@ -321,7 +321,7 @@ const Home: React.FC = () => {
           </div>
           <div style={{
             position: 'absolute',
-            bottom: theme.spacing.sm,
+            bottom: 12,
             left: 0,
             right: 0,
           }}>
@@ -394,7 +394,7 @@ const Home: React.FC = () => {
           role="button"
         >
           <Search size={18} color={theme.colors.dark.textSecondary} />
-          <span>Поиск по вкусам, брендам и названиям...</span>
+          <span>Поиск товаров...</span>
         </div>
       </div>
 
@@ -512,7 +512,9 @@ const Home: React.FC = () => {
               border: '1px solid rgba(255,255,255,0.14)',
             }}
           >
-            <div style={{ fontSize: 44, lineHeight: 1, marginBottom: theme.spacing.sm, opacity: 0.9 }}>i</div>
+            <div style={{ marginBottom: theme.spacing.sm, opacity: 0.9 }}>
+              <Info size={36} />
+            </div>
             <div style={{ textAlign: 'center', fontSize: theme.typography.fontSize.sm, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.9, marginBottom: theme.spacing.md }}>
               При покупке {qtyDiscountMin}+ шт. цена за 1 шт. составит
             </div>

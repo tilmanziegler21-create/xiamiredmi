@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
-import { Heart, ArrowLeft } from 'lucide-react';
+import { Heart } from 'lucide-react';
 import { cartAPI, favoritesAPI, productAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
 import { useAnalytics } from '../hooks/useAnalytics';
@@ -399,11 +399,6 @@ const Product: React.FC = () => {
       fontSize: theme.typography.fontSize.sm,
       color: theme.colors.dark.textSecondary,
     },
-    reviewAuthor: {
-      fontWeight: theme.typography.fontWeight.medium,
-      color: theme.colors.dark.text,
-      marginBottom: '2px',
-    },
     similarProductsGrid: {
       padding: `0 ${theme.padding.screen}`,
       display: 'grid',
@@ -415,12 +410,12 @@ const Product: React.FC = () => {
   return (
     <div style={{ paddingBottom: theme.spacing.xl }}>
       <div style={styles.pageTitle}>
-        <IconButton icon={<ArrowLeft size={20} />} onClick={() => navigate(-1)} variant="glass" size="md" />
+        <div style={{ width: 40 }} />
         <div style={{ opacity: 0.7, fontSize: theme.typography.fontSize.sm, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Товар</div>
         <IconButton icon={<Heart size={20} fill={product.favorite ? 'white' : 'none'} />} onClick={toggleFavorite} variant="glass" size="md" />
       </div>
 
-      <SectionDivider title="Добавление товара в корзину" />
+      <SectionDivider title={product.name} />
 
       <div style={styles.poster}>
         {posterImage ? <img src={posterImage} alt="" style={styles.posterImg} /> : null}
@@ -464,7 +459,7 @@ const Product: React.FC = () => {
         </div>
 
         <button style={styles.goldButton} onClick={() => setAddOpen(true)}>
-          Добавить заказ в корзину
+          Добавить в корзину
         </button>
 
         <button style={styles.disabledCta} disabled>
@@ -479,7 +474,6 @@ const Product: React.FC = () => {
             </div>
             {social.reviews.slice(0, 3).map((review, index) => (
               <div key={index} style={styles.reviewItem}>
-                <div style={styles.reviewAuthor}>Артём, Kiel</div>
                 <div>"{review}"</div>
               </div>
             ))}

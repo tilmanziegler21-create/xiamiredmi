@@ -8,6 +8,7 @@ interface PrimaryButtonProps {
   fullWidth?: boolean;
   size?: 'sm' | 'md' | 'lg';
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -17,6 +18,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   fullWidth = false,
   size = 'md',
   className = '',
+  style,
 }) => {
   const sizeStyles = {
     sm: { padding: '8px 16px', fontSize: theme.typography.fontSize.sm },
@@ -38,6 +40,7 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
     touchAction: 'manipulation',
     WebkitTapHighlightColor: 'transparent',
     ...sizeStyles[size],
+    ...(style || {}),
   };
 
   return (

@@ -1,7 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { theme } from './theme';
 
 export const FooterBar: React.FC = () => {
+  const navigate = useNavigate();
   return (
     <div
       style={{
@@ -20,8 +22,20 @@ export const FooterBar: React.FC = () => {
       }}
     >
       <span>ELFCHERRY</span>
-      <span>Поддержка 24/7</span>
+      <span
+        role="button"
+        tabIndex={0}
+        onClick={() => navigate('/support')}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            navigate('/support');
+          }
+        }}
+        style={{ cursor: 'pointer', color: theme.colors.dark.text }}
+      >
+        Поддержка 24/7
+      </span>
     </div>
   );
 };
-

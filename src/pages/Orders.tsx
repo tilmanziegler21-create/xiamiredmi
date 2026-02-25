@@ -32,6 +32,18 @@ const Orders: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [orders, setOrders] = React.useState<OrderItem[]>([]);
 
+  const getStatusText = (status: string) => {
+    switch (String(status || '').toLowerCase()) {
+      case 'buffer': return 'В обработке';
+      case 'pending': return 'Ожидает';
+      case 'assigned': return 'Курьер назначен';
+      case 'picked_up': return 'В пути';
+      case 'delivered': return 'Доставлен';
+      case 'cancelled': return 'Отменён';
+      default: return 'В обработке';
+    }
+  };
+
   React.useEffect(() => {
     (async () => {
       try {
@@ -167,7 +179,7 @@ const Orders: React.FC = () => {
                     </div>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: theme.spacing.sm }}>
-                    <div style={styles.status(o.status)}>{o.status}</div>
+                    <div style={styles.status(o.status)}>{getStatusText(o.status)}</div>
                     <div style={styles.amount}>{formatCurrency(Number(o.totalAmount || 0))}</div>
                   </div>
                 </div>
