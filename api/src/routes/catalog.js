@@ -8,6 +8,10 @@ const router = express.Router();
 function errorStatus(e) {
   const direct = Number(e?.status);
   if (Number.isFinite(direct) && direct > 0) return direct;
+  const code = Number(e?.code);
+  if (Number.isFinite(code) && code > 0) return code;
+  const deep = Number(e?.response?.data?.error?.code);
+  if (Number.isFinite(deep) && deep > 0) return deep;
   const resp = Number(e?.response?.status);
   if (Number.isFinite(resp) && resp > 0) return resp;
   return 500;
@@ -122,7 +126,7 @@ router.get('/', requireAuth, async (req, res) => {
       return res.status(503).json({ error: 'Sheets not configured', code: error.code, missing: error.missing || [] });
     }
     if (status === 401 || status === 403) {
-      return res.status(status).json({ error: 'Authentication required' });
+      return res.status(503).json({ error: 'Sheets access denied', details: message || undefined });
     }
     if (status === 404) {
       return res.status(404).json({ error: 'Sheet not found or access denied' });
@@ -148,6 +152,9 @@ router.get('/categories', requireAuth, async (req, res) => {
     if (status === 503) {
       return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
     }
+    if (status === 401 || status === 403) {
+      return res.status(503).json({ error: 'Sheets access denied', details: message || undefined });
+    }
     if (status === 404) {
       return res.status(404).json({ error: 'Sheet not found or access denied' });
     }
@@ -171,6 +178,9 @@ router.get('/brands', requireAuth, async (req, res) => {
     const message = errorMessage(e);
     if (status === 503) {
       return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
+    }
+    if (status === 401 || status === 403) {
+      return res.status(503).json({ error: 'Sheets access denied', details: message || undefined });
     }
     if (status === 404) {
       return res.status(404).json({ error: 'Sheet not found or access denied' });

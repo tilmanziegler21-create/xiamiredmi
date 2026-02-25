@@ -67,7 +67,7 @@ function sheetCandidates(base, city) {
 
 const cache = new Map();
 function cacheGet(key) {
-  const ttl = Number(getEnv('SHEETS_CACHE_TTL_SECONDS', '60')) * 1000;
+  const ttl = Number(getEnv('SHEETS_CACHE_TTL_SECONDS', '600')) * 1000;
   const v = cache.get(key);
   if (!v) return null;
   if (Date.now() - v.ts > ttl) return null;
