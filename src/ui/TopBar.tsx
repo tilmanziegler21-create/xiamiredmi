@@ -37,6 +37,21 @@ export const TopBar: React.FC<TopBarProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const [duckBroken, setDuckBroken] = React.useState(false);
+  const [isNarrow, setIsNarrow] = React.useState(false);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 360px)');
+    const apply = () => setIsNarrow(Boolean(mq.matches));
+    apply();
+    try {
+      mq.addEventListener('change', apply);
+      return () => mq.removeEventListener('change', apply);
+    } catch {
+      mq.addListener(apply);
+      return () => mq.removeListener(apply);
+    }
+  }, []);
 
   const handleLogoClick = () => {
     navigate('/home');
@@ -69,29 +84,36 @@ export const TopBar: React.FC<TopBarProps> = ({
       background: 'rgba(12, 10, 26, 0.8)',
       ...blurStyle(theme.blur.glass),
       borderBottom: theme.border.glass,
-      display: 'flex',
+      display: 'grid',
+      gridTemplateColumns: 'auto 1fr auto',
       alignItems: 'center',
-      justifyContent: 'space-between',
+      columnGap: theme.spacing.sm,
     },
     leftSection: {
       display: 'flex',
       alignItems: 'center',
       gap: theme.spacing.sm,
-      zIndex: 2,
+      minWidth: 0,
     },
     centerSection: {
-      position: 'absolute' as const,
-      left: '50%',
-      transform: 'translateX(-50%)',
       display: 'flex',
       alignItems: 'center',
-      gap: theme.spacing.sm,
-      zIndex: 1,
+      justifyContent: 'center',
+      gap: theme.spacing.md,
+      minWidth: 0,
+      overflow: 'hidden' as const,
+    },
+    brandWrap: {
+      minWidth: 0,
+      maxWidth: isNarrow ? 140 : 220,
     },
     brand: {
       fontSize: theme.typography.fontSize.lg,
       fontWeight: theme.typography.fontWeight.bold,
       letterSpacing: '0.02em',
+      whiteSpace: 'nowrap' as const,
+      overflow: 'hidden' as const,
+      textOverflow: 'ellipsis' as const,
     },
     brandSub: {
       fontSize: theme.typography.fontSize.xs,
@@ -99,6 +121,9 @@ export const TopBar: React.FC<TopBarProps> = ({
       marginTop: 2,
       letterSpacing: '0.16em',
       textTransform: 'uppercase' as const,
+      whiteSpace: 'nowrap' as const,
+      overflow: 'hidden' as const,
+      textOverflow: 'ellipsis' as const,
     },
     cartBadge: {
       position: 'absolute' as const,
@@ -119,8 +144,8 @@ export const TopBar: React.FC<TopBarProps> = ({
     rightSection: {
       display: 'flex',
       alignItems: 'center',
-      gap: theme.spacing.md,
-      zIndex: 2,
+      gap: theme.spacing.sm,
+      minWidth: 0,
     },
     bonusPill: {
       display: 'flex',
@@ -129,7 +154,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       background: 'rgba(255,255,255,0.10)',
       border: theme.border.glass,
       borderRadius: theme.radius.md,
-      padding: '6px 12px',
+      padding: isNarrow ? '6px 10px' : '6px 12px',
       color: theme.colors.dark.text,
       fontSize: theme.typography.fontSize.sm,
       fontWeight: theme.typography.fontWeight.medium,
@@ -203,36 +228,43 @@ export const TopBar: React.FC<TopBarProps> = ({
             size="md"
           />
         )}
-        <div style={styles.duckAvatar}>
-          {!duckBroken ? (
-            <img
-              src="/assets/elfcherry/ui/duck-avatar.png"
-              alt=""
-              style={styles.duckImg}
-              onError={() => setDuckBroken(true)}
-            />
-          ) : (
-            <ShoppingBag size={18} />
-          )}
-        </div>
+        {!isNarrow ? (
+          <div style={styles.duckAvatar}>
+            {!duckBroken ? (
+              <img
+                src="/assets/elfcherry/ui/duck-avatar.png"
+                alt=""
+                style={styles.duckImg}
+                onError={() => setDuckBroken(true)}
+              />
+            ) : (
+              <ShoppingBag size={18} />
+            )}
+          </div>
+        ) : null}
       </div>
 
       <div style={styles.centerSection}>
-        <div 
-          style={{ textAlign: 'center', lineHeight: 1.05, cursor: 'pointer' }} 
-          onClick={handleLogoClick}
-          role="button"
-          tabIndex={0}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
-              handleLogoClick();
-            }
-          }}
-        >
-          <div style={styles.brand}>ELFCHERRY</div>
-          <div style={styles.brandSub}>mini app 24/7</div>
+        <div style={styles.brandWrap}>
+          <div 
+            style={{ textAlign: 'center', lineHeight: 1.05, cursor: 'pointer' }} 
+            onClick={handleLogoClick}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleLogoClick();
+              }
+            }}
+          >
+            <div style={styles.brand}>ELFCHERRY</div>
+            <div style={styles.brandSub}>mini app 24/7</div>
+          </div>
         </div>
+      </div>
+
+      <div style={styles.rightSection}>
         <div style={styles.cartButton}>
           <IconButton
             icon={<ShoppingCart size={18} />}
@@ -242,11 +274,8 @@ export const TopBar: React.FC<TopBarProps> = ({
           />
           {cartCount > 0 ? <div style={styles.cartBadge}>{Math.min(99, cartCount)}</div> : null}
         </div>
-      </div>
-
-      <div style={styles.rightSection}>
         <div style={{ ...styles.bonusPill, cursor: 'pointer' }} onClick={handleBonusClick} role="button" tabIndex={0}>
-          <Coins size={16} />
+          {!isNarrow ? <Coins size={16} /> : null}
           <span>x{bonusMultiplier}</span>
           <span style={styles.bonusPlus}>+</span>
         </div>
