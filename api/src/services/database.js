@@ -18,6 +18,7 @@ class InMemoryDB {
 
     this.dataFilePath = path.resolve(process.cwd(), 'api/.data/mockdb.json');
     
+    this.ensureDataDir();
     // Initialize with mock data
     this.initMockData();
     this.loadPersistedState();
