@@ -30,14 +30,13 @@ const Checkout: React.FC = () => {
   const loc = useLocation();
   const toast = useToastStore();
   const { user } = useAuthStore();
-  const { cart, setCart } = useCartStore();
+  const { cart, setCart, isLoading: cartLoading, setLoading: setCartLoading } = useCartStore();
   const { trackCheckout, trackOrderComplete } = useAnalytics();
 
   const state = (loc.state || {}) as LocationState;
   const { city } = useCityStore();
   const { config } = useConfigStore();
   const [loading, setLoading] = React.useState(false);
-  const [cartLoading, setCartLoading] = React.useState(true);
   const [deliveryMethod, setDeliveryMethod] = React.useState<DeliveryMethod>(state.fulfillment === 'pickup' ? 'pickup' : 'courier');
   const [pickupPoint, setPickupPoint] = React.useState(state.pickup || '');
   const [promoCode, setPromoCode] = React.useState(state.promoCode || '');
@@ -149,12 +148,12 @@ const Checkout: React.FC = () => {
     }
 
     const errors: string[] = [];
-    if (!courierId) errors.push('Выбери курьера');
-    if (!deliveryTime) errors.push('Выбери время');
     if (deliveryMethod === 'pickup') {
       if (!pickupPoint.trim()) errors.push('Выбери точку самовывоза');
     } else {
       if (!address.trim()) errors.push('Укажи адрес доставки');
+      if (!courierId) errors.push('Выбери курьера');
+      if (!deliveryTime) errors.push('Выбери время');
     }
     const wantBonus = Math.max(0, Number(String(bonusWant || '').replace(',', '.')) || 0);
     if (wantBonus > 0 && wantBonus > bonusBalance) {
@@ -200,9 +199,9 @@ const Checkout: React.FC = () => {
         deliveryMethod,
         city,
         promoCode: String(promoCode || '').trim(),
-        courier_id: courierId,
-        delivery_date: deliveryDate,
-        delivery_time: deliveryTime,
+        courier_id: deliveryMethod === 'courier' ? courierId : '',
+        delivery_date: deliveryMethod === 'courier' ? deliveryDate : '',
+        delivery_time: deliveryMethod === 'courier' ? deliveryTime : '',
         courierData: {
           address: deliveryMethod === 'pickup' ? pickupPoint : address,
           comment: String(comment || '').slice(0, 500),
@@ -315,9 +314,9 @@ const Checkout: React.FC = () => {
     if (!city) return false;
     const wantBonus = Math.max(0, Number(String(bonusWant || '').replace(',', '.')) || 0);
     if (wantBonus > bonusBalance) return false;
-    if (!courierId || !deliveryTime) return false;
     if (deliveryMethod === 'pickup') return Boolean(pickupPoint.trim());
     if (!address.trim()) return false;
+    if (!courierId || !deliveryTime) return false;
     return true;
   })();
 
@@ -325,7 +324,7 @@ const Checkout: React.FC = () => {
     return (
       <div style={{ padding: theme.padding.screen }}>
         <GlassCard padding="lg" variant="elevated">
-          <div style={{ height: 64 }} className="animate-pulse" />
+          <div style={{ height: 64, borderRadius: theme.radius.md, background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)' }} />
         </GlassCard>
       </div>
     );
@@ -395,29 +394,33 @@ const Checkout: React.FC = () => {
             </>
           )}
 
-          <div style={{ height: theme.spacing.md }} />
+          {deliveryMethod === 'courier' ? (
+            <>
+              <div style={{ height: theme.spacing.md }} />
 
-          <div style={styles.label}>Курьер</div>
-          <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.input}>
-            <option value="">Выберите курьера</option>
-            {couriers.map((c) => (
-              <option key={c.courier_id} value={c.courier_id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+              <div style={styles.label}>Курьер</div>
+              <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.input}>
+                <option value="">Выберите курьера</option>
+                {couriers.map((c) => (
+                  <option key={c.courier_id} value={c.courier_id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
 
-          <div style={{ height: theme.spacing.md }} />
+              <div style={{ height: theme.spacing.md }} />
 
-          <div style={styles.label}>Время</div>
-          <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.input} disabled={!courierId}>
-            <option value="">Выберите</option>
-            {timeOptions.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+              <div style={styles.label}>Время</div>
+              <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.input} disabled={!courierId}>
+                <option value="">Выберите</option>
+                {timeOptions.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </>
+          ) : null}
         </GlassCard>
       </div>
 

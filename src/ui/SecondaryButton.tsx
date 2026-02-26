@@ -27,11 +27,13 @@ export const SecondaryButton: React.FC<SecondaryButtonProps> = ({
   };
 
   const styles = {
-    background: theme.gradients.secondary,
+    background: 'transparent',
     color: theme.colors.dark.text,
-    border: theme.border.glass,
-    borderRadius: theme.radius.md,
+    border: '1px solid rgba(255,255,255,0.2)',
+    borderRadius: 999,
     fontWeight: theme.typography.fontWeight.semibold,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase' as const,
     cursor: disabled ? 'not-allowed' : 'pointer',
     opacity: disabled ? 0.6 : 1,
     width: fullWidth ? '100%' : 'auto',

@@ -40,7 +40,7 @@ const Cart: React.FC = () => {
 
   React.useEffect(() => {
     if (!pickup && pickupPoints.length) setPickup(pickupPoints[0]);
-  }, [pickup, pickupPoints.join('|')]);
+  }, [pickup, pickupPoints.length]);
 
   React.useEffect(() => {
     (async () => {
@@ -142,12 +142,16 @@ const Cart: React.FC = () => {
     }
   };
 
-  const canCheckout = Boolean(cart?.items?.length && city && courierId && deliveryTime && (fulfillment !== 'pickup' || pickup));
+  const canCheckout = Boolean(
+    cart?.items?.length &&
+      city &&
+      (fulfillment === 'pickup' ? Boolean(pickup) : Boolean(courierId && deliveryTime))
+  );
 
   const goCheckout = () => {
     if (!cart?.items?.length) return;
     if (!canCheckout) {
-      toast.push('Выберите курьера и время', 'error');
+      toast.push(fulfillment === 'pickup' ? 'Выберите точку самовывоза' : 'Выберите курьера и время', 'error');
       return;
     }
     trackCheckout(cart.items, cart.total);
@@ -173,6 +177,14 @@ const Cart: React.FC = () => {
   };
 
   const pricing = calculatePricing();
+
+  const handleDecrement = (item: { id: string; quantity: number }) => {
+    if (item.quantity <= 1) {
+      toast.push('Используйте 🗑 для удаления товара', 'info');
+      return;
+    }
+    setQty(item.id, item.quantity - 1);
+  };
 
   const styles = {
     title: {
@@ -432,7 +444,7 @@ const Cart: React.FC = () => {
 
             <div style={{ display: 'flex', alignItems: 'center', marginTop: theme.spacing.md }}>
               <div style={styles.qtyWrap}>
-                <button style={styles.qtyBtn} onClick={() => setQty(item.id, item.quantity - 1)} aria-label="minus">
+                <button style={styles.qtyBtn} onClick={() => handleDecrement(item)} aria-label="minus">
                   <Minus size={18} />
                 </button>
                 <div style={{ width: 28, textAlign: 'center', fontWeight: theme.typography.fontWeight.bold }}>{item.quantity}</div>
@@ -509,28 +521,30 @@ const Cart: React.FC = () => {
         </div>
       ) : null}
 
-      <div style={styles.courierBox}>
-        <div style={styles.pickupTitle}>Курьер и время</div>
-        <div style={{ color: theme.colors.dark.textSecondary, marginBottom: theme.spacing.sm }}>Выберите курьера и слот доставки</div>
-        <div style={{ display: 'grid', gap: theme.spacing.sm }}>
-          <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.courierSelect}>
-            <option value="">Выберите курьера</option>
-            {couriers.map((c) => (
-              <option key={c.courier_id} value={c.courier_id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.courierSelect} disabled={!courierId}>
-            <option value="">Выберите время</option>
-            {timeOptions.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
+      {fulfillment !== 'pickup' ? (
+        <div style={styles.courierBox}>
+          <div style={styles.pickupTitle}>Курьер и время</div>
+          <div style={{ color: theme.colors.dark.textSecondary, marginBottom: theme.spacing.sm }}>Выберите курьера и слот доставки</div>
+          <div style={{ display: 'grid', gap: theme.spacing.sm }}>
+            <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.courierSelect}>
+              <option value="">Выберите курьера</option>
+              {couriers.map((c) => (
+                <option key={c.courier_id} value={c.courier_id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+            <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.courierSelect} disabled={!courierId}>
+              <option value="">Выберите время</option>
+              {timeOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {/* Total and Pricing */}
       <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { theme } from './theme';
 import { IconButton } from './IconButton';
-import { Menu, User, Coins, ShoppingCart, ArrowLeft, Settings, ShoppingBag } from 'lucide-react';
+import { Menu, User, Coins, ShoppingCart, ArrowLeft, Settings, ShoppingBag, RotateCcw } from 'lucide-react';
 import { blurStyle } from './blur';
 
 interface TopBarProps {
@@ -81,7 +81,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       zIndex: theme.zIndex.header,
       height: '64px',
       padding: `0 ${theme.padding.screen}`,
-      background: 'rgba(12, 10, 26, 0.8)',
+      background: 'rgba(15, 12, 26, 0.72)',
       ...blurStyle(theme.blur.glass),
       borderBottom: theme.border.glass,
       display: 'grid',
@@ -132,7 +132,7 @@ export const TopBar: React.FC<TopBarProps> = ({
       width: 18,
       height: 18,
       borderRadius: 999,
-      background: theme.colors.dark.accentRed,
+      background: theme.colors.dark.primary,
       color: theme.colors.dark.text,
       fontSize: 11,
       fontWeight: theme.typography.fontWeight.bold,
@@ -151,11 +151,11 @@ export const TopBar: React.FC<TopBarProps> = ({
       display: 'flex',
       alignItems: 'center',
       gap: theme.spacing.xs,
-      background: 'rgba(255,255,255,0.10)',
-      border: theme.border.glass,
-      borderRadius: theme.radius.md,
+      background: theme.colors.dark.accentGold,
+      border: 'none',
+      borderRadius: 999,
       padding: isNarrow ? '6px 10px' : '6px 12px',
-      color: theme.colors.dark.text,
+      color: '#000',
       fontSize: theme.typography.fontSize.sm,
       fontWeight: theme.typography.fontWeight.medium,
       position: 'relative' as const,
@@ -277,6 +277,7 @@ export const TopBar: React.FC<TopBarProps> = ({
         <div style={{ ...styles.bonusPill, cursor: 'pointer' }} onClick={handleBonusClick} role="button" tabIndex={0}>
           {!isNarrow ? <Coins size={16} /> : null}
           <span>x{bonusMultiplier}</span>
+          {!isNarrow ? <RotateCcw size={14} /> : null}
           <span style={styles.bonusPlus}>+</span>
         </div>
         {showSettings ? (

@@ -7,10 +7,14 @@ import { normalizeOrderStatus } from '../domain/orderStatus.js';
 const router = express.Router();
 
 const idempotency = new Map();
+const paymentIdempotency = new Map();
 setInterval(() => {
   const now = Date.now();
   for (const [k, v] of idempotency.entries()) {
     if (Number(v?.expiresAt || 0) <= now) idempotency.delete(k);
+  }
+  for (const [k, v] of paymentIdempotency.entries()) {
+    if (Number(v?.expiresAt || 0) <= now) paymentIdempotency.delete(k);
   }
 }, 5 * 60 * 1000);
 
@@ -358,11 +362,20 @@ router.post('/payment', requireAuth, async (req, res) => {
       return res.status(400).json({ error: 'Order ID is required' });
     }
 
+    const paymentKey = `${String(req.user.tgId)}:${String(orderId)}`;
+    const existingPayment = paymentIdempotency.get(paymentKey);
+    if (existingPayment && Number(existingPayment.expiresAt || 0) > Date.now()) {
+      return res.json(existingPayment.payload);
+    }
+
     let order = db.orders.get(orderId);
     const cityStr = String(city || order?.city || '');
     if (!order) order = await ensureLocalOrderFromSheets(cityStr, orderId, req.user.tgId);
     if (!order) return res.status(404).json({ error: 'Order not found' });
     if (String(order.user_id) !== String(req.user.tgId)) return res.status(403).json({ error: 'Forbidden' });
+    if (!String(order.delivery_method || '').trim()) {
+      return res.status(400).json({ error: 'Order must be confirmed before payment' });
+    }
     const current = normalizeOrderStatus(order.status);
     if (current === 'delivered' || current === 'cancelled') {
       return res.json({ success: true, status: current });
@@ -461,10 +474,23 @@ router.post('/payment', requireAuth, async (req, res) => {
         console.error('Sheets update order failed:', e);
       }
 
+      try {
+        const userCart = Array.from(db.carts.values()).find((c) => String(c.user_id) === String(req.user.tgId));
+        if (userCart) {
+          for (const [k, v] of db.cartItems.entries()) {
+            if (String(v.cart_id) === String(userCart.id)) db.cartItems.delete(k);
+          }
+          db.carts.delete(String(userCart.id));
+        }
+      } catch {
+      }
+
       db.persistState();
     }
 
-    res.json({ success: true, status: normalizeOrderStatus(db.orders.get(orderId)?.status) });
+    const payload = { success: true, status: normalizeOrderStatus(db.orders.get(orderId)?.status) };
+    paymentIdempotency.set(paymentKey, { expiresAt: Date.now() + 5 * 60 * 1000, payload });
+    res.json(payload);
   } catch (error) {
     console.error('Payment error:', error);
     res.status(500).json({ error: 'Payment failed' });

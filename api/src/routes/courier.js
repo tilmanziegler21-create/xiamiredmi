@@ -45,7 +45,10 @@ router.get('/orders', requireAuth, async (req, res) => {
     }
 
     const myCourierId = status === 'admin' ? String(req.query.courierId || '').trim() : await resolveCourierIdForUser(city, req.user.tgId);
-    const filterCourierId = myCourierId || String(req.user.tgId);
+    if (status !== 'admin' && !myCourierId) {
+      return res.status(403).json({ error: 'Courier profile not found. Contact admin.' });
+    }
+    const filterCourierId = myCourierId;
 
     const rows = await getOrders(city);
     const orders = rows
@@ -54,9 +57,11 @@ router.get('/orders', requireAuth, async (req, res) => {
       .map((o) => {
         const dbOrder = db.orders.get(String(o.order_id || ''));
         const cd = parseCourierData(o, dbOrder);
-        const items = Array.isArray(safeJson(o.items_json, [])) ? safeJson(o.items_json, []) : [];
+        const parsedItems = safeJson(o.items_json, []);
+        const items = Array.isArray(parsedItems) ? parsedItems : [];
         const totalAmount = Number(o.final_amount || 0) > 0 ? Number(o.final_amount || 0) : Number(o.total_amount || 0);
-        const payoutAmount = Math.round(totalAmount * 0.2 * 100) / 100;
+        const courierPayoutPercent = Number(process.env.COURIER_PAYOUT_PERCENT || 20) / 100;
+        const payoutAmount = Math.round(totalAmount * courierPayoutPercent * 100) / 100;
         return {
           id: String(o.order_id || ''),
           userId: String(o.user_id || ''),
@@ -104,7 +109,10 @@ router.post('/orders/status', requireAuth, async (req, res) => {
     const order = rows.find((o) => String(o.order_id || '') === orderId);
     if (!order) return res.status(404).json({ error: 'Order not found' });
     const myCourierId = status === 'admin' ? String(req.body?.courierId || req.query.courierId || '').trim() : await resolveCourierIdForUser(city, req.user.tgId);
-    const filterCourierId = myCourierId || String(req.user.tgId);
+    if (status !== 'admin' && !myCourierId) {
+      return res.status(403).json({ error: 'Courier profile not found. Contact admin.' });
+    }
+    const filterCourierId = myCourierId;
     if (status !== 'admin' && String(order.courier_id || '') !== String(filterCourierId)) {
       return res.status(403).json({ error: 'Forbidden' });
     }

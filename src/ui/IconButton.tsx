@@ -8,6 +8,7 @@ interface IconButtonProps {
   variant?: 'default' | 'glass';
   size?: 'sm' | 'md';
   className?: string;
+  style?: React.CSSProperties;
 }
 
 export const IconButton: React.FC<IconButtonProps> = ({
@@ -16,6 +17,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   variant = 'default',
   size = 'md',
   className = '',
+  style,
 }) => {
   const sizeStyles = {
     sm: {
@@ -53,6 +55,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
     touchAction: 'manipulation' as const,
     ...sizeStyles[size],
     ...variantStyles[variant],
+    ...(style || {}),
   };
 
   return (

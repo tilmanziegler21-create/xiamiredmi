@@ -41,7 +41,13 @@ api.interceptors.response.use(
       const isTimeout = error?.code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('timeout');
       const status = error?.response?.status;
       const data = error?.response?.data;
-      if (status === 401 && (url.includes('/auth/dev') || url.includes('/auth/verify'))) {
+      if (status === 401 && (url.includes('/auth/dev') || url.includes('/auth/verify') || url.includes('/auth/me'))) {
+        if (url.includes('/auth/me')) {
+          try {
+            useAuthStore.getState().logout();
+          } catch {
+          }
+        }
         return Promise.reject(error);
       }
       const serverMessage = typeof data?.error === 'string' ? data.error : '';
@@ -62,13 +68,6 @@ api.interceptors.response.use(
       }
 
       useToastStore.getState().push(message, 'error');
-
-      if (status === 401 && url.includes('/auth/me')) {
-        try {
-          useAuthStore.getState().logout();
-        } catch {
-        }
-      }
     } catch {
       // ignore
     }

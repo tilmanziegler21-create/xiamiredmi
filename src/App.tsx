@@ -3,14 +3,14 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import WebApp from '@twa-dev/sdk';
 import { useAuthStore } from './store/useAuthStore';
 import { authAPI } from './services/api';
-import { SafeAreaProvider, AppShell } from './ui';
+import { SafeAreaProvider, AppShell, GlassCard, PrimaryButton, theme } from './ui';
 import AgeVerify from './pages/AgeVerify';
 import Home from './pages/Home';
 import Catalog from './pages/Catalog';
 import Product from './pages/Product';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
-import Profile from './pages/Profile';
+import Account from './pages/Account';
 import Orders from './pages/Orders';
 import OrderDetails from './pages/OrderDetails';
 import Favorites from './pages/Favorites';
@@ -176,22 +176,22 @@ function App() {
       <SafeAreaProvider>
         <div style={{
           minHeight: '100vh',
-          background: 'linear-gradient(135deg, #0c0a1a 0%, #1a0c2e 100%)',
+          background: theme.colors.dark.bg,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-          <div style={{ textAlign: 'center' }}>
+          <div style={{ textAlign: 'center', padding: theme.padding.screen }}>
             <div style={{
               width: '48px',
               height: '48px',
-              border: '4px solid rgba(255,45,85,0.26)',
-              borderTop: '4px solid #ff2d55',
+              border: `4px solid rgba(255,255,255,0.12)`,
+              borderTop: `4px solid ${theme.colors.dark.primary}`,
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
               margin: '0 auto 16px',
             }} />
-            <p style={{ color: '#ffffff', fontSize: '16px' }}>Авторизация...</p>
+            <p style={{ color: theme.colors.dark.text, fontSize: theme.typography.fontSize.base }}>Авторизация…</p>
           </div>
         </div>
       </SafeAreaProvider>
@@ -203,33 +203,25 @@ function App() {
       <SafeAreaProvider>
         <div style={{
           minHeight: '100vh',
-          background: 'linear-gradient(135deg, #0c0a1a 0%, #1a0c2e 100%)',
+          background: theme.colors.dark.bg,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
         }}>
-          <div style={{ textAlign: 'center' }}>
-            <p style={{ color: '#ff3b30', marginBottom: '16px', fontSize: '16px' }}>Ошибка авторизации</p>
+          <div style={{ textAlign: 'center', padding: theme.padding.screen, width: '100%', maxWidth: 420 }}>
+            <GlassCard padding="lg" variant="elevated">
+              <p style={{ color: theme.colors.dark.accentRed, marginBottom: theme.spacing.md, fontSize: theme.typography.fontSize.base }}>
+                Ошибка авторизации
+              </p>
             {authErrorDetails ? (
-              <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '16px', fontSize: '12px', maxWidth: 340, wordBreak: 'break-word' }}>
+              <p style={{ color: theme.colors.dark.textSecondary, marginBottom: theme.spacing.md, fontSize: theme.typography.fontSize.xs, wordBreak: 'break-word' }}>
                 {authErrorDetails}
               </p>
             ) : null}
-            <button 
-              onClick={() => WebApp.close()}
-              style={{
-                background: 'linear-gradient(135deg, #ff2d55 0%, #b0003a 100%)',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '12px',
-                padding: '12px 24px',
-                fontSize: '16px',
-                fontWeight: '500',
-                cursor: 'pointer',
-              }}
-            >
+            <PrimaryButton fullWidth onClick={() => WebApp.close()}>
               Закрыть
-            </button>
+            </PrimaryButton>
+            </GlassCard>
           </div>
         </div>
       </SafeAreaProvider>
@@ -240,35 +232,40 @@ function App() {
     <SafeAreaProvider>
       <Router>
         <div className="min-h-screen bg-app safe-bottom">
-          {!user.ageVerified ? (
-            <Routes>
-              <Route path="/age" element={<AgeVerify />} />
-              <Route path="*" element={<Navigate to="/age" replace />} />
-            </Routes>
-          ) : (
-            <Routes>
-              <Route path="/" element={<Navigate to="/home" replace />} />
-              <Route path="/home" element={<AppShell><Home /></AppShell>} />
-              <Route path="/categories" element={<AppShell><Categories /></AppShell>} />
-              <Route path="/catalog" element={<AppShell><Catalog /></AppShell>} />
-              <Route path="/product/:id" element={<AppShell showMenu={false}><Product /></AppShell>} />
-              <Route path="/cart" element={<AppShell showMenu={false}><Cart /></AppShell>} />
-              <Route path="/checkout" element={<AppShell showMenu={false}><Checkout /></AppShell>} />
-              <Route path="/orders" element={<AppShell><Orders /></AppShell>} />
-              <Route path="/order/:id" element={<AppShell showMenu={false}><OrderDetails /></AppShell>} />
-              <Route path="/favorites" element={<AppShell><Favorites /></AppShell>} />
-              <Route path="/referral" element={<AppShell><Referral /></AppShell>} />
-              <Route path="/support" element={<AppShell><Support /></AppShell>} />
-              <Route path="/promotions" element={<AppShell><Promotions /></AppShell>} />
-              <Route path="/bonuses" element={<AppShell><Bonuses /></AppShell>} />
-              <Route path="/fortune" element={<AppShell><FortuneWheel /></AppShell>} />
-              <Route path="/profile" element={<AppShell><Profile /></AppShell>} />
-              <Route path="/courier" element={(user.status === 'courier' || user.status === 'admin') ? <AppShell><Courier /></AppShell> : <Navigate to="/home" replace />} />
-              <Route path="/admin" element={user.status === 'admin' ? <AppShell><Admin /></AppShell> : <Navigate to="/home" replace />} />
-              <Route path="/courier-registration" element={user.status === 'admin' ? <AppShell><CourierRegistration /></AppShell> : <Navigate to="/home" replace />} />
-              <Route path="*" element={<Navigate to="/home" replace />} />
-            </Routes>
-          )}
+          <div className="aurora a1" />
+          <div className="aurora a2" />
+          <div className="noise" />
+          <div className="app-content">
+            {!user.ageVerified ? (
+              <Routes>
+                <Route path="/age" element={<AgeVerify />} />
+                <Route path="*" element={<Navigate to="/age" replace />} />
+              </Routes>
+            ) : (
+              <Routes>
+                <Route path="/" element={<Navigate to="/home" replace />} />
+                <Route path="/home" element={<AppShell><Home /></AppShell>} />
+                <Route path="/categories" element={<AppShell><Categories /></AppShell>} />
+                <Route path="/catalog" element={<AppShell><Catalog /></AppShell>} />
+                <Route path="/product/:id" element={<AppShell showMenu={false}><Product /></AppShell>} />
+                <Route path="/cart" element={<AppShell showMenu={false}><Cart /></AppShell>} />
+                <Route path="/checkout" element={<AppShell showMenu={false}><Checkout /></AppShell>} />
+                <Route path="/orders" element={<AppShell><Orders /></AppShell>} />
+                <Route path="/order/:id" element={<AppShell showMenu={false}><OrderDetails /></AppShell>} />
+                <Route path="/favorites" element={<AppShell><Favorites /></AppShell>} />
+                <Route path="/referral" element={<AppShell><Referral /></AppShell>} />
+                <Route path="/support" element={<AppShell><Support /></AppShell>} />
+                <Route path="/promotions" element={<AppShell><Promotions /></AppShell>} />
+                <Route path="/bonuses" element={<AppShell><Bonuses /></AppShell>} />
+                <Route path="/fortune" element={<AppShell><FortuneWheel /></AppShell>} />
+                <Route path="/profile" element={<AppShell><Account /></AppShell>} />
+                <Route path="/courier" element={(user.status === 'courier' || user.status === 'admin') ? <AppShell><Courier /></AppShell> : <Navigate to="/home" replace />} />
+                <Route path="/admin" element={user.status === 'admin' ? <AppShell><Admin /></AppShell> : <Navigate to="/home" replace />} />
+                <Route path="/courier-registration" element={user.status === 'admin' ? <AppShell><CourierRegistration /></AppShell> : <Navigate to="/home" replace />} />
+                <Route path="*" element={<Navigate to="/home" replace />} />
+              </Routes>
+            )}
+          </div>
         </div>
       </Router>
     </SafeAreaProvider>

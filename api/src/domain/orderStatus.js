@@ -32,6 +32,5 @@ export function isOrderStatusProgressing(current, next) {
   if (c === 'cancelled') return false;
   if (c === 'delivered') return false;
   if (n === 'cancelled') return true;
-  return rank.get(n) >= rank.get(c);
+  return rank.get(n) > rank.get(c);
 }
-

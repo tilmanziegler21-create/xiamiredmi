@@ -19,10 +19,9 @@ export const SectionDivider: React.FC<Props> = ({ title }) => {
         fontSize: theme.typography.fontSize.xs,
       }}
     >
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.14)', flex: 1 }} />
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.20)', flex: 1 }} />
       <div style={{ whiteSpace: 'nowrap' }}>{title}</div>
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.14)', flex: 1 }} />
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.20)', flex: 1 }} />
     </div>
   );
 };
-

@@ -27,14 +27,14 @@ const FortuneWheel: React.FC = () => {
   const [tier, setTier] = useState<'regular' | 'vip' | 'elite'>('regular');
 
   const prizes: WheelPrize[] = [
-    { id: '1', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.25, color: '#ff2d55' },
+    { id: '1', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.20, color: '#ff2d55' },
     { id: '2', name: 'WELCOME10', type: 'discount', value: 10, probability: 0.10, color: '#ff4d6d' },
-    { id: '3', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.20, color: '#ff9800' },
+    { id: '3', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.18, color: '#ff9800' },
     { id: '4', name: 'Попробуйте еще', type: 'nothing', value: 0, probability: 0.18, color: '#607d8b' },
-    { id: '5', name: '10 бонусов', type: 'bonus', value: 10, probability: 0.15, color: '#2196f3' },
-    { id: '6', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.13, color: '#9c27b0' },
-    { id: '7', name: '20 бонусов', type: 'bonus', value: 20, probability: 0.07, color: '#4caf50' },
-    { id: '8', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.12, color: '#ffc107' },
+    { id: '5', name: '10 бонусов', type: 'bonus', value: 10, probability: 0.14, color: '#2196f3' },
+    { id: '6', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.10, color: '#9c27b0' },
+    { id: '7', name: '20 бонусов', type: 'bonus', value: 20, probability: 0.06, color: '#4caf50' },
+    { id: '8', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.04, color: '#ffc107' },
   ];
 
   const sectorAngle = 360 / prizes.length;
@@ -82,7 +82,9 @@ const FortuneWheel: React.FC = () => {
         ? prizes.find((p) => p.type === 'nothing') || prizes[0]
         : reward?.type === 'promo'
           ? prizes.find((p) => p.type === 'discount') || prizes[0]
-          : prizes.find((p) => p.type === 'bonus' && p.value === Number(reward?.amount || 0)) || prizes[0];
+          : prizes.find((p) => p.type === 'bonus' && p.value === Number(reward?.amount || 0))
+            || prizes.find((p) => p.type === 'bonus')
+            || prizes[0];
 
     const prizeIndex = prizes.findIndex((p) => p.id === selected.id);
     const sectorAngle = 360 / prizes.length;

@@ -217,7 +217,40 @@ class InMemoryDB {
 
   executeRun(query, params) {
     // Simple execution for INSERT/UPDATE/DELETE
-    if (query.includes('INSERT OR REPLACE INTO users')) {
+    if (query.includes('INSERT OR IGNORE INTO users')) {
+      const [tgId, username, firstName, lastName, ageVerified, status] = params;
+      const existing = this.users.get(String(tgId));
+      if (!existing) {
+        this.users.set(String(tgId), {
+          tg_id: String(tgId),
+          username: String(username || ''),
+          first_name: String(firstName || ''),
+          last_name: String(lastName || ''),
+          age_verified: Boolean(Number(ageVerified) ? 1 : 0),
+          status: String(status || 'regular'),
+          bonus_balance: 0,
+          referred_by: '',
+          referral_claimed_at: '',
+          referral_conversions: 0,
+          first_paid_order_at: '',
+          fortune_date: '',
+          fortune_used: 0,
+          created_at: new Date().toISOString(),
+        });
+        this.persistState();
+      }
+    } else if (query.includes('UPDATE users SET username=?') && query.includes('WHERE tg_id=?')) {
+      const [username, firstName, lastName, status, tgId] = params;
+      const user = this.users.get(String(tgId));
+      if (user) {
+        user.username = String(username || user.username || '');
+        user.first_name = String(firstName || user.first_name || '');
+        user.last_name = String(lastName || user.last_name || '');
+        user.status = String(status || user.status || 'regular');
+        this.users.set(String(tgId), user);
+        this.persistState();
+      }
+    } else if (query.includes('INSERT OR REPLACE INTO users')) {
       const [tgId, username, firstName, lastName, ageVerified, status] = params;
       const prev = this.users.get(tgId);
       this.users.set(tgId, {

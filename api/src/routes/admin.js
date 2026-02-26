@@ -74,7 +74,8 @@ router.get('/orders', async (req, res) => {
       .map((o) => {
         const dbOrder = db.orders.get(String(o.order_id || ''));
         const cd = parseCourierData(o, dbOrder);
-        const items = Array.isArray(safeJson(o.items_json, [])) ? safeJson(o.items_json, []) : [];
+        const parsedItems = safeJson(o.items_json, []);
+        const items = Array.isArray(parsedItems) ? parsedItems : [];
         const courier = courierMap.get(String(o.courier_id || ''));
         const totalAmount = Number(o.final_amount || 0) > 0 ? Number(o.final_amount || 0) : Number(o.total_amount || 0);
         return {
@@ -242,7 +243,7 @@ router.get('/stats', async (req, res) => {
     const activeCouriers = couriers.filter((c) => Boolean(c.active)).length;
     const filtered = rows.filter((o) => {
       const dt = new Date(String(o.created_at || ''));
-      if (Number.isNaN(dt.getTime())) return true;
+      if (Number.isNaN(dt.getTime())) return false;
       return dt >= start;
     });
     const deliveredOrders = filtered.filter((o) => normalizeOrderStatus(o.status) === 'delivered').length;

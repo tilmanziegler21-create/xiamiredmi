@@ -19,20 +19,27 @@ function defaultCity() {
   return first || '';
 }
 
-async function resolveStatus(tgId) {
+async function resolveStatus(tgId, existingStatus) {
   const adminIds = parseIdList(process.env.TELEGRAM_ADMIN_IDS);
   const n = Number(String(tgId));
   if (Number.isFinite(n) && adminIds.includes(n)) return 'admin';
+  const existing = String(existingStatus || '').trim();
+  if (existing === 'courier' || existing === 'admin') return existing;
+  if (existing && existing !== 'regular') return existing;
 
   try {
     const city = defaultCity();
-    const list = await getCouriers(city);
+    if (!city) return 'regular';
+    const list = await Promise.race([
+      getCouriers(city),
+      new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), 3000)),
+    ]);
     if (list.some((c) => String(c?.tg_id || '') === String(tgId))) return 'courier';
   } catch {
     // ignore
   }
 
-  return 'regular';
+  return existing || 'regular';
 }
 
 router.post('/verify', verifyTelegramAuth, async (req, res) => {
@@ -41,14 +48,13 @@ router.post('/verify', verifyTelegramAuth, async (req, res) => {
 
     const existing = db.prepare('SELECT * FROM users WHERE tg_id = ?').get(tgId);
     const ageVerified = existing ? Boolean(existing.age_verified) : false;
-    const status = await resolveStatus(tgId);
-    
-    const stmt = db.prepare(`
-      INSERT OR REPLACE INTO users (tg_id, username, first_name, last_name, age_verified, status)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-    
-    stmt.run(tgId, username, firstName, lastName, ageVerified, status);
+    const existingStatus = existing ? String(existing.status || 'regular') : '';
+    const status = await resolveStatus(tgId, existingStatus);
+
+    db.prepare(
+      'INSERT OR IGNORE INTO users (tg_id, username, first_name, last_name, age_verified, status, bonus_balance) VALUES (?, ?, ?, ?, ?, ?, 0)',
+    ).run(tgId, username, firstName, lastName, ageVerified ? 1 : 0, status);
+    db.prepare('UPDATE users SET username=?, first_name=?, last_name=?, status=? WHERE tg_id=?').run(username, firstName, lastName, status, tgId);
     
     const token = jwt.sign(
       { tgId, username },
@@ -90,12 +96,10 @@ router.post('/dev', async (_req, res) => {
     const lastName = String(_req.query?.lastName || '');
     const status = String(_req.query?.status || process.env.DEV_USER_STATUS || 'regular');
 
-    const stmt = db.prepare(`
-      INSERT OR REPLACE INTO users (tg_id, username, first_name, last_name, age_verified, status)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `);
-
-    stmt.run(tgId, username, firstName, lastName, true, status);
+    db.prepare(
+      'INSERT OR IGNORE INTO users (tg_id, username, first_name, last_name, age_verified, status, bonus_balance) VALUES (?, ?, ?, ?, ?, ?, 0)',
+    ).run(tgId, username, firstName, lastName, 1, status);
+    db.prepare('UPDATE users SET username=?, first_name=?, last_name=?, status=? WHERE tg_id=?').run(username, firstName, lastName, status, tgId);
 
     const token = jwt.sign(
       { tgId, username },

@@ -4,8 +4,7 @@ import { IconButton } from './IconButton';
 import { ChipBadge } from './ChipBadge';
 import { ShoppingCart, Heart } from 'lucide-react';
 import { formatCurrency } from '../lib/currency';
-import { TasteProfile } from './TasteProfile';
-import { TrustIndicators } from './TrustIndicators';
+import { blurStyle } from './blur';
 
 interface ProductCardProps {
   id: string;
@@ -124,7 +123,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const styles = {
     card: {
       position: 'relative' as const,
-      height: showTasteProfile || showTrustIndicators ? '320px' : '280px',
+      height: '220px',
       borderRadius: theme.radius.lg,
       overflow: 'hidden',
       background: resolvedGradient,
@@ -142,7 +141,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     scrim: {
       position: 'absolute' as const,
       inset: 0,
-      background: 'linear-gradient(135deg, rgba(0,0,0,0.3) 0%, rgba(0,0,0,0.6) 100%)',
+      background: 'linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 60%)',
       zIndex: 1,
       pointerEvents: 'none' as const,
     },
@@ -152,8 +151,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       zIndex: 2,
       display: 'flex',
       flexDirection: 'column' as const,
-      justifyContent: 'space-between',
-      padding: theme.spacing.lg,
+      justifyContent: 'flex-end',
+      padding: theme.spacing.md,
     },
     header: {
       display: 'flex',
@@ -163,28 +162,29 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     },
     title: {
       color: theme.colors.dark.text,
-      fontSize: theme.typography.fontSize.base,
+      fontSize: theme.typography.fontSize.sm,
       fontWeight: theme.typography.fontWeight.bold,
       textTransform: 'uppercase' as const,
-      lineHeight: '1.2',
-      maxWidth: '70%',
+      lineHeight: '1.15',
+      letterSpacing: '0.06em',
+      overflow: 'hidden' as const,
+      textOverflow: 'ellipsis' as const,
+      whiteSpace: 'nowrap' as const,
     },
     pricePill: {
-      background: 'rgba(255,255,255,0.9)',
-      color: '#000',
-      padding: '6px 12px',
-      borderRadius: theme.radius.md,
+      background: '#ffffff',
+      color: '#0b0b0b',
+      padding: '4px 12px',
+      borderRadius: 999,
       fontSize: theme.typography.fontSize.sm,
-      fontWeight: theme.typography.fontWeight.semibold,
+      fontWeight: theme.typography.fontWeight.bold,
       display: 'flex',
       alignItems: 'center',
       gap: '4px',
     },
     actions: {
       display: 'flex',
-      justifyContent: 'flex-end',
       gap: theme.spacing.sm,
-      marginTop: 'auto',
     },
     newBadge: {
       position: 'absolute' as const,
@@ -195,32 +195,43 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       position: 'absolute' as const,
       top: theme.spacing.md,
       left: theme.spacing.md,
-      padding: '4px 8px',
-      borderRadius: theme.radius.sm,
+      padding: '4px 10px',
+      borderRadius: 999,
       fontSize: theme.typography.fontSize.xs,
       fontWeight: theme.typography.fontWeight.bold,
       textTransform: 'uppercase' as const,
       letterSpacing: '0.08em',
     },
     inStock: {
-      background: 'rgba(76,175,80,0.9)',
-      color: '#ffffff',
+      background: '#ffffff',
+      color: '#0b0b0b',
     },
     outOfStock: {
-      background: 'rgba(244,67,54,0.9)',
-      color: '#ffffff',
+      background: '#ffffff',
+      color: '#0b0b0b',
     },
     lowStock: {
-      background: 'rgba(255,152,0,0.9)',
-      color: '#ffffff',
+      background: '#ffffff',
+      color: '#0b0b0b',
     },
-    tasteProfile: {
-      marginTop: theme.spacing.sm,
-      marginBottom: theme.spacing.sm,
+    overlayActions: {
+      position: 'absolute' as const,
+      right: theme.spacing.md,
+      top: theme.spacing.md,
+      display: 'flex',
+      flexDirection: 'column' as const,
+      gap: theme.spacing.sm,
     },
-    trustIndicators: {
-      marginTop: 'auto',
-      marginBottom: theme.spacing.sm,
+    roundAction: {
+      background: 'rgba(255,255,255,0.15)',
+      border: '1px solid rgba(255,255,255,0.10)',
+      ...blurStyle(theme.blur.glass),
+    },
+    bottomRow: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: theme.spacing.sm,
     },
   };
 
@@ -255,28 +266,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
         
-        <div style={styles.header}>
-          <h3 style={styles.title}>{name}</h3>
-          <div style={styles.pricePill}>
-            <span>{formatCurrency(price)}</span>
-          </div>
-        </div>
-
-        {/* Taste Profile */}
-        {showTasteProfile && tasteProfile && (
-          <div style={styles.tasteProfile}>
-            <TasteProfile {...tasteProfile} size="sm" />
-          </div>
-        )}
-
-        {/* Trust Indicators */}
-        {showTrustIndicators && trustData && (
-          <div style={styles.trustIndicators}>
-            <TrustIndicators {...trustData} size="sm" />
-          </div>
-        )}
-
-        <div style={styles.actions}>
+        <div style={styles.overlayActions}>
           <IconButton
             icon={<Heart size={18} fill={isFavorite ? 'white' : 'none'} />}
             onClick={(e) => {
@@ -285,6 +275,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }}
             variant="glass"
             size="sm"
+            style={styles.roundAction}
           />
           <IconButton
             icon={<ShoppingCart size={18} />}
@@ -294,7 +285,15 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }}
             variant="glass"
             size="sm"
+            style={styles.roundAction}
           />
+        </div>
+
+        <div style={styles.bottomRow}>
+          <div style={styles.pricePill}>
+            <span>{formatCurrency(price)}</span>
+          </div>
+          <h3 style={styles.title}>{name}</h3>
         </div>
       </div>
     </div>

@@ -159,13 +159,15 @@ const server = app.listen(PORT, () => {
 });
 
 server.on('listening', async () => {
-  const cities = String(process.env.CITY_CODES || '')
+  const cities = String(process.env.CITY_CODES || 'MU')
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
   for (const c of cities) {
     try {
       await readSheetTable('products', c);
+      await readSheetTable('couriers', c);
+      console.log(`Cache warmed for city: ${c}`);
     } catch {
     }
   }

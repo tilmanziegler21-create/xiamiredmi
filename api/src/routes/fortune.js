@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth.js';
 import db from '../services/database.js';
 
 const router = express.Router();
+const spinLocks = new Set();
 
 function dateKey() {
   return new Date().toISOString().slice(0, 10);
@@ -10,8 +11,8 @@ function dateKey() {
 
 function tierFor(user) {
   const balance = Number(user?.bonus_balance || 0);
-  if (balance >= 500) return 'elite';
-  if (balance >= 200) return 'vip';
+  if (balance >= 5000) return 'elite';
+  if (balance >= 1000) return 'vip';
   return 'regular';
 }
 
@@ -44,6 +45,10 @@ router.get('/state', requireAuth, (req, res) => {
 
 router.post('/spin', requireAuth, (req, res) => {
   const tgId = String(req.user?.tgId || '');
+  const lockKey = String(tgId);
+  if (spinLocks.has(lockKey)) return res.status(429).json({ error: 'Spin in progress' });
+  spinLocks.add(lockKey);
+  try {
   const u = db.getUser(tgId);
   const day = dateKey();
   const tier = tierFor(u);
@@ -67,6 +72,9 @@ router.post('/spin', requireAuth, (req, res) => {
     left: Math.max(0, limit - (used + 1)),
     bonusBalance: Number(nextUser?.bonus_balance || 0),
   });
+  } finally {
+    spinLocks.delete(lockKey);
+  }
 });
 
 export default router;

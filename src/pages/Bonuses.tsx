@@ -30,6 +30,8 @@ const Bonuses: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [referralCode, setReferralCode] = useState('');
   const [referralLink, setReferralLink] = useState('');
+  const [referralBonusAmount, setReferralBonusAmount] = useState(20);
+  const historyRef = React.useRef<HTMLDivElement>(null);
 
   const userStatuses: UserStatus[] = [
     {
@@ -83,7 +85,13 @@ const Bonuses: React.FC = () => {
 
       const code = String(ref.data?.referralCode || user?.tgId || '');
       setReferralCode(code);
-      setReferralLink(`${window.location.origin}/home?ref=${encodeURIComponent(code)}`);
+      setReferralBonusAmount(Number(ref.data?.bonusAmount || 20));
+      const botUsername = String(import.meta.env.VITE_BOT_USERNAME || '').trim();
+      setReferralLink(
+        botUsername
+          ? `https://t.me/${botUsername}?startapp=ref_${encodeURIComponent(code)}`
+          : `https://t.me/share/url?url=${encodeURIComponent(`ref:${code}`)}`,
+      );
     } catch (error) {
       toast.push('Ошибка загрузки данных', 'error');
     } finally {
@@ -256,7 +264,7 @@ const Bonuses: React.FC = () => {
           </PrimaryButton>
           <SecondaryButton
             size="sm"
-            onClick={() => toast.push('История транзакций', 'info')}
+            onClick={() => historyRef.current?.scrollIntoView({ behavior: 'smooth' })}
           >
             История
           </SecondaryButton>
@@ -320,7 +328,7 @@ const Bonuses: React.FC = () => {
         </div>
 
         <div style={{ fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.md }}>
-          Получите 50 🍒 за каждого друга, который сделает первый заказ
+          Получите {referralBonusAmount} 🍒 за каждого друга, который сделает первый заказ
         </div>
 
         <div style={styles.referralCode}>
@@ -344,7 +352,7 @@ const Bonuses: React.FC = () => {
       </div>
 
       {/* Recent Transactions */}
-      <div style={{ padding: `0 ${theme.padding.screen}` }}>
+      <div style={{ padding: `0 ${theme.padding.screen}` }} ref={historyRef}>
         <h3 style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, marginBottom: theme.spacing.md, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>История бонусов</h3>
         {transactions.map((transaction) => (
           <div key={transaction.id} style={styles.transactionCard}>
@@ -395,7 +403,7 @@ const Bonuses: React.FC = () => {
                   Приглашайте друзей
                 </div>
                 <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-                  50 🍒 за каждого друга
+                  {referralBonusAmount} 🍒 за каждого друга
                 </div>
               </div>
             </div>

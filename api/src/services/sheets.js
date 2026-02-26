@@ -471,7 +471,7 @@ export async function updateCourierRowByCourierId(city, courierId, patch) {
   for (const [k, v] of Object.entries(patch)) {
     const colIdx = headerIndex(headers, k);
     if (colIdx < 0) continue;
-    const col = String.fromCharCode('A'.charCodeAt(0) + colIdx);
+    const col = colLetter(colIdx);
     updates.push({ range: `${sheet}!${col}${targetRowIndex}`, values: [[v == null ? '' : String(v)]] });
   }
   if (updates.length === 0) return true;
@@ -481,6 +481,6 @@ export async function updateCourierRowByCourierId(city, courierId, patch) {
     requestBody: { valueInputOption: 'RAW', data: updates },
   });
 
-  cache.clear();
+  cache.delete(`${spreadsheetId}:${String(sheet || '')}`);
   return true;
 }

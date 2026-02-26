@@ -20,6 +20,31 @@ function currencySymbol() {
   return '₽';
 }
 
+function pickupPoints() {
+  try {
+    const raw = String(process.env.PICKUP_POINTS_JSON || '').trim();
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((p, i) => ({
+            id: String(p?.id || `p${i + 1}`),
+            title: String(p?.title || p?.address || ''),
+            address: String(p?.address || p?.title || ''),
+          }))
+          .filter((p) => p.title && p.address);
+      }
+    }
+  } catch {
+  }
+  return [
+    { id: 'p1', title: 'ul. Krucza 03, Śródmieście', address: 'ul. Krucza 03, Śródmieście' },
+    { id: 'p2', title: 'ul. Optyków 7A, Praga-Południe', address: 'ul. Optyków 7A, Praga-Południe' },
+    { id: 'p3', title: "ul. Tagore'a 1, Mokotów", address: "ul. Tagore'a 1, Mokotów" },
+    { id: 'p4', title: 'ul. Ordona-WSA, Wola', address: 'ul. Ordona-WSA, Wola' },
+  ];
+}
+
 router.get('/', (_req, res) => {
   const codes = listCities();
   const supportUrl = process.env.GROUP_URL || process.env.REVIEWS_URL || '';
@@ -92,12 +117,7 @@ router.get('/', (_req, res) => {
       { slug: 'Поды', title: 'ПОДЫ', imageUrl: '/assets/elfcherry/categories/category-pods.jpg' },
       { slug: 'Картриджи', title: 'КАРТРИДЖИ', imageUrl: '/assets/elfcherry/categories/category-cartridges.jpg' },
     ],
-    pickupPoints: [
-      { id: 'p1', title: 'ul. Krucza 03, Śródmieście', address: 'ul. Krucza 03, Śródmieście' },
-      { id: 'p2', title: 'ul. Optyków 7A, Praga-Południe', address: 'ul. Optyków 7A, Praga-Południe' },
-      { id: 'p3', title: "ul. Tagore'a 1, Mokotów", address: "ul. Tagore'a 1, Mokotów" },
-      { id: 'p4', title: 'ul. Ordona-WSA, Wola', address: 'ul. Ordona-WSA, Wola' },
-    ],
+    pickupPoints: pickupPoints(),
     referralRules: {
       title: 'ПРИГЛАСИТЕ 2 РЕФЕРАЛА',
       description: 'За каждых двух друзей, которые совершают покупку, вы получите бонус на баланс.',
