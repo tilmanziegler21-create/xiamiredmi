@@ -152,6 +152,37 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+app.get('/health/sheets-public', async (req, res) => {
+  if (String(process.env.PUBLIC_DIAGNOSTICS || '') !== '1') {
+    return res.status(404).json({ ok: false });
+  }
+  try {
+    const city = String(req.query?.city || process.env.CITY_CODES || '').split(',')[0].trim();
+    const table = await readSheetTable('products', city);
+    res.json({
+      ok: true,
+      city,
+      sheet: table.sheet,
+      rowCount: Array.isArray(table.rows) ? table.rows.length : 0,
+      env: {
+        spreadsheetIdTail: String(process.env.GOOGLE_SHEETS_SPREADSHEET_ID || process.env.GOOGLE_SHEET_ID || '').slice(-6),
+        sheetTabProducts: String(process.env.SHEET_TAB_PRODUCTS || ''),
+        sheetTabOrders: String(process.env.SHEET_TAB_ORDERS || ''),
+        sheetTabCouriers: String(process.env.SHEET_TAB_COURIERS || ''),
+      },
+    });
+  } catch (e) {
+    const status = Number(e?.status) || Number(e?.response?.status) || 500;
+    res.status(status).json({
+      ok: false,
+      status,
+      error: String(e?.message || 'Sheets error'),
+      code: e?.code,
+      details: e?.details,
+    });
+  }
+});
+
 app.get('/health/sheets', requireAuthAllowUnverified, requireAdmin, async (req, res) => {
   try {
     const city = String(req.query?.city || process.env.CITY_CODES || '').split(',')[0].trim();
