@@ -104,14 +104,15 @@ const Catalog: React.FC = () => {
     const rawCategory = String(filters.category || '');
     const catKey = norm(rawCategory);
     const mappedCategory = categoryAlias[catKey] || rawCategory;
+    const hasAnyNew = source.some((p) => Boolean((p as any).isNew));
     if (catKey === 'новинки') {
-      out = out.filter((p) => Boolean((p as any).isNew));
+      if (hasAnyNew) out = out.filter((p) => Boolean((p as any).isNew));
     } else if (catKey === 'хиты') {
       // no-op: avoid empty catalog due to mismatched labels
     } else if (rawCategory) {
       out = out.filter((p) => norm(p.category) === norm(mappedCategory));
     }
-    if (filters.brand) out = out.filter((p) => String(p.brand) === String(filters.brand));
+    if (filters.brand) out = out.filter((p) => norm(p.brand) === norm(filters.brand));
     if (Number.isFinite(priceMin)) out = out.filter((p) => Number(p.price || 0) >= priceMin);
     if (Number.isFinite(priceMax)) out = out.filter((p) => Number(p.price || 0) <= priceMax);
     if (filters.discount) out = out.filter((p) => Number((p as any).discount || 0) > 0);
@@ -392,6 +393,12 @@ const Catalog: React.FC = () => {
                 onClick={() => {
                   setQuery('');
                   resetFilters();
+                  try {
+                    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
+                    params.delete('category');
+                    navigate({ pathname: '/catalog', search: params.toString() ? `?${params.toString()}` : '' }, { replace: true });
+                  } catch {
+                  }
                 }}
               >
                 Сбросить фильтры
