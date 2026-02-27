@@ -91,9 +91,12 @@ async function sheetTitleMap(spreadsheetId) {
   const sheets = Array.isArray(meta.sheets) ? meta.sheets : [];
   const map = new Map();
   for (const s of sheets) {
-    const title = String(s?.properties?.title || '').trim();
-    if (!title) continue;
-    map.set(title.toLowerCase(), title);
+    const rawTitle = String(s?.properties?.title || '');
+    if (!rawTitle.trim()) continue;
+    const lowerKey = rawTitle.toLowerCase();
+    const normKey = normalizeTabKey(rawTitle);
+    if (!map.has(lowerKey)) map.set(lowerKey, rawTitle);
+    if (normKey && !map.has(normKey)) map.set(normKey, rawTitle);
   }
   return map;
 }
@@ -271,7 +274,10 @@ export async function readSheetTable(baseName, city) {
   let lastErr = null;
 
   for (const name of candidates) {
-    const actualName = titles.get(String(name).toLowerCase()) || name;
+    const actualName =
+      titles.get(String(name).toLowerCase()) ||
+      titles.get(normalizeTabKey(name)) ||
+      name;
     const key = `${spreadsheetId}:${actualName}`;
     const cached = cacheGet(key);
     if (cached) return cached;
