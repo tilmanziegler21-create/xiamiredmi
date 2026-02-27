@@ -117,12 +117,44 @@ function toNumber(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function normalizeTabKey(s) {
+  return String(s || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9а-яё]+/gi, '');
+}
+
+function tabOverrideEnvKey(baseName) {
+  const b = String(baseName || '').trim().toLowerCase();
+  if (b === 'products') return 'SHEET_TAB_PRODUCTS';
+  if (b === 'orders') return 'SHEET_TAB_ORDERS';
+  if (b === 'couriers') return 'SHEET_TAB_COURIERS';
+  return '';
+}
+
+function sheetOverrideCandidates(baseName, city) {
+  const envKey = tabOverrideEnvKey(baseName);
+  if (!envKey) return [];
+  const raw = String(getEnv(envKey) || '').trim();
+  if (!raw) return [];
+  const parts = raw.split(',').map((s) => s.trim()).filter(Boolean);
+  const out = [];
+  for (const p of parts) {
+    const resolved = p.replace(/\{CITY\}/g, String(city || '').trim()).trim();
+    if (resolved) out.push(resolved);
+  }
+  return out;
+}
+
 function sheetCandidates(base, city) {
   const out = [];
   out.push(base);
   out.push(base.endsWith('_') ? base : `${base}_`);
   if (city) {
     out.push(base.endsWith('_') ? `${base}${city}` : `${base}_${city}`);
+    out.push(`${base}${city}`);
+    out.push(`${base}-${city}`);
+    out.push(`${base} ${city}`);
   }
   return Array.from(new Set(out));
 }
@@ -191,7 +223,7 @@ export async function readSheetTable(baseName, city) {
 
   const api = sheetsApi();
   const titles = await sheetTitleMap(spreadsheetId);
-  const candidates = sheetCandidates(baseName, city);
+  const candidates = Array.from(new Set([...sheetOverrideCandidates(baseName, city), ...sheetCandidates(baseName, city)]));
   let lastErr = null;
 
   for (const name of candidates) {
@@ -236,6 +268,44 @@ export async function readSheetTable(baseName, city) {
       return await promise;
     } catch (e) {
       lastErr = e;
+    }
+  }
+
+  if (lastErr?.code === 'SHEETS_TAB_NOT_FOUND') {
+    try {
+      const baseNorm = normalizeTabKey(baseName);
+      const cityNorm = normalizeTabKey(city);
+      const keys = Array.from(titles.entries()).map(([lower, actual]) => ({
+        lower,
+        actual,
+        norm: normalizeTabKey(actual),
+      }));
+
+      const scored = keys
+        .map((k) => {
+          const hasBase = baseNorm ? k.norm.includes(baseNorm) : false;
+          const hasCity = cityNorm ? k.norm.includes(cityNorm) : true;
+          if (!hasBase || !hasCity) return null;
+          return { ...k, score: k.norm.length };
+        })
+        .filter(Boolean)
+        .sort((a, b) => a.score - b.score);
+
+      const picked = scored[0]?.actual;
+      if (picked) {
+        const key = `${spreadsheetId}:${picked}`;
+        const cached = cacheGet(key);
+        if (cached) return cached;
+        const range = `${picked}!A:AZ`;
+        const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
+        const values = resp.data.values || [];
+        const headers = (values[0] || []).map((x) => String(x));
+        const rows = values.slice(1);
+        const out = { sheet: picked, headers, rows };
+        cacheSet(key, out);
+        return out;
+      }
+    } catch {
     }
   }
 

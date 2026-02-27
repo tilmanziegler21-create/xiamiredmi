@@ -39,6 +39,16 @@ if (!process.env.JWT_SECRET && String(process.env.NODE_ENV || '') === 'productio
 const app = express();
 const PORT = process.env.PORT || 8080;
 
+{
+  const raw = String(process.env.TRUST_PROXY || '').trim();
+  if (raw) {
+    const n = Number(raw);
+    app.set('trust proxy', Number.isFinite(n) ? n : 1);
+  } else if (process.env.RENDER || String(process.env.NODE_ENV || '') === 'production') {
+    app.set('trust proxy', 1);
+  }
+}
+
 function escapeRegExp(s) {
   return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }

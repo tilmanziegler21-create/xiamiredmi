@@ -129,7 +129,7 @@ router.get('/', requireAuth, async (req, res) => {
       return res.status(503).json({ error: 'Sheets access denied', details: message || undefined });
     }
     if (status === 404) {
-      return res.status(404).json({ error: 'Sheet not found or access denied' });
+      return res.status(404).json({ error: 'Sheet tab not found', code: error.code || undefined });
     }
     if (status === 429) {
       return res.status(429).json({ error: 'Sheets quota exceeded' });

@@ -36,6 +36,16 @@ router.get('/', requireAuth, async (req, res) => {
     res.json({ favorites: items });
   } catch (e) {
     console.error('Favorites error:', e);
+    const status = Number(e?.status) || 500;
+    if (status === 503) {
+      return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
+    }
+    if (status === 401 || status === 403) {
+      return res.status(503).json({ error: 'Sheets access denied' });
+    }
+    if (status === 404) {
+      return res.status(404).json({ error: 'Sheet tab not found', code: e.code || undefined });
+    }
     res.status(500).json({ error: 'Failed to fetch favorites' });
   }
 });
