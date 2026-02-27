@@ -22,7 +22,7 @@ import referralRoutes from './routes/referral.js';
 import fortuneRoutes from './routes/fortune.js';
 import cron from 'node-cron';
 import db from './services/database.js';
-import { updateOrderRowByOrderId, readSheetTable, listSheetTabs } from './services/sheets.js';
+import { updateOrderRowByOrderId, readSheetTable, listSheetTabs, getProducts } from './services/sheets.js';
 import { requireAdmin, requireAuthAllowUnverified } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -177,6 +177,42 @@ app.get('/health/sheets-public', async (req, res) => {
       ok: false,
       status,
       error: String(e?.message || 'Sheets error'),
+      code: e?.code,
+      details: e?.details,
+    });
+  }
+});
+
+app.get('/health/catalog-public', async (req, res) => {
+  if (String(process.env.PUBLIC_DIAGNOSTICS || '') !== '1') {
+    return res.status(404).json({ ok: false });
+  }
+  try {
+    const city = String(req.query?.city || process.env.CITY_CODES || '').split(',')[0].trim();
+    const products = await getProducts(city);
+    const total = Array.isArray(products) ? products.length : 0;
+    const activeCount = products.filter((p) => Boolean(p?.active)).length;
+    const stockPositiveCount = products.filter((p) => Number(p?.stock || 0) > 0).length;
+    const activeAndStockCount = products.filter((p) => Boolean(p?.active) && Number(p?.stock || 0) > 0).length;
+    res.json({
+      ok: true,
+      city,
+      counts: { total, activeCount, stockPositiveCount, activeAndStockCount },
+      sample: {
+        first: products[0] ? { sku: products[0].sku, active: products[0].active, stock: products[0].stock } : null,
+        firstActive: products.find((p) => Boolean(p?.active)) ? {
+          sku: products.find((p) => Boolean(p?.active)).sku,
+          active: products.find((p) => Boolean(p?.active)).active,
+          stock: products.find((p) => Boolean(p?.active)).stock,
+        } : null,
+      },
+    });
+  } catch (e) {
+    const status = Number(e?.status) || Number(e?.response?.status) || 500;
+    res.status(status).json({
+      ok: false,
+      status,
+      error: String(e?.message || 'Catalog error'),
       code: e?.code,
       details: e?.details,
     });
