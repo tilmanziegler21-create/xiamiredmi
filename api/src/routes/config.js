@@ -50,8 +50,8 @@ router.get('/', (_req, res) => {
   const supportUrl = process.env.GROUP_URL || process.env.REVIEWS_URL || '';
   const bonusMultiplier = Number(process.env.BONUS_MULTIPLIER || 4);
   const quantityDiscount = {
-    minQty: Number(process.env.QUANTITY_DISCOUNT_MIN_QTY || 3),
-    unitPrice: Number(process.env.QUANTITY_DISCOUNT_UNIT_PRICE || 40),
+    minQty: Number(process.env.QTY_DISCOUNT_MIN || process.env.QUANTITY_DISCOUNT_MIN_QTY || 3),
+    unitPrice: Number(process.env.QTY_DISCOUNT_PRICE || process.env.QUANTITY_DISCOUNT_UNIT_PRICE || 40),
   };
   const now = Date.now();
   const promos = db.getPromos().filter((p) => {

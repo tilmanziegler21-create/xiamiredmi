@@ -24,6 +24,7 @@ import cron from 'node-cron';
 import db from './services/database.js';
 import { updateOrderRowByOrderId } from './services/sheets.js';
 import { readSheetTable } from './services/sheets.js';
+import { requireAdmin, requireAuthAllowUnverified } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -89,6 +90,10 @@ function originAllowed(origin, allowedList) {
 app.use(helmet());
 const limiter = rateLimit({ windowMs: 60_000, max: 60 });
 app.use('/api/', limiter);
+const authLimiter = rateLimit({ windowMs: 60_000, max: 10, message: 'Слишком много попыток' });
+app.use('/api/auth', authLimiter);
+const spinLimiter = rateLimit({ windowMs: 3_600_000, max: 3, message: 'Лимит спинов' });
+app.use('/api/fortune/spin', spinLimiter);
 app.use(
   cors({
     origin(origin, callback) {
@@ -125,7 +130,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-app.get('/health/sheets', async (req, res) => {
+app.get('/health/sheets', requireAuthAllowUnverified, requireAdmin, async (req, res) => {
   try {
     const city = String(req.query?.city || process.env.CITY_CODES || '').split(',')[0].trim();
     const table = await readSheetTable('products', city);

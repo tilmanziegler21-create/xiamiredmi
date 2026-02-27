@@ -1,13 +1,6 @@
 export function isBlurEnabled() {
   if (typeof window === 'undefined') return true;
   try {
-    if (document.documentElement.classList.contains('tg-webview')) return false;
-  } catch {
-  }
-  const ua = navigator.userAgent || '';
-  if (/Android/i.test(ua)) return false;
-  if (/Telegram/i.test(ua)) return false;
-  try {
     return typeof CSS !== 'undefined' && CSS.supports('backdrop-filter', 'blur(1px)');
   } catch {
     return false;
@@ -16,8 +9,19 @@ export function isBlurEnabled() {
 
 export function blurStyle(value: string) {
   if (!isBlurEnabled()) return {};
+  const ua = typeof navigator !== 'undefined' ? (navigator.userAgent || '') : '';
+  const isAndroid = /Android/i.test(ua);
+  const isTelegram = /Telegram/i.test(ua);
+  const isTgWebview = (() => {
+    try {
+      return document.documentElement.classList.contains('tg-webview');
+    } catch {
+      return false;
+    }
+  })();
+  const blurValue = isAndroid ? '4px' : isTelegram || isTgWebview ? '8px' : value;
   return {
-    backdropFilter: `blur(${value})`,
-    WebkitBackdropFilter: `blur(${value})`,
+    backdropFilter: `blur(${blurValue})`,
+    WebkitBackdropFilter: `blur(${blurValue})`,
   } as const;
 }

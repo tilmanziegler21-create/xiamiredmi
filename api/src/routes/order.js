@@ -1,5 +1,6 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
+import { validateBody } from '../middleware/validate.js';
 import db from '../services/database.js';
 import { getProducts, updateProductStock, appendOrderRow, updateOrderRowByOrderId, getOrders } from '../services/sheets.js';
 import { normalizeOrderStatus } from '../domain/orderStatus.js';
@@ -111,7 +112,7 @@ async function ensureLocalOrderFromSheets(city, orderId, tgId) {
   }
 }
 
-router.post('/create', requireAuth, async (req, res) => {
+router.post('/create', requireAuth, validateBody({ city: 'required' }), async (req, res) => {
   try {
     const { tgId } = req.user;
     const { city, items, promoCode } = req.body;
@@ -354,7 +355,7 @@ router.post('/confirm', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/payment', requireAuth, async (req, res) => {
+router.post('/payment', requireAuth, validateBody({ orderId: 'required' }), async (req, res) => {
   try {
     const { orderId, paymentMethod, city, bonusApplied } = req.body;
     
@@ -500,16 +501,20 @@ router.post('/payment', requireAuth, async (req, res) => {
 router.get('/history', requireAuth, async (req, res) => {
   try {
     const { tgId } = req.user;
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Math.max(0, Number(req.query.offset) || 0);
 
     const city = String(req.query.city || '');
     try {
       if (!city) throw new Error('City is required');
       const rows = await getOrders(city);
-      const filtered = rows
+      const all = rows
         .filter((o) => String(o.user_id) === String(tgId))
         .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));
+      const total = all.length;
+      const slice = all.slice(offset, offset + limit);
       return res.json({
-        orders: filtered.map((order) => ({
+        orders: slice.map((order) => ({
           id: order.order_id,
           status: normalizeOrderStatus(order.status),
           totalAmount: order.total_amount,
@@ -517,13 +522,18 @@ router.get('/history', requireAuth, async (req, res) => {
           createdAt: order.created_at,
           itemCount: order.item_count,
         })),
+        total,
+        limit,
+        offset,
       });
     } catch {
-      const orders = Array.from(db.orders.values())
+      const all = Array.from(db.orders.values())
         .filter((o) => String(o.user_id) === String(tgId) && (!city || String(o.city) === city))
         .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
         .map(mapDbOrderToHistory);
-      return res.json({ orders });
+      const total = all.length;
+      const orders = all.slice(offset, offset + limit);
+      return res.json({ orders, total, limit, offset });
     }
   } catch (error) {
     console.error('Order history error:', error);

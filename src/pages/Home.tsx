@@ -193,8 +193,8 @@ const Home: React.FC = () => {
       alignItems: 'center',
       justifyContent: 'center',
       gap: theme.spacing.sm,
-      background: 'linear-gradient(135deg, rgba(255,45,85,0.15) 0%, rgba(176,0,58,0.1) 100%)',
-      border: '1px solid rgba(255,45,85,0.3)',
+      background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(79,70,229,0.1) 100%)',
+      border: '1px solid rgba(124,58,237,0.3)',
       color: theme.colors.dark.text,
       textDecoration: 'none',
       transition: 'all 0.2s ease',
@@ -350,7 +350,7 @@ const Home: React.FC = () => {
           role="button"
         >
           <div style={styles.quickActionIcon}>
-            <Grid size={24} color="#ff2d55" />
+            <Grid size={24} color="#7c3aed" />
           </div>
           <div style={styles.quickActionText}>Каталог</div>
         </div>
@@ -360,7 +360,7 @@ const Home: React.FC = () => {
           role="button"
         >
           <div style={styles.quickActionIcon}>
-            <Gift size={24} color="#ff2d55" />
+            <Gift size={24} color="#7c3aed" />
           </div>
           <div style={styles.quickActionText}>Акции</div>
         </div>
@@ -370,7 +370,7 @@ const Home: React.FC = () => {
           role="button"
         >
           <div style={styles.quickActionIcon}>
-            <ShoppingCart size={24} color="#ff2d55" />
+            <ShoppingCart size={24} color="#7c3aed" />
           </div>
           <div style={styles.quickActionText}>Корзина</div>
         </div>
@@ -380,7 +380,7 @@ const Home: React.FC = () => {
           role="button"
         >
           <div style={styles.quickActionIcon}>
-            <Star size={24} color="#ff2d55" />
+            <Star size={24} color="#7c3aed" />
           </div>
           <div style={styles.quickActionText}>Бонусы</div>
         </div>
@@ -414,34 +414,48 @@ const Home: React.FC = () => {
       </div>
 
       <div style={styles.categoryGrid}>
-        {categories.map((category) => (
-          <div
-            key={category.name}
-            style={{
-              ...styles.categoryCard,
-              background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)',
-            }}
-            onClick={() => navigate(`/catalog?category=${encodeURIComponent(category.slug)}`)}
-            role="button"
-          >
-            {!ultraLite && category.image ? (
-              <img
-                src={category.image}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : null}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
-            {category.badgeText ? (
-              <div style={{ position: 'absolute', top: theme.spacing.md, right: theme.spacing.md }}>
-                <ChipBadge variant="new" size="sm">{category.badgeText}</ChipBadge>
-              </div>
-            ) : null}
-            <div style={styles.categoryTitle}>{category.name}</div>
-          </div>
-        ))}
+        {categories.length === 0 ? (
+          [...Array(4)].map((_, i) => (
+            <div
+              key={i}
+              style={{
+                ...styles.categoryCard,
+                background: 'rgba(255,255,255,0.05)',
+                border: '1px solid rgba(255,255,255,0.10)',
+                animation: 'pulse 1.5s ease-in-out infinite',
+              }}
+            />
+          ))
+        ) : (
+          categories.map((category) => (
+            <div
+              key={category.name}
+              style={{
+                ...styles.categoryCard,
+                background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)',
+              }}
+              onClick={() => navigate(`/catalog?category=${encodeURIComponent(category.slug)}`)}
+              role="button"
+            >
+              {!ultraLite && category.image ? (
+                <img
+                  src={category.image}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : null}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
+              {category.badgeText ? (
+                <div style={{ position: 'absolute', top: theme.spacing.md, right: theme.spacing.md }}>
+                  <ChipBadge variant="new" size="sm">{category.badgeText}</ChipBadge>
+                </div>
+              ) : null}
+              <div style={styles.categoryTitle}>{category.name}</div>
+            </div>
+          ))
+        )}
       </div>
 
       <SectionDivider title="Наш каталог" />
@@ -508,7 +522,7 @@ const Home: React.FC = () => {
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              background: 'linear-gradient(135deg, rgba(255,45,85,0.22) 0%, rgba(176,0,58,0.18) 100%)',
+              background: 'linear-gradient(135deg, rgba(124,58,237,0.22) 0%, rgba(79,70,229,0.18) 100%)',
               border: '1px solid rgba(255,255,255,0.14)',
             }}
           >

@@ -5,7 +5,7 @@ import { Heart } from 'lucide-react';
 import { cartAPI, favoritesAPI, productAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { AddToCartModal, GlassCard, IconButton, ProductCard, SectionDivider, theme, TasteProfile, TrustIndicators } from '../ui';
+import { AddToCartModal, GlassCard, IconButton, ProductCard, SectionDivider, theme } from '../ui';
 import { useToastStore } from '../store/useToastStore';
 import { formatCurrency } from '../lib/currency';
 import { useCityStore } from '../store/useCityStore';
@@ -25,13 +25,6 @@ type ProductEntity = {
   favorite?: boolean;
 };
 
-type SocialProof = {
-  rating: number;
-  reviewsCount: number;
-  weeklyOrders: number;
-  reviews: string[];
-};
-
 type SimilarProduct = {
   id: string;
   name: string;
@@ -40,34 +33,6 @@ type SimilarProduct = {
   price: number;
   image: string;
   sku?: string;
-};
-
-const seed2 = (seed: string) => {
-  const s = String(seed || '');
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  const r = (h % 1000) / 1000;
-  const r2 = ((h >>> 8) % 1000) / 1000;
-  return { r, r2 };
-};
-
-const trustFor = (seed: string) => {
-  const { r, r2 } = seed2(seed);
-  return {
-    rating: 4.2 + r * 0.8,
-    reviewCount: Math.floor(50 + r2 * 200),
-    weeklyOrders: Math.floor(20 + r * 100),
-  };
-};
-
-const tasteFor = (seed: string) => {
-  const { r, r2 } = seed2(seed);
-  const r3 = ((Math.floor(r * 1000) ^ Math.floor(r2 * 1000)) % 1000) / 1000;
-  return {
-    sweetness: Math.floor(1 + r * 5),
-    fruitiness: Math.floor(1 + r2 * 5),
-    coolness: Math.floor(1 + r3 * 3),
-  };
 };
 
 const assetUrl = (p: string) => {
@@ -122,9 +87,9 @@ const getBrandImage = (brand: string, productImage: string) => {
 const getBrandGradient = (brand: string) => {
   if (!brand) return 'linear-gradient(135deg, #333 0%, #666 100%)';
   const k = brandKey(brand);
-  if (k.compact.includes('elfliq')) return 'linear-gradient(135deg, #ff2d55 0%, #ff6b6b 100%)';
-  if (k.compact.includes('elfic')) return 'linear-gradient(135deg, #ff2d55 0%, #ff6b6b 100%)';
-  if (k.compact.includes('elflic')) return 'linear-gradient(135deg, #ff2d55 0%, #ff6b6b 100%)';
+  if (k.compact.includes('elfliq')) return 'linear-gradient(135deg, #7c3aed 0%, #ff6b6b 100%)';
+  if (k.compact.includes('elfic')) return 'linear-gradient(135deg, #7c3aed 0%, #ff6b6b 100%)';
+  if (k.compact.includes('elflic')) return 'linear-gradient(135deg, #7c3aed 0%, #ff6b6b 100%)';
   if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return 'linear-gradient(135deg, #4a90e2 0%, #357abd 100%)';
   if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)';
   if (k.compact.includes('vaporesso')) return 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)';
@@ -138,7 +103,6 @@ const Product: React.FC = () => {
   const { setCart } = useCartStore();
   const { trackProductView, trackAddToCart } = useAnalytics();
   const [product, setProduct] = React.useState<ProductEntity | null>(null);
-  const [social, setSocial] = React.useState<SocialProof | null>(null);
   const [similar, setSimilar] = React.useState<SimilarProduct[]>([]);
   const [loading, setLoading] = React.useState(true);
   const { city } = useCityStore();
@@ -155,7 +119,6 @@ const Product: React.FC = () => {
       const resp = await productAPI.getById(String(id || ''), city);
       const p: ProductEntity = resp.data.product;
       setProduct(p);
-      setSocial(resp.data.social || null);
       setSimilar(resp.data.similar || []);
       trackProductView(p.id, p.name, p.category);
     } catch (e) {
@@ -433,29 +396,13 @@ const Product: React.FC = () => {
           <div style={styles.pricePill}>{formatCurrency(product.price)}</div>
         </div>
 
-        {/* Taste Profile */}
-        {product.tasteProfile && (
-          <div style={styles.tasteProfileSection}>
-            <TasteProfile {...product.tasteProfile as any} />
-          </div>
-        )}
-
-        {/* Trust Indicators */}
-        {social && (
-          <div style={styles.trustSection}>
-            <TrustIndicators
-              rating={social.rating}
-              reviewCount={social.reviewsCount}
-              weeklyOrders={social.weeklyOrders}
-              showReviewButton={true}
-              onReviewClick={() => toast.push('Функция оценки скоро будет доступна!', 'info')}
-            />
-          </div>
-        )}
-
         {/* Description */}
         <div style={styles.description}>
           {product.description}
+        </div>
+
+        <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.md }}>
+          Будьте первым, кто оставит отзыв
         </div>
 
         <button style={styles.goldButton} onClick={() => setAddOpen(true)}>
@@ -466,19 +413,6 @@ const Product: React.FC = () => {
           В наличии: {product.qtyAvailable}
         </button>
 
-        {/* Reviews Section */}
-        {social?.reviews && social.reviews.length > 0 && (
-          <div style={styles.reviewsSection}>
-            <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium, marginBottom: theme.spacing.sm }}>
-              Последние отзывы:
-            </div>
-            {social.reviews.slice(0, 3).map((review, index) => (
-              <div key={index} style={styles.reviewItem}>
-                <div>"{review}"</div>
-              </div>
-            ))}
-          </div>
-        )}
       </GlassCard>
 
       {similar.length ? (
@@ -493,10 +427,6 @@ const Product: React.FC = () => {
                 price={p.price}
                 image={p.image}
                 brand={p.brand} // Add brand prop
-                tasteProfile={tasteFor(p.id)}
-                trustData={trustFor(p.id)}
-                showTasteProfile={true}
-                showTrustIndicators={true}
                 onClick={(pid) => navigate(`/product/${pid}`)}
                 onAddToCart={(pid) => navigate(`/product/${pid}`)}
               />

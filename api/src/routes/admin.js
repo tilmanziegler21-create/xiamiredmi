@@ -67,9 +67,11 @@ router.get('/orders', async (req, res) => {
   try {
     const city = String(req.query.city || '');
     if (!city) return res.status(400).json({ error: 'City parameter is required' });
+    const limit = Math.min(Number(req.query.limit) || 50, 200);
+    const offset = Math.max(0, Number(req.query.offset) || 0);
     const [rows, couriers] = await Promise.all([getOrders(city), getCouriers(city)]);
     const courierMap = new Map(couriers.map((c) => [String(c.courier_id || ''), c]));
-    const orders = rows
+    const all = rows
       .sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')))
       .map((o) => {
         const dbOrder = db.orders.get(String(o.order_id || ''));
@@ -101,7 +103,9 @@ router.get('/orders', async (req, res) => {
           })),
         };
       });
-    res.json({ orders });
+    const total = all.length;
+    const orders = all.slice(offset, offset + limit);
+    res.json({ orders, total, limit, offset });
   } catch (e) {
     const status = Number(e?.status) || 500;
     if (status === 503) {
@@ -202,6 +206,27 @@ router.delete('/promos/:promoId', async (req, res) => {
   if (!promoId) return res.status(400).json({ error: 'promoId is required' });
   const ok = db.deletePromo(promoId);
   if (!ok) return res.status(404).json({ error: 'Promo not found' });
+  res.json({ ok: true });
+});
+
+router.post('/promos/update', async (req, res) => {
+  const id = String(req.body?.id || '').trim();
+  if (!id) return res.status(400).json({ error: 'id is required' });
+  const payload = {
+    id,
+    title: String(req.body?.title || id),
+    description: String(req.body?.description || ''),
+    type: String(req.body?.type || 'percent'),
+    value: Number(req.body?.value || 0),
+    minTotal: Number(req.body?.minTotal || 0),
+    startsAt: String(req.body?.startsAt || ''),
+    endsAt: String(req.body?.endsAt || ''),
+    active: Boolean(req.body?.active),
+  };
+  if (!Number.isFinite(payload.value)) return res.status(400).json({ error: 'value must be a number' });
+  if (!Number.isFinite(payload.minTotal)) return res.status(400).json({ error: 'minTotal must be a number' });
+  const ok = db.upsertPromo(payload);
+  if (!ok) return res.status(500).json({ error: 'Failed to update promo' });
   res.json({ ok: true });
 });
 

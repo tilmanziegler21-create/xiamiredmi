@@ -119,3 +119,9 @@ export const requireAuthAllowUnverified = (req, res, next) => {
     return res.status(401).json({ error: 'Invalid token' });
   }
 };
+
+export const requireAdmin = (req, res, next) => {
+  const status = String(req.user?.status || '').toLowerCase();
+  if (status === 'admin') return next();
+  return res.status(403).json({ error: 'Forbidden' });
+};

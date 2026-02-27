@@ -1,5 +1,6 @@
 import React from 'react';
 import WebApp from '@twa-dev/sdk';
+import { Heart } from 'lucide-react';
 import { cartAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
 import { AddToCartModal, GlassCard, ProductCard, SectionDivider, theme } from '../ui';
@@ -122,7 +123,15 @@ const Favorites: React.FC = () => {
         ) : (
           <div style={{ gridColumn: '1 / -1' }}>
             <GlassCard padding="lg" variant="elevated">
-              <div style={{ textAlign: 'center', color: theme.colors.dark.textSecondary }}>Пока пусто</div>
+              <div style={{ textAlign: 'center', padding: theme.spacing.xl, opacity: 0.75 }}>
+                <Heart size={48} style={{ marginBottom: theme.spacing.md }} />
+                <div style={{ fontWeight: theme.typography.fontWeight.bold, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: 6 }}>
+                  Здесь пока ничего нет
+                </div>
+                <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+                  Добавляйте товары в избранное, чтобы не потерять
+                </div>
+              </div>
             </GlassCard>
           </div>
         )}

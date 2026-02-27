@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import WebApp from '@twa-dev/sdk';
 import { useNavigate } from 'react-router-dom';
 import { theme, GlassCard, SectionDivider, PrimaryButton, SecondaryButton } from '../ui';
 import { useAuthStore } from '../store/useAuthStore';
@@ -90,7 +91,7 @@ const Bonuses: React.FC = () => {
       setReferralLink(
         botUsername
           ? `https://t.me/${botUsername}?startapp=ref_${encodeURIComponent(code)}`
-          : `https://t.me/share/url?url=${encodeURIComponent(`ref:${code}`)}`,
+          : '',
       );
     } catch (error) {
       toast.push('Ошибка загрузки данных', 'error');
@@ -110,10 +111,33 @@ const Bonuses: React.FC = () => {
 
   const copyReferralLink = async () => {
     try {
+      if (!referralLink) {
+        toast.push('Ссылка недоступна', 'info');
+        return;
+      }
       await navigator.clipboard.writeText(referralLink);
       toast.push('Реферальная ссылка скопирована', 'success');
     } catch {
       toast.push('Ошибка копирования', 'error');
+    }
+  };
+
+  const shareReferral = () => {
+    if (!referralLink) {
+      toast.push('Укажите VITE_BOT_USERNAME, чтобы появилась ссылка', 'info');
+      return;
+    }
+    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Присоединяйся!')}`;
+    try {
+      if ((WebApp as any)?.openTelegramLink) {
+        (WebApp as any).openTelegramLink(shareUrl);
+        return;
+      }
+    } catch {
+    }
+    try {
+      window.open(shareUrl, '_blank', 'noopener,noreferrer');
+    } catch {
     }
   };
 
@@ -139,8 +163,8 @@ const Bonuses: React.FC = () => {
       paddingBottom: theme.spacing.xl,
     },
     balanceCard: {
-      background: 'linear-gradient(135deg, rgba(255,45,85,0.15) 0%, rgba(176,0,58,0.1) 100%)',
-      border: '1px solid rgba(255,45,85,0.3)',
+      background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(109,40,217,0.1) 100%)',
+      border: '1px solid rgba(124,58,237,0.3)',
       borderRadius: theme.radius.lg,
       padding: theme.spacing.lg,
       margin: `0 ${theme.padding.screen} ${theme.spacing.lg}`,
@@ -170,7 +194,7 @@ const Bonuses: React.FC = () => {
     balanceAmount: {
       fontSize: theme.typography.fontSize['3xl'],
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#ff2d55',
+      color: '#7c3aed',
       marginBottom: theme.spacing.xs,
     },
     balanceLabel: {
@@ -221,7 +245,7 @@ const Bonuses: React.FC = () => {
     },
     progressFill: {
       height: '100%',
-      background: 'linear-gradient(135deg, #ff2d55 0%, #b0003a 100%)',
+      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
       borderRadius: theme.radius.sm,
       transition: 'width 0.3s ease',
     },
@@ -344,10 +368,18 @@ const Bonuses: React.FC = () => {
           </PrimaryButton>
           <SecondaryButton
             size="sm"
-            onClick={copyReferralLink}
+            onClick={shareReferral}
           >
-            Скопировать ссылку
+            Поделиться
           </SecondaryButton>
+          {referralLink ? (
+            <SecondaryButton
+              size="sm"
+              onClick={copyReferralLink}
+            >
+              Скопировать ссылку
+            </SecondaryButton>
+          ) : null}
         </div>
       </div>
 
@@ -369,7 +401,7 @@ const Bonuses: React.FC = () => {
                 fontSize: theme.typography.fontSize.sm, 
                 fontWeight: theme.typography.fontWeight.bold,
                 color: transaction.type === 'earned' ? '#4caf50' : 
-                       transaction.type === 'spent' ? '#ff2d55' : '#ffc107'
+                       transaction.type === 'spent' ? '#ef4444' : '#ffc107'
               }}>
                 {transaction.type === 'earned' ? '+' : ''}{transaction.amount} 🍒
               </div>
@@ -384,7 +416,7 @@ const Bonuses: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.md }}>
           <GlassCard padding="md" variant="elevated">
             <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
-              <Gift size={20} color="#ff2d55" />
+              <Gift size={20} color="#7c3aed" />
               <div>
                 <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
                   Делайте покупки

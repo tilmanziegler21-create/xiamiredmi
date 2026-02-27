@@ -11,6 +11,7 @@ import { useCityStore } from '../store/useCityStore';
 import { CityPickerModal } from './CityPickerModal';
 import { useToastStore } from '../store/useToastStore';
 import { cartAPI, referralAPI } from '../services/api';
+import { theme } from './theme';
 
 type Props = {
   children: React.ReactNode;
@@ -27,6 +28,8 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
   const { config, load } = useConfigStore();
   const { city, setCity, ensureCity } = useCityStore();
   const [cityModalOpen, setCityModalOpen] = React.useState(false);
+  const [showProgress, setShowProgress] = React.useState(false);
+  const [progressDone, setProgressDone] = React.useState(false);
 
   const cityTitle = React.useMemo(() => {
     if (!city) return '';
@@ -76,8 +79,33 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
     })();
   }, [location.pathname, location.search, navigate, user?.tgId]);
 
+  React.useEffect(() => {
+    setShowProgress(true);
+    setProgressDone(false);
+    const t1 = window.setTimeout(() => setProgressDone(true), 220);
+    const t2 = window.setTimeout(() => setShowProgress(false), 520);
+    return () => {
+      window.clearTimeout(t1);
+      window.clearTimeout(t2);
+    };
+  }, [location.key]);
+
   return (
     <>
+      {showProgress ? (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            height: 2,
+            width: progressDone ? '100%' : '70%',
+            background: theme.gradients.accent,
+            zIndex: 9999,
+            transition: 'width 0.3s ease',
+          }}
+        />
+      ) : null}
       <TopBar
         onMenuClick={showMenu ? () => setDrawerOpen(true) : () => undefined}
         onCartClick={() => navigate('/cart')}

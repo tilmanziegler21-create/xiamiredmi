@@ -59,6 +59,7 @@ router.get('/orders', requireAuth, async (req, res) => {
         const cd = parseCourierData(o, dbOrder);
         const parsedItems = safeJson(o.items_json, []);
         const items = Array.isArray(parsedItems) ? parsedItems : [];
+        const maskedPhone = cd.phone ? `${String(cd.phone).slice(0, 3)}***${String(cd.phone).slice(-2)}` : null;
         const totalAmount = Number(o.final_amount || 0) > 0 ? Number(o.final_amount || 0) : Number(o.total_amount || 0);
         const courierPayoutPercent = Number(process.env.COURIER_PAYOUT_PERCENT || 20) / 100;
         const payoutAmount = Math.round(totalAmount * courierPayoutPercent * 100) / 100;
@@ -66,7 +67,7 @@ router.get('/orders', requireAuth, async (req, res) => {
           id: String(o.order_id || ''),
           userId: String(o.user_id || ''),
           userName: cd.userName,
-          userPhone: cd.phone,
+          userPhone: maskedPhone,
           deliveryAddress: cd.address,
           comment: cd.comment,
           status: normalizeOrderStatus(o.status),

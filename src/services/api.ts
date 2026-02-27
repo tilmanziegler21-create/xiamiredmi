@@ -54,17 +54,25 @@ api.interceptors.response.use(
       const code = typeof data?.code === 'string' ? data.code : '';
       const missing = Array.isArray(data?.missing) ? data.missing : [];
 
-      let message = serverMessage;
-      if (!message) {
-        if (isTimeout) message = 'Сервер не отвечает (таймаут)';
-        else if (isNetwork) message = 'Нет соединения с сервером';
-        if (status === 401) message = 'Требуется авторизация';
-        else if (status === 403) message = 'Доступ запрещён';
-        else if (status === 404) message = 'Не найдено';
-        else if (status === 409) message = 'Недостаточно товара на складе';
-        else if (status === 503 && code === 'SHEETS_NOT_CONFIGURED') {
-          message = missing.length ? `Sheets не настроен: ${missing.join(', ')}` : 'Sheets не настроен';
-        } else message = 'Ошибка запроса';
+      let message: string;
+      // 401 on non-auth endpoints: token is invalid, force logout + generic message
+      if (status === 401) {
+        try { useAuthStore.getState().logout(); } catch { /* ignore */ }
+        message = 'Требуется авторизация';
+      } else if (isTimeout) {
+        message = 'Сервер не отвечает (таймаут)';
+      } else if (isNetwork) {
+        message = 'Нет соединения с сервером';
+      } else if (status === 403) {
+        message = 'Доступ запрещён';
+      } else if (status === 404) {
+        message = 'Не найдено';
+      } else if (status === 409) {
+        message = serverMessage || 'Недостаточно товара на складе';
+      } else if (status === 503 && code === 'SHEETS_NOT_CONFIGURED') {
+        message = missing.length ? `Sheets не настроен: ${missing.join(', ')}` : 'Sheets не настроен';
+      } else {
+        message = serverMessage || 'Ошибка запроса';
       }
 
       useToastStore.getState().push(message, 'error');
@@ -154,6 +162,7 @@ export const adminAPI = {
   updateOrderStatus: (orderId: string, status: string, city: string) => api.post('/admin/orders/status', { orderId, status, city }),
   toggleCourierStatus: (courierId: string, active: boolean, city: string) => api.post('/admin/couriers/status', { courierId, active, city }),
   togglePromoStatus: (promoId: string, active: boolean) => api.post('/admin/promos/status', { promoId, active }),
+  updatePromo: (payload: any) => api.post('/admin/promos/update', payload),
   deletePromo: (promoId: string) => api.delete(`/admin/promos/${encodeURIComponent(promoId)}`),
   addCourier: (payload: { city: string; courierId: string; name: string; tgId?: string; timeFrom?: string; timeTo?: string }) => api.post('/admin/couriers/add', payload),
 };

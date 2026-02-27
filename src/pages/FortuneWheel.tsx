@@ -27,8 +27,8 @@ const FortuneWheel: React.FC = () => {
   const [tier, setTier] = useState<'regular' | 'vip' | 'elite'>('regular');
 
   const prizes: WheelPrize[] = [
-    { id: '1', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.20, color: '#ff2d55' },
-    { id: '2', name: 'WELCOME10', type: 'discount', value: 10, probability: 0.10, color: '#ff4d6d' },
+    { id: '1', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.20, color: '#7c3aed' },
+    { id: '2', name: 'WELCOME10', type: 'discount', value: 10, probability: 0.10, color: '#8b5cf6' },
     { id: '3', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.18, color: '#ff9800' },
     { id: '4', name: 'Попробуйте еще', type: 'nothing', value: 0, probability: 0.18, color: '#607d8b' },
     { id: '5', name: '10 бонусов', type: 'bonus', value: 10, probability: 0.14, color: '#2196f3' },
@@ -90,9 +90,12 @@ const FortuneWheel: React.FC = () => {
     const sectorAngle = 360 / prizes.length;
     const prizeAngle = prizeIndex * sectorAngle + sectorAngle / 2;
     const spins = 5;
-    const finalRotation = rotation + spins * 360 + (360 - prizeAngle);
-
-    setRotation(finalRotation);
+    const targetAngle = 360 - prizeAngle;
+    setRotation((prev) => {
+      const base = ((prev % 360) + 360) % 360;
+      const desired = spins * 360 + targetAngle;
+      return prev + (desired - base);
+    });
     setSelectedPrize(selected);
 
     setTimeout(() => {
@@ -152,7 +155,7 @@ const FortuneWheel: React.FC = () => {
       height: 0,
       borderLeft: '15px solid transparent',
       borderRight: '15px solid transparent',
-      borderTop: '30px solid #ff2d55',
+      borderTop: '30px solid #7c3aed',
       zIndex: 10,
     },
     centerButton: {
@@ -163,13 +166,13 @@ const FortuneWheel: React.FC = () => {
       width: '80px',
       height: '80px',
       borderRadius: '50%',
-      background: 'linear-gradient(135deg, #ff2d55 0%, #b0003a 100%)',
+      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
       border: '4px solid rgba(255,255,255,0.3)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       cursor: 'pointer',
-      boxShadow: '0 8px 24px rgba(255,45,85,0.4)',
+      boxShadow: '0 8px 24px rgba(124,58,237,0.4)',
       zIndex: 5,
     },
     resultCard: {
@@ -219,7 +222,7 @@ const FortuneWheel: React.FC = () => {
           <div style={{ fontSize: theme.typography.fontSize.sm, color: theme.colors.dark.textSecondary }}>
             Осталось вращений
           </div>
-          <div style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, color: dailySpins > 0 ? '#4caf50' : '#ff2d55' }}>
+          <div style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, color: dailySpins > 0 ? '#4caf50' : '#ef4444' }}>
             {dailySpins}
           </div>
         </div>

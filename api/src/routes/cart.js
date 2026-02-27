@@ -1,6 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import db from '../services/database.js';
+import { validateBody } from '../middleware/validate.js';
 import { getProducts } from '../services/sheets.js';
 
 const router = express.Router();
@@ -53,11 +54,13 @@ router.get('/', requireAuth, async (req, res) => {
 
     let subtotal = 0;
     let quantityDiscount = 0;
+    const minQty = Number(process.env.QTY_DISCOUNT_MIN || process.env.QUANTITY_DISCOUNT_MIN_QTY || 3);
+    const unitPrice = Number(process.env.QTY_DISCOUNT_PRICE || process.env.QUANTITY_DISCOUNT_UNIT_PRICE || 40);
 
     const mappedItems = items.map(item => {
       const qty = Number(item.quantity || 0);
       const price = Number(item.product_price || item.price || 0);
-      const effectivePrice = qty >= 3 && price > 40 ? 40 : price;
+      const effectivePrice = qty >= minQty && price > unitPrice ? unitPrice : price;
       const lineSubtotal = price * qty;
       const lineTotal = effectivePrice * qty;
       subtotal += lineSubtotal;
@@ -99,7 +102,7 @@ router.get('/', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/add', requireAuth, async (req, res) => {
+router.post('/add', requireAuth, validateBody({ productId: 'required', city: 'required', quantity: 'number' }), async (req, res) => {
   try {
     const { tgId } = req.user;
     const { productId, quantity = 1, city, variant } = req.body;
@@ -160,7 +163,7 @@ router.post('/add', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/remove', requireAuth, (req, res) => {
+router.post('/remove', requireAuth, validateBody({ itemId: 'required' }), (req, res) => {
   try {
     const { itemId } = req.body;
     
@@ -178,7 +181,7 @@ router.post('/remove', requireAuth, (req, res) => {
   }
 });
 
-router.post('/update', requireAuth, async (req, res) => {
+router.post('/update', requireAuth, validateBody({ itemId: 'required', quantity: 'number' }), async (req, res) => {
   try {
     const { itemId, quantity } = req.body;
     if (!itemId) return res.status(400).json({ error: 'Item ID is required' });
@@ -215,7 +218,7 @@ router.post('/update', requireAuth, async (req, res) => {
   }
 });
 
-router.post('/clear', requireAuth, (req, res) => {
+router.post('/clear', requireAuth, validateBody({ city: 'required' }), (req, res) => {
   try {
     const { tgId } = req.user;
     const { city } = req.body;

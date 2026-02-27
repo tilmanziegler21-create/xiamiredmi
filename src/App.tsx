@@ -24,6 +24,47 @@ import Bonuses from './pages/Bonuses';
 import FortuneWheel from './pages/FortuneWheel';
 import CourierRegistration from './pages/CourierRegistration';
 
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: theme.padding.screen }}>
+          <GlassCard padding="lg" variant="elevated">
+            <div style={{ color: theme.colors.dark.accentRed, fontWeight: theme.typography.fontWeight.bold, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: theme.spacing.md }}>
+              Ошибка
+            </div>
+            <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.lg }}>
+              Что-то пошло не так. Попробуйте обновить экран.
+            </div>
+            <PrimaryButton
+              fullWidth
+              onClick={() => {
+                this.setState({ hasError: false });
+                try {
+                  window.location.reload();
+                } catch {
+                }
+              }}
+            >
+              Обновить
+            </PrimaryButton>
+          </GlassCard>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function App() {
   const { user, setUser, setLoading, isLoading } = useAuthStore();
   const authStartedRef = React.useRef(false);
@@ -236,35 +277,37 @@ function App() {
           <div className="aurora a2" />
           <div className="noise" />
           <div className="app-content">
-            {!user.ageVerified ? (
-              <Routes>
-                <Route path="/age" element={<AgeVerify />} />
-                <Route path="*" element={<Navigate to="/age" replace />} />
-              </Routes>
-            ) : (
-              <Routes>
-                <Route path="/" element={<Navigate to="/home" replace />} />
-                <Route path="/home" element={<AppShell><Home /></AppShell>} />
-                <Route path="/categories" element={<AppShell><Categories /></AppShell>} />
-                <Route path="/catalog" element={<AppShell><Catalog /></AppShell>} />
-                <Route path="/product/:id" element={<AppShell showMenu={false}><Product /></AppShell>} />
-                <Route path="/cart" element={<AppShell showMenu={false}><Cart /></AppShell>} />
-                <Route path="/checkout" element={<AppShell showMenu={false}><Checkout /></AppShell>} />
-                <Route path="/orders" element={<AppShell><Orders /></AppShell>} />
-                <Route path="/order/:id" element={<AppShell showMenu={false}><OrderDetails /></AppShell>} />
-                <Route path="/favorites" element={<AppShell><Favorites /></AppShell>} />
-                <Route path="/referral" element={<AppShell><Referral /></AppShell>} />
-                <Route path="/support" element={<AppShell><Support /></AppShell>} />
-                <Route path="/promotions" element={<AppShell><Promotions /></AppShell>} />
-                <Route path="/bonuses" element={<AppShell><Bonuses /></AppShell>} />
-                <Route path="/fortune" element={<AppShell><FortuneWheel /></AppShell>} />
-                <Route path="/profile" element={<AppShell><Account /></AppShell>} />
-                <Route path="/courier" element={(user.status === 'courier' || user.status === 'admin') ? <AppShell><Courier /></AppShell> : <Navigate to="/home" replace />} />
-                <Route path="/admin" element={user.status === 'admin' ? <AppShell><Admin /></AppShell> : <Navigate to="/home" replace />} />
-                <Route path="/courier-registration" element={user.status === 'admin' ? <AppShell><CourierRegistration /></AppShell> : <Navigate to="/home" replace />} />
-                <Route path="*" element={<Navigate to="/home" replace />} />
-              </Routes>
-            )}
+            <ErrorBoundary>
+              {!user.ageVerified ? (
+                <Routes>
+                  <Route path="/age" element={<AgeVerify />} />
+                  <Route path="*" element={<Navigate to="/age" replace />} />
+                </Routes>
+              ) : (
+                <Routes>
+                  <Route path="/" element={<Navigate to="/home" replace />} />
+                  <Route path="/home" element={<AppShell><Home /></AppShell>} />
+                  <Route path="/categories" element={<AppShell><Categories /></AppShell>} />
+                  <Route path="/catalog" element={<AppShell><Catalog /></AppShell>} />
+                  <Route path="/product/:id" element={<AppShell showMenu={false}><Product /></AppShell>} />
+                  <Route path="/cart" element={<AppShell showMenu={false}><Cart /></AppShell>} />
+                  <Route path="/checkout" element={<AppShell showMenu={false}><Checkout /></AppShell>} />
+                  <Route path="/orders" element={<AppShell><Orders /></AppShell>} />
+                  <Route path="/order/:id" element={<AppShell showMenu={false}><OrderDetails /></AppShell>} />
+                  <Route path="/favorites" element={<AppShell><Favorites /></AppShell>} />
+                  <Route path="/referral" element={<AppShell><Referral /></AppShell>} />
+                  <Route path="/support" element={<AppShell><Support /></AppShell>} />
+                  <Route path="/promotions" element={<AppShell><Promotions /></AppShell>} />
+                  <Route path="/bonuses" element={<AppShell><Bonuses /></AppShell>} />
+                  <Route path="/fortune" element={<AppShell><FortuneWheel /></AppShell>} />
+                  <Route path="/profile" element={<AppShell><Account /></AppShell>} />
+                  <Route path="/courier" element={(user.status === 'courier' || user.status === 'admin') ? <AppShell><Courier /></AppShell> : <Navigate to="/home" replace />} />
+                  <Route path="/admin" element={user.status === 'admin' ? <AppShell><Admin /></AppShell> : <Navigate to="/home" replace />} />
+                  <Route path="/courier-registration" element={user.status === 'admin' ? <AppShell><CourierRegistration /></AppShell> : <Navigate to="/home" replace />} />
+                  <Route path="*" element={<Navigate to="/home" replace />} />
+                </Routes>
+              )}
+            </ErrorBoundary>
           </div>
         </div>
       </Router>

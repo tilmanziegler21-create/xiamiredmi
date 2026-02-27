@@ -54,6 +54,95 @@ type Promo = {
   currentUses?: number;
 };
 
+const PromoEditModal: React.FC<{
+  promo: Promo;
+  onClose: () => void;
+  onSave: (data: { id: string; title: string; description: string; type: string; value: number; active: boolean; startsAt?: string; endsAt?: string; minTotal?: number }) => Promise<void>;
+}> = ({ promo, onClose, onSave }) => {
+  const toast = useToastStore();
+  const [busy, setBusy] = useState(false);
+  const [id, setId] = useState(String(promo.id || '').trim());
+  const [title, setTitle] = useState(String(promo.title || '').trim());
+  const [description, setDescription] = useState(String(promo.description || '').trim());
+  const [type, setType] = useState<Promo['type']>(promo.type);
+  const [value, setValue] = useState(String(promo.discount || 0));
+  const [minTotal, setMinTotal] = useState(String(promo.minOrderAmount || 0));
+  const [endsAt, setEndsAt] = useState(String(promo.validUntil || ''));
+  const [active, setActive] = useState(Boolean(promo.isActive));
+
+  const submit = async () => {
+    const code = String(id || '').trim();
+    if (!code) {
+      toast.push('Код обязателен', 'error');
+      return;
+    }
+    const v = Number(String(value || '').replace(',', '.'));
+    if (!Number.isFinite(v)) {
+      toast.push('Скидка должна быть числом', 'error');
+      return;
+    }
+    const mt = Number(String(minTotal || '').replace(',', '.'));
+    const mappedType = type === 'percentage' ? 'percent' : type === 'fixed' ? 'fixed' : 'gift';
+    setBusy(true);
+    try {
+      await onSave({
+        id: code,
+        title: String(title || code),
+        description: String(description || ''),
+        type: mappedType,
+        value: v,
+        active,
+        endsAt: String(endsAt || ''),
+        minTotal: Number.isFinite(mt) ? mt : 0,
+      });
+      toast.push('Сохранено', 'success');
+      onClose();
+    } catch {
+      toast.push('Ошибка сохранения', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 3000, background: 'rgba(0,0,0,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: theme.padding.screen }}>
+      <GlassCard padding="lg" variant="elevated" style={{ width: '100%', maxWidth: 520 }}>
+        <div style={{ fontWeight: theme.typography.fontWeight.bold, letterSpacing: '0.08em', textTransform: 'uppercase' as const, marginBottom: theme.spacing.md }}>
+          Редактирование промо
+        </div>
+
+        <div style={{ display: 'grid', gap: theme.spacing.sm }}>
+          <input value={id} onChange={(e) => setId(e.target.value)} placeholder="Код" style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }} />
+          <input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Название" style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }} />
+          <input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Описание" style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.sm }}>
+            <select value={type} onChange={(e) => setType(e.target.value as any)} style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}>
+              <option value="percentage">Процент</option>
+              <option value="fixed">Фикс</option>
+              <option value="gift">Подарок</option>
+            </select>
+            <input value={value} onChange={(e) => setValue(e.target.value)} placeholder="Скидка" inputMode="decimal" style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }} />
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.sm }}>
+            <input value={minTotal} onChange={(e) => setMinTotal(e.target.value)} placeholder="Мин. сумма" inputMode="decimal" style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }} />
+            <input value={endsAt} onChange={(e) => setEndsAt(e.target.value)} placeholder="Действует до (ISO)" style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }} />
+          </div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm, color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+            <input type="checkbox" checked={active} onChange={(e) => setActive(e.target.checked)} />
+            Активен
+          </label>
+        </div>
+
+        <div style={{ height: theme.spacing.md }} />
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.sm }}>
+          <SecondaryButton fullWidth onClick={onClose} disabled={busy}>Отмена</SecondaryButton>
+          <PrimaryButton fullWidth onClick={submit} disabled={busy}>{busy ? 'Сохранение…' : 'Сохранить'}</PrimaryButton>
+        </div>
+      </GlassCard>
+    </div>
+  );
+};
+
 const Admin: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastStore();
@@ -62,6 +151,7 @@ const Admin: React.FC = () => {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [couriers, setCouriers] = useState<CourierRow[]>([]);
   const [promos, setPromos] = useState<Promo[]>([]);
+  const [editPromo, setEditPromo] = useState<Promo | null>(null);
   const [activeTab, setActiveTab] = useState<'orders' | 'couriers' | 'promos' | 'stats'>('stats');
   const [selectedDate, setSelectedDate] = useState<'today' | 'week' | 'month'>('today');
   const [stats, setStats] = useState({
@@ -96,7 +186,7 @@ const Admin: React.FC = () => {
         title: String(p.title || p.id || ''),
         description: String(p.description || ''),
         discount: Number(p.value || 0),
-        type: String(p.type || '') === 'percent' ? 'percentage' : 'fixed',
+        type: String(p.type || '') === 'gift' ? 'gift' : String(p.type || '') === 'percent' ? 'percentage' : 'fixed',
         validUntil: String(p.endsAt || ''),
         isActive: Boolean(p.active),
         terms: [],
@@ -160,6 +250,11 @@ const Admin: React.FC = () => {
     }
   };
 
+  const savePromo = async (payload: any) => {
+    await adminAPI.updatePromo(payload);
+    await loadData();
+  };
+
   const getStatusColor = (status: AdminOrder['status']) => {
     switch (status) {
       case 'pending': return '#ffc107';
@@ -213,8 +308,8 @@ const Admin: React.FC = () => {
       padding: '8px 16px',
       borderRadius: theme.radius.md,
       border: '1px solid rgba(255,255,255,0.14)',
-      background: active ? 'rgba(255,45,85,0.2)' : 'rgba(255,255,255,0.06)',
-      color: active ? '#ff2d55' : theme.colors.dark.text,
+      background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)',
+      color: active ? '#7c3aed' : theme.colors.dark.text,
       fontSize: theme.typography.fontSize.sm,
       fontWeight: active ? theme.typography.fontWeight.bold : theme.typography.fontWeight.medium,
       cursor: 'pointer',
@@ -231,8 +326,8 @@ const Admin: React.FC = () => {
       padding: '6px 12px',
       borderRadius: theme.radius.sm,
       border: '1px solid rgba(255,255,255,0.14)',
-      background: active ? 'rgba(255,45,85,0.2)' : 'rgba(255,255,255,0.06)',
-      color: active ? '#ff2d55' : theme.colors.dark.text,
+      background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)',
+      color: active ? '#7c3aed' : theme.colors.dark.text,
       fontSize: theme.typography.fontSize.xs,
       fontWeight: active ? theme.typography.fontWeight.bold : theme.typography.fontWeight.medium,
       cursor: 'pointer',
@@ -254,7 +349,7 @@ const Admin: React.FC = () => {
     statValue: {
       fontSize: theme.typography.fontSize['2xl'],
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#ff2d55',
+      color: '#7c3aed',
       marginBottom: theme.spacing.xs,
     },
     statLabel: {
@@ -337,7 +432,7 @@ const Admin: React.FC = () => {
     totalValue: {
       fontSize: theme.typography.fontSize.lg,
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#ff2d55',
+      color: '#7c3aed',
     },
     actionButtons: {
       display: 'flex',
@@ -390,7 +485,7 @@ const Admin: React.FC = () => {
     promoDiscount: {
       fontSize: theme.typography.fontSize['2xl'],
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#ff2d55',
+      color: '#7c3aed',
       marginBottom: theme.spacing.xs,
     },
     promoDescription: {
@@ -707,7 +802,10 @@ const Admin: React.FC = () => {
           <div style={{ padding: `0 ${theme.padding.screen}` }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.md }}>
               <div style={styles.statLabel}>Активных акций: {stats.activePromos}</div>
-              <PrimaryButton size="sm" onClick={() => navigate('/promo-editor')}>
+              <PrimaryButton
+                size="sm"
+                onClick={() => setEditPromo({ id: '', title: '', description: '', discount: 0, type: 'percentage', validUntil: '', isActive: true, terms: [] })}
+              >
                 <Plus size={16} style={{ marginRight: '4px' }} />
                 Создать акцию
               </PrimaryButton>
@@ -780,7 +878,7 @@ const Admin: React.FC = () => {
                     </PrimaryButton>
                     <SecondaryButton
                       size="sm"
-                      onClick={() => navigate(`/promo-editor/${promo.id}`)}
+                      onClick={() => setEditPromo(promo)}
                     >
                       <Edit size={16} style={{ marginRight: '4px' }} />
                       Редактировать
@@ -800,6 +898,14 @@ const Admin: React.FC = () => {
           </div>
         </>
       )}
+
+      {editPromo ? (
+        <PromoEditModal
+          promo={editPromo}
+          onClose={() => setEditPromo(null)}
+          onSave={savePromo}
+        />
+      ) : null}
     </div>
   );
 };

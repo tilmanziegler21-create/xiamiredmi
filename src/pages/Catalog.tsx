@@ -45,6 +45,7 @@ const Catalog: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
   const [query, setQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [addOpen, setAddOpen] = useState(false);
   const [addProduct, setAddProduct] = useState<Product | null>(null);
   const [visibleCount, setVisibleCount] = useState(40);
@@ -70,25 +71,17 @@ const Catalog: React.FC = () => {
     }
   })();
 
-  const trustFor = (seed: string) => {
-    const s = String(seed || '');
-    let h = 0;
-    for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-    const r = (h % 1000) / 1000;
-    const r2 = ((h >>> 8) % 1000) / 1000;
-    return {
-      rating: 4.2 + r * 0.8,
-      reviewCount: Math.floor(50 + r2 * 200),
-      weeklyOrders: Math.floor(20 + r * 100),
-    };
-  };
-
   useEffect(() => {
     const qCategory = searchParams.get('category');
     if (qCategory) {
       setFilters((s) => ({ ...s, category: qCategory }));
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setDebouncedQuery(query), 200);
+    return () => window.clearTimeout(t);
+  }, [query]);
 
   const applyFilters = (source: Product[]) => {
     const toNum = (v: string) => {
@@ -183,7 +176,7 @@ const Catalog: React.FC = () => {
   };
 
   const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
+    const q = debouncedQuery.trim().toLowerCase();
     if (products.length === 0) return [];
     if (!q) {
       return products;
@@ -192,7 +185,7 @@ const Catalog: React.FC = () => {
       [p.name, p.brand, p.category].filter(Boolean).some((v) => String(v).toLowerCase().includes(q)),
     );
     return result;
-  }, [products, query]);
+  }, [products, debouncedQuery]);
 
   const visible = useMemo(() => {
     return filtered.slice(0, Math.max(0, visibleCount));
@@ -316,9 +309,9 @@ const Catalog: React.FC = () => {
       borderRadius: 999,
       cursor: 'pointer',
       userSelect: 'none' as const,
-      background: active ? 'rgba(255,45,85,0.2)' : 'rgba(255,255,255,0.06)',
-      border: active ? '1px solid rgba(255,45,85,0.5)' : '1px solid rgba(255,255,255,0.14)',
-      color: active ? '#ff2d55' : theme.colors.dark.text,
+      background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)',
+      border: active ? '1px solid rgba(124,58,237,0.5)' : '1px solid rgba(255,255,255,0.14)',
+      color: active ? '#7c3aed' : theme.colors.dark.text,
       fontSize: theme.typography.fontSize.sm,
       letterSpacing: '0.06em',
       textTransform: 'uppercase' as const,
@@ -382,12 +375,6 @@ const Catalog: React.FC = () => {
               brand={p.brand}
               isNew={Boolean((p as any).isNew)}
               stock={(p as any).qtyAvailable || 0}
-              tasteProfile={p.tasteProfile}
-              trustData={{
-                ...trustFor(p.id),
-              }}
-              showTasteProfile={!liteCards}
-              showTrustIndicators={!liteCards}
               onClick={(id) => navigate(`/product/${id}`)}
               onAddToCart={() => openAdd(p)}
               isFavorite={favorites.isFavorite(p.id)}

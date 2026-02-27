@@ -117,8 +117,8 @@ const Profile: React.FC = () => {
       case 'VIP':
         return {
           title: 'VIP Клиент',
-          color: '#ff2d55',
-          bgColor: 'rgba(255,45,85,0.14)',
+          color: '#7c3aed',
+          bgColor: 'rgba(124,58,237,0.14)',
           icon: '👑',
           benefits: ['5% скидка на все товары', 'Приоритетная доставка', 'Персональный менеджер']
         };
@@ -153,8 +153,8 @@ const Profile: React.FC = () => {
     headerCard: {
       margin: `0 ${theme.padding.screen} ${theme.spacing.lg}`,
       borderRadius: 22,
-      background: 'linear-gradient(135deg, rgba(255,45,85,0.15) 0%, rgba(176,0,58,0.1) 100%)',
-      border: '1px solid rgba(255,45,85,0.3)',
+      background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(109,40,217,0.1) 100%)',
+      border: '1px solid rgba(124,58,237,0.3)',
       ...blurStyle(theme.blur.glass),
       boxShadow: theme.shadow.card,
     },
@@ -203,7 +203,7 @@ const Profile: React.FC = () => {
     balanceValue: {
       fontSize: 28,
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#ff2d55',
+      color: '#7c3aed',
       letterSpacing: '0.02em',
     },
     tierBox: {
@@ -237,8 +237,8 @@ const Profile: React.FC = () => {
       letterSpacing: '0.06em',
       textTransform: 'uppercase' as const,
       color: active ? '#fff' : 'rgba(255,255,255,0.55)',
-      background: active ? 'linear-gradient(135deg, #ff2d55 0%, #b0003a 100%)' : 'rgba(255,255,255,0.06)',
-      border: active ? '1px solid rgba(255,45,85,0.42)' : '1px solid rgba(255,255,255,0.14)',
+      background: active ? 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)' : 'rgba(255,255,255,0.06)',
+      border: active ? '1px solid rgba(124,58,237,0.42)' : '1px solid rgba(255,255,255,0.14)',
       boxShadow: active ? theme.shadow.glow : 'none',
       transition: 'all 0.2s ease',
     }),
@@ -442,7 +442,7 @@ const Profile: React.FC = () => {
             <GlassCard padding="lg" variant="elevated">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: theme.spacing.md }}>
                 <div style={{ color: theme.colors.dark.textSecondary }}>Доступно бонусов</div>
-                <div style={{ fontSize: theme.typography.fontSize.xl, fontWeight: theme.typography.fontWeight.bold, color: '#ff2d55' }}>
+                <div style={{ fontSize: theme.typography.fontSize.xl, fontWeight: theme.typography.fontWeight.bold, color: '#7c3aed' }}>
                   {bonusBalance.toLocaleString()}
                 </div>
               </div>

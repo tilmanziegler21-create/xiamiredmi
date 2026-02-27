@@ -44,6 +44,9 @@ const Checkout: React.FC = () => {
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>('cash');
 
   const idempotencyKeyRef = React.useRef<string>('');
+  React.useEffect(() => {
+    idempotencyKeyRef.current = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+  }, []);
 
   const [address, setAddress] = React.useState('');
   const [couriers, setCouriers] = React.useState<Array<{ courier_id: string; name: string; tg_id: string; time_from?: string; time_to?: string }>>([]);
@@ -155,8 +158,9 @@ const Checkout: React.FC = () => {
       if (!courierId) errors.push('Выбери курьера');
       if (!deliveryTime) errors.push('Выбери время');
     }
-    const wantBonus = Math.max(0, Number(String(bonusWant || '').replace(',', '.')) || 0);
-    if (wantBonus > 0 && wantBonus > bonusBalance) {
+    const wantBonusRaw = Number(String(bonusWant || '').replace(',', '.')) || 0;
+    const wantBonus = Math.max(0, Math.min(wantBonusRaw, bonusBalance));
+    if (wantBonusRaw !== wantBonus) {
       errors.push('Бонусов больше, чем на балансе');
     }
     if (errors.length) {
@@ -232,7 +236,7 @@ const Checkout: React.FC = () => {
       }
 
       navigate('/orders');
-      idempotencyKeyRef.current = '';
+      idempotencyKeyRef.current = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     } catch (e) {
       console.error('Failed to create order:', e);
       try {
@@ -448,7 +452,18 @@ const Checkout: React.FC = () => {
             <span>{bonusBalance.toLocaleString()} 🍒</span>
           </div>
           <div style={styles.label}>Сколько списать</div>
-          <input value={bonusWant} onChange={(e) => setBonusWant(e.target.value)} placeholder="0" style={styles.input} inputMode="decimal" />
+          <input
+            value={bonusWant}
+            onChange={(e) => setBonusWant(e.target.value)}
+            onBlur={() => {
+              const raw = Number(String(bonusWant || '').replace(',', '.')) || 0;
+              const clamped = Math.max(0, Math.min(raw, bonusBalance));
+              setBonusWant(clamped ? String(clamped) : '');
+            }}
+            placeholder="0"
+            style={styles.input}
+            inputMode="decimal"
+          />
         </GlassCard>
       </div>
 

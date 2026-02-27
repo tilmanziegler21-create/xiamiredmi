@@ -107,9 +107,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const getBrandGradient = (brand: string) => {
     if (!brand) return 'linear-gradient(135deg, #333 0%, #666 100%)';
     const k = brandKey(brand);
-    if (k.compact.includes('elfliq')) return 'linear-gradient(135deg, #ff2d55 0%, #ff6b6b 100%)';
-    if (k.compact.includes('elfic')) return 'linear-gradient(135deg, #ff2d55 0%, #ff6b6b 100%)';
-    if (k.compact.includes('elflic')) return 'linear-gradient(135deg, #ff2d55 0%, #ff6b6b 100%)';
+    if (k.compact.includes('elfliq')) return 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)';
+    if (k.compact.includes('elfic')) return 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)';
+    if (k.compact.includes('elflic')) return 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)';
     if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return 'linear-gradient(135deg, #4a90e2 0%, #357abd 100%)';
     if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)';
     if (k.compact.includes('vaporesso')) return 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)';
@@ -207,8 +207,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       color: '#0b0b0b',
     },
     outOfStock: {
-      background: '#ffffff',
-      color: '#0b0b0b',
+      background: theme.colors.dark.accentRed,
+      color: '#ffffff',
     },
     lowStock: {
       background: '#ffffff',
@@ -244,6 +244,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {resolvedImage ? <img src={resolvedImage} alt="" style={styles.bgImage} loading="lazy" decoding="async" /> : null}
       <div style={styles.scrim} />
+      {stock === 0 ? (
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2, borderRadius: 'inherit', pointerEvents: 'none' }} />
+      ) : null}
       <div style={styles.content}>
         {/* Stock Status Badge */}
         {stock !== undefined && (

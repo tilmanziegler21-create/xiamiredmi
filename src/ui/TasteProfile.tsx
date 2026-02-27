@@ -51,8 +51,8 @@ export const TasteProfile: React.FC<TasteProfileProps> = ({
       transition: 'all 0.2s ease',
     },
     dotFilled: {
-      backgroundColor: '#ff2d55',
-      boxShadow: '0 2px 4px rgba(255,45,85,0.3)',
+      backgroundColor: '#7c3aed',
+      boxShadow: '0 2px 4px rgba(124,58,237,0.3)',
     },
     dotEmpty: {
       backgroundColor: 'rgba(255,255,255,0.1)',

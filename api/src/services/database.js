@@ -448,6 +448,7 @@ class InMemoryDB {
     if (!p) return false;
     p.active = Boolean(active);
     this.promos.set(String(promoId), p);
+    this.persistState();
     return true;
   }
 
@@ -460,6 +461,28 @@ class InMemoryDB {
     const ok = this.promos.delete(String(promoId));
     if (ok) this.persistState();
     return ok;
+  }
+
+  upsertPromo(promo) {
+    const id = String(promo?.id || '').trim();
+    if (!id) return false;
+    const prev = this.promos.get(id) || {};
+    const next = {
+      ...prev,
+      ...promo,
+      id,
+      title: String(promo?.title ?? prev?.title ?? id),
+      description: String(promo?.description ?? prev?.description ?? ''),
+      type: String(promo?.type ?? prev?.type ?? 'percent'),
+      value: Number(promo?.value ?? prev?.value ?? 0),
+      minTotal: Number(promo?.minTotal ?? prev?.minTotal ?? 0),
+      startsAt: String(promo?.startsAt ?? prev?.startsAt ?? ''),
+      endsAt: String(promo?.endsAt ?? prev?.endsAt ?? ''),
+      active: Boolean(promo?.active ?? prev?.active ?? false),
+    };
+    this.promos.set(id, next);
+    this.persistState();
+    return true;
   }
 
   getUser(tgId) {

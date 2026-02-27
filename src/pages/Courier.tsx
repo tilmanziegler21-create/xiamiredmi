@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import WebApp from '@twa-dev/sdk';
 import { useNavigate } from 'react-router-dom';
 import { courierAPI } from '../services/api';
 import { GlassCard, SectionDivider, PrimaryButton, SecondaryButton, theme } from '../ui';
@@ -61,6 +62,14 @@ const Courier: React.FC = () => {
   }, [city]);
 
   const updateOrderStatus = async (orderId: string, newStatus: CourierOrder['status']) => {
+    const confirmed = await new Promise<boolean>((resolve) => {
+      try {
+        WebApp.showConfirm(`Изменить статус на "${getStatusText(newStatus)}"?`, (ok) => resolve(Boolean(ok)));
+      } catch {
+        resolve(window.confirm(`Изменить статус на "${getStatusText(newStatus)}"?`));
+      }
+    });
+    if (!confirmed) return;
     try {
       await courierAPI.updateOrderStatus(orderId, newStatus, city);
       toast.push('Статус заказа обновлен', 'success');
@@ -149,8 +158,8 @@ const Courier: React.FC = () => {
       padding: '8px 16px',
       borderRadius: theme.radius.md,
       border: '1px solid rgba(255,255,255,0.14)',
-      background: active ? 'rgba(255,45,85,0.2)' : 'rgba(255,255,255,0.06)',
-      color: active ? '#ff2d55' : theme.colors.dark.text,
+      background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)',
+      color: active ? '#7c3aed' : theme.colors.dark.text,
       fontSize: theme.typography.fontSize.sm,
       fontWeight: active ? theme.typography.fontWeight.bold : theme.typography.fontWeight.medium,
       cursor: 'pointer',
@@ -230,7 +239,7 @@ const Courier: React.FC = () => {
     totalValue: {
       fontSize: theme.typography.fontSize.lg,
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#ff2d55',
+      color: '#7c3aed',
     },
     actionButtons: {
       display: 'flex',

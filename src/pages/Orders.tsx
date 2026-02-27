@@ -1,6 +1,7 @@
 import React from 'react';
 import WebApp from '@twa-dev/sdk';
 import { useNavigate } from 'react-router-dom';
+import { Package } from 'lucide-react';
 import { orderAPI } from '../services/api';
 import { GlassCard, SectionDivider, theme } from '../ui';
 import { useToastStore } from '../store/useToastStore';
@@ -188,7 +189,15 @@ const Orders: React.FC = () => {
           ))
         ) : (
           <GlassCard padding="lg" variant="elevated">
-            <div style={{ textAlign: 'center', color: theme.colors.dark.textSecondary }}>Пока нет заказов</div>
+            <div style={{ textAlign: 'center', padding: theme.spacing.xl, opacity: 0.75 }}>
+              <Package size={48} style={{ marginBottom: theme.spacing.md }} />
+              <div style={{ fontWeight: theme.typography.fontWeight.bold, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: 6 }}>
+                Здесь пока ничего нет
+              </div>
+              <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+                Оформите первый заказ в каталоге
+              </div>
+            </div>
           </GlassCard>
         )}
       </div>
