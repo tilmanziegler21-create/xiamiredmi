@@ -74,7 +74,7 @@ const AgeVerify: React.FC = () => {
       justifyContent: 'center',
       padding: theme.padding.screen,
       background:
-        'radial-gradient(1200px 800px at 20% 10%, rgba(124,58,237,0.16) 0%, rgba(0,0,0,0) 60%), radial-gradient(1200px 800px at 80% 40%, rgba(255,168,0,0.10) 0%, rgba(0,0,0,0) 62%), linear-gradient(180deg, #070607 0%, #0f070b 100%)',
+        'radial-gradient(1200px 800px at 20% 10%, rgba(255,45,85,0.16) 0%, rgba(0,0,0,0) 60%), radial-gradient(1200px 800px at 80% 40%, rgba(255,214,10,0.10) 0%, rgba(0,0,0,0) 62%), linear-gradient(180deg, #070607 0%, #0f070b 100%)',
     },
     card: {
       width: '100%',
@@ -89,7 +89,7 @@ const AgeVerify: React.FC = () => {
       width: 80,
       height: 80,
       borderRadius: 999,
-      background: 'rgba(124,58,237,0.15)',
+      background: 'rgba(255,45,85,0.14)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',

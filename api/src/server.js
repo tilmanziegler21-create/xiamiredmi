@@ -22,8 +22,7 @@ import referralRoutes from './routes/referral.js';
 import fortuneRoutes from './routes/fortune.js';
 import cron from 'node-cron';
 import db from './services/database.js';
-import { updateOrderRowByOrderId } from './services/sheets.js';
-import { readSheetTable } from './services/sheets.js';
+import { updateOrderRowByOrderId, readSheetTable, listSheetTabs } from './services/sheets.js';
 import { requireAdmin, requireAuthAllowUnverified } from './middleware/auth.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -165,6 +164,22 @@ app.get('/health/sheets', requireAuthAllowUnverified, requireAdmin, async (req, 
       status,
     };
     res.status(status).json(payload);
+  }
+});
+
+app.get('/health/sheets/tabs', requireAuthAllowUnverified, requireAdmin, async (_req, res) => {
+  try {
+    const tabs = await listSheetTabs();
+    res.json({ ok: true, tabs });
+  } catch (e) {
+    const status = Number(e?.status) || Number(e?.response?.status) || 500;
+    res.status(status).json({
+      ok: false,
+      error: String(e?.message || 'Sheets error'),
+      code: e?.code,
+      missing: e?.missing,
+      status,
+    });
   }
 });
 

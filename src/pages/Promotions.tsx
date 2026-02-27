@@ -87,8 +87,8 @@ const Promotions: React.FC = () => {
       paddingBottom: theme.spacing.xl,
     },
     promotionCard: {
-      background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(109,40,217,0.1) 100%)',
-      border: '1px solid rgba(124,58,237,0.3)',
+      background: 'linear-gradient(135deg, rgba(255,45,85,0.18) 0%, rgba(176,0,58,0.10) 100%)',
+      border: '1px solid rgba(255,45,85,0.28)',
       borderRadius: theme.radius.lg,
       padding: theme.spacing.lg,
       marginBottom: theme.spacing.md,
@@ -106,7 +106,7 @@ const Promotions: React.FC = () => {
       position: 'absolute' as const,
       top: theme.spacing.md,
       right: theme.spacing.md,
-      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+      background: theme.gradients.primary,
       color: '#ffffff',
       padding: '4px 8px',
       borderRadius: theme.radius.sm,
@@ -203,7 +203,7 @@ const Promotions: React.FC = () => {
                promotion.type === 'fixed' ? `-${formatCurrency(promotion.discount)}` : 'ПОДАРОК'}
             </div>
             <div style={styles.iconWrapper}>
-              <Gift size={24} color="#7c3aed" />
+              <Gift size={24} color={theme.colors.dark.primary} />
             </div>
             <h4 style={styles.title}>{promotion.title}</h4>
             <p style={styles.description}>{promotion.description}</p>

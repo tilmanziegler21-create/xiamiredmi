@@ -27,14 +27,14 @@ const FortuneWheel: React.FC = () => {
   const [tier, setTier] = useState<'regular' | 'vip' | 'elite'>('regular');
 
   const prizes: WheelPrize[] = [
-    { id: '1', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.20, color: '#7c3aed' },
-    { id: '2', name: 'WELCOME10', type: 'discount', value: 10, probability: 0.10, color: '#8b5cf6' },
-    { id: '3', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.18, color: '#ff9800' },
-    { id: '4', name: 'Попробуйте еще', type: 'nothing', value: 0, probability: 0.18, color: '#607d8b' },
-    { id: '5', name: '10 бонусов', type: 'bonus', value: 10, probability: 0.14, color: '#2196f3' },
-    { id: '6', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.10, color: '#9c27b0' },
-    { id: '7', name: '20 бонусов', type: 'bonus', value: 20, probability: 0.06, color: '#4caf50' },
-    { id: '8', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.04, color: '#ffc107' },
+    { id: '1', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.20, color: theme.colors.dark.primary },
+    { id: '2', name: 'WELCOME10', type: 'discount', value: 10, probability: 0.10, color: theme.colors.dark.accentGold },
+    { id: '3', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.18, color: theme.colors.dark.secondary },
+    { id: '4', name: 'Попробуйте еще', type: 'nothing', value: 0, probability: 0.18, color: 'rgba(255,255,255,0.14)' },
+    { id: '5', name: '10 бонусов', type: 'bonus', value: 10, probability: 0.14, color: 'rgba(255,45,85,0.55)' },
+    { id: '6', name: '2 бонуса', type: 'bonus', value: 2, probability: 0.10, color: 'rgba(176,0,58,0.75)' },
+    { id: '7', name: '20 бонусов', type: 'bonus', value: 20, probability: 0.06, color: theme.colors.dark.accentGreen },
+    { id: '8', name: '5 бонусов', type: 'bonus', value: 5, probability: 0.04, color: 'rgba(255,214,10,0.75)' },
   ];
 
   const sectorAngle = 360 / prizes.length;
@@ -155,7 +155,7 @@ const FortuneWheel: React.FC = () => {
       height: 0,
       borderLeft: '15px solid transparent',
       borderRight: '15px solid transparent',
-      borderTop: '30px solid #7c3aed',
+      borderTop: `30px solid ${theme.colors.dark.primary}`,
       zIndex: 10,
     },
     centerButton: {
@@ -166,13 +166,13 @@ const FortuneWheel: React.FC = () => {
       width: '80px',
       height: '80px',
       borderRadius: '50%',
-      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+      background: theme.gradients.primary,
       border: '4px solid rgba(255,255,255,0.3)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       cursor: 'pointer',
-      boxShadow: '0 8px 24px rgba(124,58,237,0.4)',
+      boxShadow: '0 10px 26px rgba(255,45,85,0.26)',
       zIndex: 5,
     },
     resultCard: {

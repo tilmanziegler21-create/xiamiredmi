@@ -140,8 +140,8 @@ const Courier: React.FC = () => {
   const getStatusColor = (status: CourierOrder['status']) => {
     switch (status) {
       case 'pending': return '#ffc107';
-      case 'assigned': return '#2196f3';
-      case 'picked_up': return '#ff9800';
+      case 'assigned': return theme.colors.dark.primary;
+      case 'picked_up': return 'rgba(255,45,85,0.75)';
       case 'delivered': return '#4caf50';
       case 'cancelled': return '#f44336';
       default: return '#9e9e9e';

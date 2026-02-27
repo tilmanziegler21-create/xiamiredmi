@@ -276,6 +276,9 @@ function App() {
           <div className="aurora a1" />
           <div className="aurora a2" />
           <div className="noise" />
+          <div className="hitech-grid" />
+          <div className="hitech-scan" />
+          <div className="hitech-vignette" />
           <div className="app-content">
             <ErrorBoundary>
               {!user.ageVerified ? (

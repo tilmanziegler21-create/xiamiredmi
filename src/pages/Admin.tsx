@@ -258,8 +258,8 @@ const Admin: React.FC = () => {
   const getStatusColor = (status: AdminOrder['status']) => {
     switch (status) {
       case 'pending': return '#ffc107';
-      case 'assigned': return '#2196f3';
-      case 'picked_up': return '#ff9800';
+      case 'assigned': return theme.colors.dark.primary;
+      case 'picked_up': return 'rgba(255,45,85,0.75)';
       case 'delivered': return '#4caf50';
       case 'cancelled': return '#f44336';
       default: return '#9e9e9e';
@@ -308,8 +308,8 @@ const Admin: React.FC = () => {
       padding: '8px 16px',
       borderRadius: theme.radius.md,
       border: '1px solid rgba(255,255,255,0.14)',
-      background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)',
-      color: active ? '#7c3aed' : theme.colors.dark.text,
+      background: active ? 'rgba(255,45,85,0.18)' : 'rgba(255,255,255,0.06)',
+      color: active ? theme.colors.dark.primary : theme.colors.dark.text,
       fontSize: theme.typography.fontSize.sm,
       fontWeight: active ? theme.typography.fontWeight.bold : theme.typography.fontWeight.medium,
       cursor: 'pointer',
@@ -326,8 +326,8 @@ const Admin: React.FC = () => {
       padding: '6px 12px',
       borderRadius: theme.radius.sm,
       border: '1px solid rgba(255,255,255,0.14)',
-      background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)',
-      color: active ? '#7c3aed' : theme.colors.dark.text,
+      background: active ? 'rgba(255,45,85,0.18)' : 'rgba(255,255,255,0.06)',
+      color: active ? theme.colors.dark.primary : theme.colors.dark.text,
       fontSize: theme.typography.fontSize.xs,
       fontWeight: active ? theme.typography.fontWeight.bold : theme.typography.fontWeight.medium,
       cursor: 'pointer',
@@ -349,7 +349,7 @@ const Admin: React.FC = () => {
     statValue: {
       fontSize: theme.typography.fontSize['2xl'],
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#7c3aed',
+      color: theme.colors.dark.primary,
       marginBottom: theme.spacing.xs,
     },
     statLabel: {
@@ -432,7 +432,7 @@ const Admin: React.FC = () => {
     totalValue: {
       fontSize: theme.typography.fontSize.lg,
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#7c3aed',
+      color: theme.colors.dark.primary,
     },
     actionButtons: {
       display: 'flex',
@@ -485,7 +485,7 @@ const Admin: React.FC = () => {
     promoDiscount: {
       fontSize: theme.typography.fontSize['2xl'],
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#7c3aed',
+      color: theme.colors.dark.primary,
       marginBottom: theme.spacing.xs,
     },
     promoDescription: {

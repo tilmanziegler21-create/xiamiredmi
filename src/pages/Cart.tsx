@@ -339,8 +339,8 @@ const Cart: React.FC = () => {
       overflow: 'hidden',
       border: '1px solid rgba(255,255,255,0.14)',
       background: ultraLite
-        ? `linear-gradient(135deg, rgba(255,214,10,0.10) 0%, rgba(124,58,237,0.18) 100%)`
-        : `linear-gradient(135deg, rgba(255,214,10,0.10) 0%, rgba(124,58,237,0.18) 100%), url(/assets/elfcherry/banners/banner-1.jpg) center/cover`,
+        ? `linear-gradient(135deg, rgba(255,214,10,0.10) 0%, rgba(255,45,85,0.18) 100%)`
+        : `linear-gradient(135deg, rgba(255,214,10,0.10) 0%, rgba(255,45,85,0.18) 100%), url(/assets/elfcherry/banners/banner-1.jpg) center/cover`,
       boxShadow: theme.shadow.card,
     },
     pickupInner: {
@@ -563,7 +563,7 @@ const Cart: React.FC = () => {
             borderTop: '1px solid rgba(255,255,255,0.1)'
           }}>
             <span style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold }}>Итого:</span>
-            <span style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, color: '#7c3aed' }}>
+            <span style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, color: theme.colors.dark.primary }}>
               {formatCurrency(pricing.total)}
             </span>
           </div>

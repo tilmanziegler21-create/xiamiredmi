@@ -193,8 +193,8 @@ const Home: React.FC = () => {
       alignItems: 'center',
       justifyContent: 'center',
       gap: theme.spacing.sm,
-      background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(79,70,229,0.1) 100%)',
-      border: '1px solid rgba(124,58,237,0.3)',
+      background: 'linear-gradient(135deg, rgba(255,45,85,0.16) 0%, rgba(176,0,58,0.10) 100%)',
+      border: '1px solid rgba(255,45,85,0.24)',
       color: theme.colors.dark.text,
       textDecoration: 'none',
       transition: 'all 0.2s ease',
@@ -350,7 +350,7 @@ const Home: React.FC = () => {
           role="button"
         >
           <div style={styles.quickActionIcon}>
-            <Grid size={24} color="#7c3aed" />
+            <Grid size={24} color={theme.colors.dark.primary} />
           </div>
           <div style={styles.quickActionText}>Каталог</div>
         </div>
@@ -360,7 +360,7 @@ const Home: React.FC = () => {
           role="button"
         >
           <div style={styles.quickActionIcon}>
-            <Gift size={24} color="#7c3aed" />
+            <Gift size={24} color={theme.colors.dark.primary} />
           </div>
           <div style={styles.quickActionText}>Акции</div>
         </div>
@@ -370,7 +370,7 @@ const Home: React.FC = () => {
           role="button"
         >
           <div style={styles.quickActionIcon}>
-            <ShoppingCart size={24} color="#7c3aed" />
+            <ShoppingCart size={24} color={theme.colors.dark.primary} />
           </div>
           <div style={styles.quickActionText}>Корзина</div>
         </div>
@@ -380,7 +380,7 @@ const Home: React.FC = () => {
           role="button"
         >
           <div style={styles.quickActionIcon}>
-            <Star size={24} color="#7c3aed" />
+            <Star size={24} color={theme.colors.dark.primary} />
           </div>
           <div style={styles.quickActionText}>Бонусы</div>
         </div>
@@ -522,7 +522,7 @@ const Home: React.FC = () => {
               flexDirection: 'column',
               justifyContent: 'center',
               alignItems: 'center',
-              background: 'linear-gradient(135deg, rgba(124,58,237,0.22) 0%, rgba(79,70,229,0.18) 100%)',
+              background: 'linear-gradient(135deg, rgba(255,45,85,0.22) 0%, rgba(176,0,58,0.14) 100%)',
               border: '1px solid rgba(255,255,255,0.14)',
             }}
           >

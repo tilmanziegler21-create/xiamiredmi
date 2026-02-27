@@ -146,6 +146,15 @@ function sheetOverrideCandidates(baseName, city) {
   return out;
 }
 
+function baseTabAliases(baseName) {
+  const b = String(baseName || '').trim().toLowerCase();
+  if (b === 'products') return ['Products', 'Product', 'товары', 'товар', 'каталог', 'ассортимент'];
+  if (b === 'orders') return ['Orders', 'Order', 'заказы', 'заказ'];
+  if (b === 'couriers') return ['Couriers', 'Courier', 'курьеры', 'курьер'];
+  if (b === 'promos') return ['Promos', 'Promo', 'промо', 'акции'];
+  return [];
+}
+
 function sheetCandidates(base, city) {
   const out = [];
   out.push(base);
@@ -223,7 +232,11 @@ export async function readSheetTable(baseName, city) {
 
   const api = sheetsApi();
   const titles = await sheetTitleMap(spreadsheetId);
-  const candidates = Array.from(new Set([...sheetOverrideCandidates(baseName, city), ...sheetCandidates(baseName, city)]));
+  const bases = Array.from(new Set([baseName, ...baseTabAliases(baseName)]));
+  const candidates = Array.from(new Set([
+    ...sheetOverrideCandidates(baseName, city),
+    ...bases.flatMap((b) => sheetCandidates(b, city)),
+  ]));
   let lastErr = null;
 
   for (const name of candidates) {
@@ -273,7 +286,7 @@ export async function readSheetTable(baseName, city) {
 
   if (lastErr?.code === 'SHEETS_TAB_NOT_FOUND') {
     try {
-      const baseNorm = normalizeTabKey(baseName);
+      const baseNorms = Array.from(new Set([baseName, ...baseTabAliases(baseName)].map((x) => normalizeTabKey(x)).filter(Boolean)));
       const cityNorm = normalizeTabKey(city);
       const keys = Array.from(titles.entries()).map(([lower, actual]) => ({
         lower,
@@ -283,7 +296,7 @@ export async function readSheetTable(baseName, city) {
 
       const scored = keys
         .map((k) => {
-          const hasBase = baseNorm ? k.norm.includes(baseNorm) : false;
+          const hasBase = baseNorms.length ? baseNorms.some((bn) => k.norm.includes(bn)) : false;
           const hasCity = cityNorm ? k.norm.includes(cityNorm) : true;
           if (!hasBase || !hasCity) return null;
           return { ...k, score: k.norm.length };
@@ -310,6 +323,23 @@ export async function readSheetTable(baseName, city) {
   }
 
   throw lastErr || new Error(`Unable to read sheet ${baseName}`);
+}
+
+export async function listSheetTabs() {
+  const spreadsheetId = getSpreadsheetId();
+  if (!spreadsheetId) {
+    const err = new Error('Sheets not configured');
+    err.status = 503;
+    err.code = 'SHEETS_NOT_CONFIGURED';
+    err.missing = ['GOOGLE_SHEETS_SPREADSHEET_ID'];
+    throw err;
+  }
+  const meta = await spreadsheetMeta(spreadsheetId);
+  const sheets = Array.isArray(meta.sheets) ? meta.sheets : [];
+  return sheets
+    .map((s) => String(s?.properties?.title || '').trim())
+    .filter(Boolean)
+    .map((title) => ({ title, key: normalizeTabKey(title) }));
 }
 
 export async function getProducts(city) {

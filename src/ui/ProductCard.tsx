@@ -107,12 +107,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const getBrandGradient = (brand: string) => {
     if (!brand) return 'linear-gradient(135deg, #333 0%, #666 100%)';
     const k = brandKey(brand);
-    if (k.compact.includes('elfliq')) return 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)';
-    if (k.compact.includes('elfic')) return 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)';
-    if (k.compact.includes('elflic')) return 'linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%)';
-    if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return 'linear-gradient(135deg, #4a90e2 0%, #357abd 100%)';
-    if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return 'linear-gradient(135deg, #ff6b35 0%, #f7931e 100%)';
-    if (k.compact.includes('vaporesso')) return 'linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%)';
+    if (k.compact.includes('elfliq')) return theme.gradients.primary;
+    if (k.compact.includes('elfic')) return theme.gradients.primary;
+    if (k.compact.includes('elflic')) return theme.gradients.primary;
+    if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return theme.gradients.primary;
+    if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return theme.gradients.secondary;
+    if (k.compact.includes('vaporesso')) return theme.gradients.secondary;
     return 'linear-gradient(135deg, #333 0%, #666 100%)';
   };
 

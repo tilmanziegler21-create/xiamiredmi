@@ -128,7 +128,7 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
                       style={{
                         borderRadius: 999,
                         border: '1px solid rgba(255,255,255,0.14)',
-                        background: active ? 'rgba(124,58,237,0.22)' : 'rgba(255,255,255,0.06)',
+                        background: active ? 'rgba(255,45,85,0.18)' : 'rgba(255,255,255,0.06)',
                         color: theme.colors.dark.text,
                         padding: '8px 12px',
                         cursor: 'pointer',

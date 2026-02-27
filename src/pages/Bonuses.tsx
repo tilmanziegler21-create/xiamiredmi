@@ -163,8 +163,8 @@ const Bonuses: React.FC = () => {
       paddingBottom: theme.spacing.xl,
     },
     balanceCard: {
-      background: 'linear-gradient(135deg, rgba(124,58,237,0.15) 0%, rgba(109,40,217,0.1) 100%)',
-      border: '1px solid rgba(124,58,237,0.3)',
+      background: 'linear-gradient(135deg, rgba(255,45,85,0.18) 0%, rgba(176,0,58,0.10) 100%)',
+      border: '1px solid rgba(255,45,85,0.28)',
       borderRadius: theme.radius.lg,
       padding: theme.spacing.lg,
       margin: `0 ${theme.padding.screen} ${theme.spacing.lg}`,
@@ -194,7 +194,7 @@ const Bonuses: React.FC = () => {
     balanceAmount: {
       fontSize: theme.typography.fontSize['3xl'],
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#7c3aed',
+      color: theme.colors.dark.primary,
       marginBottom: theme.spacing.xs,
     },
     balanceLabel: {
@@ -245,7 +245,7 @@ const Bonuses: React.FC = () => {
     },
     progressFill: {
       height: '100%',
-      background: 'linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)',
+      background: theme.gradients.primary,
       borderRadius: theme.radius.sm,
       transition: 'width 0.3s ease',
     },
@@ -416,7 +416,7 @@ const Bonuses: React.FC = () => {
         <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.md }}>
           <GlassCard padding="md" variant="elevated">
             <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
-              <Gift size={20} color="#7c3aed" />
+              <Gift size={20} color={theme.colors.dark.primary} />
               <div>
                 <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
                   Делайте покупки
