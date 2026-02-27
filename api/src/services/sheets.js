@@ -314,11 +314,15 @@ export async function readSheetTable(baseName, city) {
           const err = new Error('Sheet tab not found');
           err.status = 404;
           err.code = 'SHEETS_TAB_NOT_FOUND';
+          const envKey = tabOverrideEnvKey(baseName);
           err.details = {
             candidate: String(name),
             resolvedTitle: String(actualName),
             range: String(range),
             city: String(city || ''),
+            envKey,
+            envOverride: envKey ? String(getEnv(envKey) || '') : '',
+            spreadsheetIdTail: String(spreadsheetId || '').slice(-6),
           };
           throw err;
         }
