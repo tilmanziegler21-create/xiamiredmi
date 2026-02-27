@@ -13,6 +13,22 @@ const api = axios.create({
 });
 
 api.interceptors.request.use((config) => {
+  try {
+    const p: any = config.params;
+    if (p && typeof p === 'object' && typeof p.city === 'string') {
+      p.city = p.city.trim();
+      config.params = p;
+    }
+  } catch {
+  }
+  try {
+    const d: any = config.data;
+    if (d && typeof d === 'object' && typeof d.city === 'string') {
+      d.city = d.city.trim();
+      config.data = d;
+    }
+  } catch {
+  }
   let token: string | null = null;
   try {
     token = useAuthStore.getState().token;
