@@ -73,9 +73,7 @@ const Catalog: React.FC = () => {
 
   useEffect(() => {
     const qCategory = searchParams.get('category');
-    if (qCategory) {
-      setFilters((s) => ({ ...s, category: qCategory }));
-    }
+    setFilters((s) => ({ ...s, category: qCategory ? String(qCategory) : '' }));
   }, [searchParams]);
 
   useEffect(() => {
@@ -381,6 +379,46 @@ const Catalog: React.FC = () => {
         </div>
       ) : (
         <div style={styles.grid}>
+          {allProducts.length > 0 && filtered.length === 0 ? (
+            <GlassCard padding="lg" variant="elevated" style={{ gridColumn: '1 / -1' }}>
+              <div style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.semibold, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: theme.spacing.sm }}>
+                Ничего не найдено
+              </div>
+              <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, lineHeight: '1.45', marginBottom: theme.spacing.md }}>
+                Похоже, фильтры или категория не совпадают с данными. Сбросьте фильтры и попробуйте снова.
+              </div>
+              <PrimaryButton
+                fullWidth
+                onClick={() => {
+                  setQuery('');
+                  resetFilters();
+                }}
+              >
+                Сбросить фильтры
+              </PrimaryButton>
+            </GlassCard>
+          ) : null}
+          {allProducts.length === 0 && !loading ? (
+            <GlassCard padding="lg" variant="elevated" style={{ gridColumn: '1 / -1' }}>
+              <div style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.semibold, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: theme.spacing.sm }}>
+                Каталог пуст
+              </div>
+              <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, lineHeight: '1.45', marginBottom: theme.spacing.md }}>
+                Если товары есть в таблице, значит запрос не прошёл или вернул пустой список. Попробуйте обновить экран или открыть каталог заново.
+              </div>
+              <PrimaryButton
+                fullWidth
+                onClick={() => {
+                  try {
+                    window.location.reload();
+                  } catch {
+                  }
+                }}
+              >
+                Обновить
+              </PrimaryButton>
+            </GlassCard>
+          ) : null}
           {visible.map((p) => (
             <ProductCard
               key={p.id}
