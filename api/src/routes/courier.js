@@ -1,7 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import db from '../services/database.js';
-import { getCouriers, getOrders, updateOrderRowByOrderId } from '../services/sheets.js';
+import { getCouriers, getOrders, updateOrderRowByOrderId, updateCourierRowByCourierId } from '../services/sheets.js';
 import { isAllowedCourierOrderStatus, normalizeOrderStatus } from '../domain/orderStatus.js';
 
 const router = express.Router();
@@ -102,6 +102,7 @@ router.post('/orders/status', requireAuth, async (req, res) => {
     }
     const orderId = String(req.body?.orderId || '').trim();
     const next = String(req.body?.status || '').trim().toLowerCase();
+    const reason = String(req.body?.reason || '').trim().slice(0, 200);
     if (!orderId) return res.status(400).json({ error: 'orderId is required' });
     if (!isAllowedCourierOrderStatus(next)) return res.status(400).json({ error: 'Invalid status' });
     const normalizedNext = normalizeOrderStatus(next);
@@ -118,10 +119,19 @@ router.post('/orders/status', requireAuth, async (req, res) => {
       return res.status(403).json({ error: 'Forbidden' });
     }
 
-    await updateOrderRowByOrderId(city, orderId, { status: normalizedNext });
+    const patch = { status: normalizedNext };
+    if (normalizedNext === 'delivered') {
+      patch.delivered_at = new Date().toISOString();
+    }
+    if (normalizedNext === 'cancelled') {
+      patch.cancelled_at = new Date().toISOString();
+      if (reason) patch.cancel_reason = reason;
+    }
+    await updateOrderRowByOrderId(city, orderId, patch);
     const local = db.orders.get(String(orderId));
     if (local) {
       local.status = normalizedNext;
+      if (normalizedNext === 'cancelled' && reason) local.cancel_reason = reason;
       db.orders.set(String(orderId), local);
     }
     res.json({ ok: true });
@@ -131,6 +141,44 @@ router.post('/orders/status', requireAuth, async (req, res) => {
       return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
     }
     res.status(500).json({ error: 'Failed to update order' });
+  }
+});
+
+router.post('/preferences', requireAuth, async (req, res) => {
+  try {
+    const city = String(req.body?.city || req.query.city || '');
+    if (!city) return res.status(400).json({ error: 'City parameter is required' });
+
+    const status = String(req.user?.status || '');
+    if (status !== 'courier' && status !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const myCourierId = status === 'admin' ? String(req.body?.courierId || '').trim() : await resolveCourierIdForUser(city, req.user.tgId);
+    if (status !== 'admin' && !myCourierId) {
+      return res.status(403).json({ error: 'Courier profile not found. Contact admin.' });
+    }
+
+    const timeFrom = String(req.body?.time_from || req.body?.timeFrom || '').trim();
+    const timeTo = String(req.body?.time_to || req.body?.timeTo || '').trim();
+    const meetingPlace = String(req.body?.meeting_place || req.body?.meetingPlace || '').trim();
+
+    const patch = {
+      ...(timeFrom ? { time_from: timeFrom } : {}),
+      ...(timeTo ? { time_to: timeTo } : {}),
+      ...(meetingPlace ? { meeting_place: meetingPlace, place: meetingPlace, location: meetingPlace, address: meetingPlace } : {}),
+      updated_at: new Date().toISOString(),
+    };
+
+    const ok = await updateCourierRowByCourierId(city, myCourierId, patch);
+    if (!ok) return res.status(404).json({ error: 'Courier not found' });
+    res.json({ ok: true });
+  } catch (e) {
+    const status = Number(e?.status) || 500;
+    if (status === 503) {
+      return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
+    }
+    res.status(500).json({ error: 'Failed to update courier preferences' });
   }
 });
 

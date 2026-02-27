@@ -151,7 +151,8 @@ export const couriersAPI = {
 
 export const courierAPI = {
   orders: (city: string) => api.get('/courier/orders', { params: { city } }),
-  updateOrderStatus: (orderId: string, status: string, city: string) => api.post('/courier/orders/status', { orderId, status, city }),
+  updateOrderStatus: (orderId: string, status: string, city: string, reason?: string) => api.post('/courier/orders/status', { orderId, status, city, reason }),
+  updatePreferences: (payload: { city: string; time_from?: string; time_to?: string; meeting_place?: string }) => api.post('/courier/preferences', payload),
 };
 
 export const adminAPI = {

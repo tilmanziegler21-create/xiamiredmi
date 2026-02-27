@@ -2,8 +2,9 @@ import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
 import db from '../services/database.js';
-import { getProducts, updateProductStock, appendOrderRow, updateOrderRowByOrderId, getOrders } from '../services/sheets.js';
+import { getProducts, updateProductStock, appendOrderRow, updateOrderRowByOrderId, getOrders, getCouriers } from '../services/sheets.js';
 import { normalizeOrderStatus } from '../domain/orderStatus.js';
+import { sendTelegramMessage } from '../services/telegram.js';
 
 const router = express.Router();
 
@@ -163,11 +164,13 @@ router.post('/create', requireAuth, validateBody({ city: 'required' }), async (r
     const orderId = generateOrderId();
     const subtotalAmount = normalizedItems.reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0);
     let discountAmount = 0;
+    const qtyMin = Number(process.env.QTY_DISCOUNT_MIN || process.env.QUANTITY_DISCOUNT_MIN_QTY || 3);
+    const qtyUnitPrice = Number(process.env.QTY_DISCOUNT_PRICE || process.env.QUANTITY_DISCOUNT_UNIT_PRICE || 40);
 
     for (const it of normalizedItems) {
       const qty = Number(it.quantity || 0);
       const price = Number(it.price || 0);
-      if (qty >= 3 && price > 40) discountAmount += (price - 40) * qty;
+      if (qty >= qtyMin && price > qtyUnitPrice) discountAmount += (price - qtyUnitPrice) * qty;
     }
 
     const promo = String(promoCode || '').trim();
@@ -181,6 +184,8 @@ router.post('/create', requireAuth, validateBody({ city: 'required' }), async (r
     if (promoObj && promoObj.active && inWindow && discountedSubtotal >= Number(promoObj.minTotal || 0)) {
       if (String(promoObj.type || '') === 'percent') {
         discountAmount += (discountedSubtotal * Number(promoObj.value || 0)) / 100;
+      } else if (String(promoObj.type || '') === 'fixed') {
+        discountAmount += Math.min(discountedSubtotal, Math.max(0, Number(promoObj.value || 0)));
       }
     }
 
@@ -348,6 +353,68 @@ router.post('/confirm', requireAuth, async (req, res) => {
       console.error('Sheets upsert order failed:', e);
     }
 
+    if (!order.stock_committed) {
+      try {
+        const sheetProducts = cityStr ? await getProducts(cityStr) : [];
+        const bySku = new Map(sheetProducts.map((p) => [String(p.sku), p]));
+
+        for (const oi of db.orderItems.values()) {
+          if (oi.order_id !== orderId) continue;
+          const sku = String(oi.product_id);
+          const p = bySku.get(sku);
+          if (!p) continue;
+          const newStock = Math.max(0, Number(p.stock) - Number(oi.quantity));
+          const newActive = newStock > 0;
+          try {
+            await updateProductStock(p, newStock, newActive);
+          } catch (e) {
+            console.error('Update stock failed:', e);
+          }
+        }
+
+        order.stock_committed = true;
+        db.releaseReservationsByOrder(orderId);
+        db.persistState();
+
+        try {
+          await updateOrderRowByOrderId(cityStr, orderId, { stock_committed: 'TRUE' });
+        } catch {
+        }
+      } catch (e) {
+        console.error('Commit stock on confirm failed:', e);
+      }
+    }
+
+    try {
+      const courierId = String(courier_id || '').trim();
+      if (courierId) {
+        const couriers = await getCouriers(cityStr);
+        const courier = couriers.find((c) => String(c.courier_id || '').trim() === courierId);
+        const courierChatId = courier ? String(courier.tg_id || '').trim() : '';
+        if (courierChatId) {
+          const cd = courierData || {};
+          const address = String(cd?.address || '').trim();
+          const comment = String(cd?.comment || '').trim();
+          const when = [String(delivery_date || '').trim(), String(delivery_time || '').trim()].filter(Boolean).join(' ');
+          const lines = [];
+          lines.push(`📦 Новый заказ #${orderId}`);
+          if (when) lines.push(`🕒 ${when}`);
+          if (address) lines.push(`📍 ${address}`);
+          if (comment) lines.push(`💬 ${comment}`);
+          lines.push(`💰 Сумма: ${Number(order?.total_amount || 0)}`);
+          lines.push('');
+          lines.push('Товары:');
+          for (const oi of db.orderItems.values()) {
+            if (oi.order_id !== orderId) continue;
+            lines.push(`• ${String(oi.name || oi.product_id)} ×${Number(oi.quantity || 0)}`);
+          }
+          await sendTelegramMessage(courierChatId, lines.join('\n'));
+        }
+      }
+    } catch (e) {
+      console.error('Courier notify failed:', e);
+    }
+
     res.json({ success: true, status: 'pending' });
   } catch (error) {
     console.error('Confirm order error:', error);
@@ -384,25 +451,33 @@ router.post('/payment', requireAuth, validateBody({ orderId: 'required' }), asyn
     const nextStatus = current === 'buffer' ? 'pending' : current;
     order.status = nextStatus;
     {
-      try {
-        const sheetProducts = cityStr ? await getProducts(cityStr) : [];
-        const bySku = new Map(sheetProducts.map((p) => [String(p.sku), p]));
+      if (!order.stock_committed) {
+        try {
+          const sheetProducts = cityStr ? await getProducts(cityStr) : [];
+          const bySku = new Map(sheetProducts.map((p) => [String(p.sku), p]));
 
-        for (const oi of db.orderItems.values()) {
-          if (oi.order_id !== orderId) continue;
-          const sku = String(oi.product_id);
-          const p = bySku.get(sku);
-          if (!p) continue;
-          const newStock = Math.max(0, Number(p.stock) - Number(oi.quantity));
-          const newActive = newStock > 0;
-          try {
-            await updateProductStock(p, newStock, newActive);
-          } catch (e) {
-            console.error('Update stock failed:', e);
+          for (const oi of db.orderItems.values()) {
+            if (oi.order_id !== orderId) continue;
+            const sku = String(oi.product_id);
+            const p = bySku.get(sku);
+            if (!p) continue;
+            const newStock = Math.max(0, Number(p.stock) - Number(oi.quantity));
+            const newActive = newStock > 0;
+            try {
+              await updateProductStock(p, newStock, newActive);
+            } catch (e) {
+              console.error('Update stock failed:', e);
+            }
           }
+
+          order.stock_committed = true;
+          try {
+            await updateOrderRowByOrderId(cityStr, orderId, { stock_committed: 'TRUE' });
+          } catch {
+          }
+        } catch (e) {
+          console.error('Fetch products for stock update failed:', e);
         }
-      } catch (e) {
-        console.error('Fetch products for stock update failed:', e);
       }
 
       let bonusUsed = 0;

@@ -12,7 +12,7 @@ export const ToastHost: React.FC = () => {
   const toastStyles: Record<string, { border: string; icon: React.ReactNode }> = {
     success: { border: '1px solid rgba(74,222,128,0.4)', icon: <CheckCircle2 size={18} color="#4ade80" /> },
     error: { border: '1px solid rgba(239,68,68,0.4)', icon: <XCircle size={18} color="#ef4444" /> },
-    info: { border: '1px solid rgba(124,58,237,0.4)', icon: <Info size={18} color="#7c3aed" /> },
+    info: { border: '1px solid rgba(255,45,85,0.4)', icon: <Info size={18} color={theme.colors.dark.primary} /> },
   };
 
   return (

@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import WebApp from '@twa-dev/sdk';
 import { useNavigate } from 'react-router-dom';
-import { courierAPI } from '../services/api';
+import { courierAPI, couriersAPI } from '../services/api';
 import { GlassCard, SectionDivider, PrimaryButton, SecondaryButton, theme } from '../ui';
 import { useCityStore } from '../store/useCityStore';
 import { useToastStore } from '../store/useToastStore';
+import { useAuthStore } from '../store/useAuthStore';
 import { formatCurrency } from '../lib/currency';
 import { Package, MapPin, Clock, Phone, CheckCircle, XCircle, Truck, User } from 'lucide-react';
 
@@ -34,10 +35,16 @@ const Courier: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastStore();
   const { city } = useCityStore();
+  const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<CourierOrder[]>([]);
   const [selectedDate, setSelectedDate] = useState<'today' | 'tomorrow' | 'day_after'>('today');
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
+  const [showCompleted, setShowCompleted] = useState(false);
+  const [prefTimeFrom, setPrefTimeFrom] = useState('');
+  const [prefTimeTo, setPrefTimeTo] = useState('');
+  const [prefPlace, setPrefPlace] = useState('');
+  const [savingPrefs, setSavingPrefs] = useState(false);
 
   const loadOrders = async () => {
     try {
@@ -61,6 +68,48 @@ const Courier: React.FC = () => {
     loadOrders();
   }, [city]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        if (!city) return;
+        const resp = await couriersAPI.list(city);
+        const list = Array.isArray(resp.data?.couriers) ? resp.data.couriers : [];
+        const me = list.find((c: any) => String(c?.tg_id || '') === String(user?.tgId || '') || String(c?.courier_id || '') === String(user?.tgId || ''));
+        if (!me) return;
+        setPrefTimeFrom(String(me?.time_from || '').trim());
+        setPrefTimeTo(String(me?.time_to || '').trim());
+        setPrefPlace(String(me?.meeting_place || '').trim());
+      } catch {
+      }
+    })();
+  }, [city, user?.tgId]);
+
+  const savePrefs = async () => {
+    if (!city) return;
+    setSavingPrefs(true);
+    try {
+      await courierAPI.updatePreferences({
+        city,
+        time_from: prefTimeFrom.trim(),
+        time_to: prefTimeTo.trim(),
+        meeting_place: prefPlace.trim(),
+      });
+      toast.push('Настройки сохранены', 'success');
+      const resp = await couriersAPI.list(city);
+      const list = Array.isArray(resp.data?.couriers) ? resp.data.couriers : [];
+      const me = list.find((c: any) => String(c?.tg_id || '') === String(user?.tgId || '') || String(c?.courier_id || '') === String(user?.tgId || ''));
+      if (me) {
+        setPrefTimeFrom(String(me?.time_from || '').trim());
+        setPrefTimeTo(String(me?.time_to || '').trim());
+        setPrefPlace(String(me?.meeting_place || '').trim());
+      }
+    } catch {
+      toast.push('Не удалось сохранить', 'error');
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
+
   const updateOrderStatus = async (orderId: string, newStatus: CourierOrder['status']) => {
     const confirmed = await new Promise<boolean>((resolve) => {
       try {
@@ -70,8 +119,16 @@ const Courier: React.FC = () => {
       }
     });
     if (!confirmed) return;
+    let reason = '';
+    if (newStatus === 'cancelled') {
+      try {
+        reason = String(window.prompt('Короткая причина (не выдано):', '') || '').trim();
+      } catch {
+        reason = '';
+      }
+    }
     try {
-      await courierAPI.updateOrderStatus(orderId, newStatus, city);
+      await courierAPI.updateOrderStatus(orderId, newStatus, city, reason || undefined);
       toast.push('Статус заказа обновлен', 'success');
       loadOrders(); // Refresh orders
     } catch (error) {
@@ -125,8 +182,11 @@ const Courier: React.FC = () => {
   };
 
   const filteredOrders = filterOrdersByDate(orders);
-  const dayRevenue = filteredOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0);
-  const dayPayout = filteredOrders.reduce((s, o) => s + Number(o.payoutAmount ?? (Math.round(Number(o.totalAmount || 0) * 0.2 * 100) / 100)), 0);
+  const visibleOrders = filteredOrders.filter((o) => (showCompleted ? true : o.status !== 'delivered' && o.status !== 'cancelled'));
+  const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered');
+  const cancelledOrders = filteredOrders.filter((o) => o.status === 'cancelled');
+  const dayRevenue = deliveredOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0);
+  const dayPayout = deliveredOrders.reduce((s, o) => s + Number(o.payoutAmount ?? (Math.round(Number(o.totalAmount || 0) * 0.2 * 100) / 100)), 0);
 
   const styles = {
     container: {
@@ -158,8 +218,8 @@ const Courier: React.FC = () => {
       padding: '8px 16px',
       borderRadius: theme.radius.md,
       border: '1px solid rgba(255,255,255,0.14)',
-      background: active ? 'rgba(124,58,237,0.2)' : 'rgba(255,255,255,0.06)',
-      color: active ? '#7c3aed' : theme.colors.dark.text,
+      background: active ? 'rgba(255,45,85,0.18)' : 'rgba(255,255,255,0.06)',
+      color: active ? theme.colors.dark.primary : theme.colors.dark.text,
       fontSize: theme.typography.fontSize.sm,
       fontWeight: active ? theme.typography.fontWeight.bold : theme.typography.fontWeight.medium,
       cursor: 'pointer',
@@ -239,7 +299,7 @@ const Courier: React.FC = () => {
     totalValue: {
       fontSize: theme.typography.fontSize.lg,
       fontWeight: theme.typography.fontWeight.bold,
-      color: '#7c3aed',
+      color: theme.colors.dark.primary,
     },
     actionButtons: {
       display: 'flex',
@@ -272,6 +332,39 @@ const Courier: React.FC = () => {
         <div style={styles.title}>Курьер</div>
       </div>
 
+      <SectionDivider title="Мои настройки" />
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
+        <GlassCard padding="lg" variant="elevated">
+          <div style={{ display: 'grid', gap: theme.spacing.sm }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.sm }}>
+              <input
+                value={prefTimeFrom}
+                onChange={(e) => setPrefTimeFrom(e.target.value)}
+                placeholder="Время с (HH:MM)"
+                style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}
+                inputMode="numeric"
+              />
+              <input
+                value={prefTimeTo}
+                onChange={(e) => setPrefTimeTo(e.target.value)}
+                placeholder="Время до (HH:MM)"
+                style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}
+                inputMode="numeric"
+              />
+            </div>
+            <input
+              value={prefPlace}
+              onChange={(e) => setPrefPlace(e.target.value)}
+              placeholder="Место встречи"
+              style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}
+            />
+            <PrimaryButton fullWidth size="sm" onClick={savePrefs} disabled={savingPrefs}>
+              {savingPrefs ? 'Сохранение…' : 'Сохранить'}
+            </PrimaryButton>
+          </div>
+        </GlassCard>
+      </div>
+
       <SectionDivider title="Мои заказы" />
 
       {/* Date Selector */}
@@ -294,6 +387,12 @@ const Courier: React.FC = () => {
         >
           Послезавтра
         </button>
+        <button
+          style={styles.dateButton(showCompleted)}
+          onClick={() => setShowCompleted((s) => !s)}
+        >
+          {showCompleted ? 'Все' : 'Активные'}
+        </button>
       </div>
 
       <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
@@ -305,13 +404,19 @@ const Courier: React.FC = () => {
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
               К выплате (20%): <span style={{ color: '#37d67a', fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayPayout)}</span>
             </div>
+            <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+              Выдано: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{deliveredOrders.length}</span>
+            </div>
+            <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+              Не выдано: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{cancelledOrders.length}</span>
+            </div>
           </div>
         </GlassCard>
       </div>
 
       {/* Orders List */}
       <div style={{ padding: `0 ${theme.padding.screen}` }}>
-        {filteredOrders.length === 0 ? (
+        {visibleOrders.length === 0 ? (
           <GlassCard padding="lg" variant="elevated">
             <div style={styles.emptyState}>
               <Package size={48} style={{ marginBottom: theme.spacing.md, opacity: 0.5 }} />
@@ -322,7 +427,7 @@ const Courier: React.FC = () => {
             </div>
           </GlassCard>
         ) : (
-          filteredOrders.map((order) => (
+          visibleOrders.map((order) => (
             <GlassCard key={order.id} padding="lg" variant="elevated" style={styles.orderCard}>
               {/* Order Header */}
               <div style={styles.orderHeader}>

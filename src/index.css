@@ -51,15 +51,14 @@
   left: -140px;
   top: -160px;
   background: radial-gradient(circle at 30% 30%, rgba(124,58,237,1) 0%, rgba(124,58,237,0) 60%);
-  animation: aurora1 10s ease-in-out infinite;
+  background: radial-gradient(circle at 30% 30%, rgba(255,45,85,1) 0%, rgba(255,45,85,0) 60%);
 }
 
 .aurora.a2 {
   right: -160px;
-  top: 120px;
+  background: radial-gradient(circle at 70% 40%, rgba(176,0,58,1) 0%, rgba(176,0,58,0) 62%);
   background: radial-gradient(circle at 70% 40%, rgba(79,70,229,1) 0%, rgba(79,70,229,0) 62%);
   animation: aurora2 12s ease-in-out infinite;
-}
 
 .noise {
   position: fixed;
@@ -87,7 +86,7 @@
 }
 
 .btn-primary {
-  background: linear-gradient(180deg, #8b5cf6 0%, #6d28d9 100%);
+  background: linear-gradient(180deg, #ff2d55 0%, #b0003a 100%);
   color: #fff;
   border-radius: var(--radius-md);
 }

@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { theme } from './theme';
 import { IconButton } from './IconButton';
-import { Menu, User, Coins, ShoppingCart, ArrowLeft, Settings, ShoppingBag, RotateCcw } from 'lucide-react';
+import { Menu, User, ShoppingCart, ArrowLeft, Settings, ShoppingBag } from 'lucide-react';
 import { blurStyle } from './blur';
 
 interface TopBarProps {
@@ -16,7 +16,6 @@ interface TopBarProps {
   onBackClick?: () => void;
   showSettings?: boolean;
   onSettingsClick?: () => void;
-  onBonusClick?: () => void;
   onProfileClick?: () => void;
 }
 
@@ -31,7 +30,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   onBackClick,
   showSettings = false,
   onSettingsClick,
-  onBonusClick,
   onProfileClick,
 }) => {
   const navigate = useNavigate();
@@ -55,11 +53,6 @@ export const TopBar: React.FC<TopBarProps> = ({
 
   const handleLogoClick = () => {
     navigate('/home');
-  };
-
-  const handleBonusClick = () => {
-    if (onBonusClick) return onBonusClick();
-    navigate('/bonuses');
   };
 
   const handleProfileClick = () => {
@@ -146,35 +139,6 @@ export const TopBar: React.FC<TopBarProps> = ({
       alignItems: 'center',
       gap: theme.spacing.sm,
       minWidth: 0,
-    },
-    bonusPill: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: theme.spacing.xs,
-      background: theme.colors.dark.accentGold,
-      border: 'none',
-      borderRadius: 999,
-      padding: isNarrow ? '6px 10px' : '6px 12px',
-      color: '#000',
-      fontSize: theme.typography.fontSize.sm,
-      fontWeight: theme.typography.fontWeight.medium,
-      position: 'relative' as const,
-    },
-    bonusPlus: {
-      position: 'absolute' as const,
-      right: -6,
-      top: -6,
-      width: 18,
-      height: 18,
-      borderRadius: 999,
-      background: theme.colors.dark.accentGold,
-      color: '#000',
-      fontSize: 12,
-      fontWeight: theme.typography.fontWeight.bold,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: '0 10px 20px rgba(0,0,0,0.35)',
     },
     avatar: {
       width: '40px',
@@ -273,12 +237,6 @@ export const TopBar: React.FC<TopBarProps> = ({
             size="sm"
           />
           {cartCount > 0 ? <div style={styles.cartBadge}>{Math.min(99, cartCount)}</div> : null}
-        </div>
-        <div style={{ ...styles.bonusPill, cursor: 'pointer' }} onClick={handleBonusClick} role="button" tabIndex={0}>
-          {!isNarrow ? <Coins size={16} /> : null}
-          <span>x{bonusMultiplier}</span>
-          {!isNarrow ? <RotateCcw size={14} /> : null}
-          <span style={styles.bonusPlus}>+</span>
         </div>
         {showSettings ? (
           <IconButton

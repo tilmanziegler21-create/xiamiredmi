@@ -49,7 +49,7 @@ const Checkout: React.FC = () => {
   }, []);
 
   const [address, setAddress] = React.useState('');
-  const [couriers, setCouriers] = React.useState<Array<{ courier_id: string; name: string; tg_id: string; time_from?: string; time_to?: string }>>([]);
+  const [couriers, setCouriers] = React.useState<Array<{ courier_id: string; name: string; tg_id: string; time_from?: string; time_to?: string; meeting_place?: string }>>([]);
   const [courierId, setCourierId] = React.useState(state.courierId || '');
   const [deliveryDate, setDeliveryDate] = React.useState(state.deliveryDate || new Date().toISOString().slice(0, 10));
   const [deliveryTime, setDeliveryTime] = React.useState(state.deliveryTime || '');
@@ -131,13 +131,25 @@ const Checkout: React.FC = () => {
     const tm = toMin(to);
     if (fm == null || tm == null || tm <= fm) return [];
     const out: string[] = [];
-    for (let m = fm; m <= tm - 30; m += 30) {
+    for (let m = fm; m <= tm - 10; m += 10) {
       const hh = String(Math.floor(m / 60)).padStart(2, '0');
       const mm = String(m % 60).padStart(2, '0');
       out.push(`${hh}:${mm}`);
     }
     return out;
   }, [courierId, couriers]);
+
+  const courierMeetingPlace = React.useMemo(() => {
+    const c = couriers.find((x) => x.courier_id === courierId);
+    return String((c as any)?.meeting_place || '').trim();
+  }, [courierId, couriers]);
+
+  React.useEffect(() => {
+    if (deliveryMethod !== 'courier') return;
+    if (!courierMeetingPlace) return;
+    if (address.trim()) return;
+    setAddress(courierMeetingPlace);
+  }, [deliveryMethod, courierMeetingPlace, address]);
 
   React.useEffect(() => {
     if (deliveryTime) return;
@@ -393,8 +405,14 @@ const Checkout: React.FC = () => {
             </>
           ) : (
             <>
-              <div style={styles.label}>Адрес доставки *</div>
-              <input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Введите адрес" style={styles.input} />
+              <div style={styles.label}>{courierMeetingPlace ? 'Место встречи' : 'Адрес доставки *'}</div>
+              <input
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                placeholder={courierMeetingPlace ? 'Место встречи задано курьером' : 'Введите адрес'}
+                style={{ ...styles.input, opacity: courierMeetingPlace ? 0.85 : 1 }}
+                disabled={Boolean(courierMeetingPlace)}
+              />
             </>
           )}
 
