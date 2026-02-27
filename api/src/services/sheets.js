@@ -283,7 +283,14 @@ export async function readSheetTable(baseName, city) {
     const key = `${spreadsheetId}:${actualName}`;
     const cached = cacheGet(key);
     if (cached) return cached;
-    if (inflight.has(key)) return inflight.get(key);
+    if (inflight.has(key)) {
+      try {
+        return await inflight.get(key);
+      } catch (e) {
+        lastErr = e;
+        continue;
+      }
+    }
     const stale = cacheGetStale(key);
     const promise = (async () => {
       const range = sheetRange(actualName, SHEET_READ_A1);
