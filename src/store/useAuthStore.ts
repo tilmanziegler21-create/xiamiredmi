@@ -55,10 +55,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       localStorage.removeItem('cart');
     } catch {
     }
-    try {
-      localStorage.removeItem('city');
-    } catch {
-    }
     set({ user: null, token: null });
   },
   setLoading: (loading) => set({ isLoading: loading })

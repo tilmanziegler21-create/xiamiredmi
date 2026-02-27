@@ -1,4 +1,5 @@
 import axios from 'axios';
+import WebApp from '@twa-dev/sdk';
 import { useToastStore } from '../store/useToastStore';
 import { useAuthStore } from '../store/useAuthStore';
 
@@ -11,6 +12,45 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+const rawApi = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 15000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+let refreshPromise: Promise<string> | null = null;
+async function refreshTokenIfPossible() {
+  if (refreshPromise) return refreshPromise;
+  const initData = WebApp.initData || (import.meta.env?.VITE_TG_INIT_DATA as string);
+  if (!initData) {
+    const err = new Error('No initData available');
+    (err as any).code = 'NO_INIT_DATA';
+    throw err;
+  }
+  refreshPromise = (async () => {
+    const resp = await rawApi.post('/auth/verify', { initData });
+    const token = String(resp?.data?.token || '').trim();
+    const user = resp?.data?.user;
+    if (!token || !user) throw new Error('Invalid auth response');
+    try {
+      useAuthStore.getState().setUser(user, token);
+    } catch {
+      try {
+        localStorage.setItem('token', token);
+      } catch {
+      }
+    }
+    return token;
+  })();
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
 
 api.interceptors.request.use((config) => {
   try {
@@ -49,7 +89,7 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (resp) => resp,
-  (error) => {
+  async (error) => {
     console.error('API error:', error);
     try {
       const url = String(error?.config?.url || '');
@@ -66,6 +106,19 @@ api.interceptors.response.use(
         }
         return Promise.reject(error);
       }
+      if (status === 401 && !url.includes('/auth/')) {
+        const cfg: any = error?.config || {};
+        if (!cfg._retry) {
+          cfg._retry = true;
+          try {
+            await refreshTokenIfPossible();
+            return api(cfg);
+          } catch {
+          }
+        }
+        try { useAuthStore.getState().logout(); } catch {
+        }
+      }
       const serverMessage = typeof data?.error === 'string' ? data.error : '';
       const code = typeof data?.code === 'string' ? data.code : '';
       const missing = Array.isArray(data?.missing) ? data.missing : [];
@@ -73,7 +126,8 @@ api.interceptors.response.use(
       let message: string;
       // 401 on non-auth endpoints: token is invalid, force logout + generic message
       if (status === 401) {
-        try { useAuthStore.getState().logout(); } catch { /* ignore */ }
+        try { useAuthStore.getState().logout(); } catch {
+        }
         message = 'Требуется авторизация';
       } else if (isTimeout) {
         message = 'Сервер не отвечает (таймаут)';

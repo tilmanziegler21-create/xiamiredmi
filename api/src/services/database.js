@@ -1,6 +1,7 @@
 // Simple in-memory database for development
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
 class InMemoryDB {
   constructor() {
@@ -16,7 +17,8 @@ class InMemoryDB {
     this.analyticsEvents = [];
     this.promos = new Map();
 
-    this.dataFilePath = path.resolve(process.cwd(), 'api/.data/mockdb.json');
+    const here = path.dirname(fileURLToPath(import.meta.url));
+    this.dataFilePath = path.resolve(process.env.MOCK_DB_FILE || path.resolve(here, '..', '..', '.data', 'mockdb.json'));
     
     this.ensureDataDir();
     // Initialize with mock data

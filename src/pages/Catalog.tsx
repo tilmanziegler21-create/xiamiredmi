@@ -125,7 +125,14 @@ const Catalog: React.FC = () => {
   };
 
   useEffect(() => {
-    if (!city) return;
+    if (!city) {
+      setLoading(false);
+      setAllProducts([]);
+      setProducts([]);
+      setCategories([]);
+      setBrands([]);
+      return;
+    }
     favorites.load(city);
     (async () => {
       try {
@@ -394,9 +401,7 @@ const Catalog: React.FC = () => {
                   setQuery('');
                   resetFilters();
                   try {
-                    const params = new URLSearchParams(window.location.hash.split('?')[1] || '');
-                    params.delete('category');
-                    navigate({ pathname: '/catalog', search: params.toString() ? `?${params.toString()}` : '' }, { replace: true });
+                    navigate('/catalog', { replace: true });
                   } catch {
                   }
                 }}
