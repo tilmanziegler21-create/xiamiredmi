@@ -286,8 +286,8 @@ export async function readSheetTable(baseName, city) {
     if (inflight.has(key)) return inflight.get(key);
     const stale = cacheGetStale(key);
     const promise = (async () => {
+      const range = sheetRange(actualName, SHEET_READ_A1);
       try {
-        const range = sheetRange(actualName, SHEET_READ_A1);
         const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
         const values = resp.data.values || [];
         const headers = (values[0] || []).map((x) => String(x));
