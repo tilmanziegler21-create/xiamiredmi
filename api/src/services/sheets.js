@@ -139,6 +139,8 @@ function sheetRange(sheetTitle, a1) {
   return `'${s}'!${a1}`;
 }
 
+const SHEET_READ_A1 = 'A1:AZ5000';
+
 function normalizeTabKey(s) {
   return String(s || '')
     .trim()
@@ -285,7 +287,7 @@ export async function readSheetTable(baseName, city) {
     const stale = cacheGetStale(key);
     const promise = (async () => {
       try {
-        const range = sheetRange(actualName, 'A:AZ');
+        const range = sheetRange(actualName, SHEET_READ_A1);
         const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
         const values = resp.data.values || [];
         const headers = (values[0] || []).map((x) => String(x));
@@ -305,6 +307,11 @@ export async function readSheetTable(baseName, city) {
           const err = new Error('Sheet tab not found');
           err.status = 404;
           err.code = 'SHEETS_TAB_NOT_FOUND';
+          err.details = {
+            candidate: String(name),
+            resolvedTitle: String(actualName),
+            range: String(range),
+          };
           throw err;
         }
         if (stale) return stale;
@@ -346,7 +353,7 @@ export async function readSheetTable(baseName, city) {
         const key = `${spreadsheetId}:${picked}`;
         const cached = cacheGet(key);
         if (cached) return cached;
-        const range = sheetRange(picked, 'A:AZ');
+        const range = sheetRange(picked, SHEET_READ_A1);
         const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
         const values = resp.data.values || [];
         const headers = (values[0] || []).map((x) => String(x));
@@ -482,7 +489,7 @@ export async function appendOrderRow(city, orderRow) {
 
   await api.spreadsheets.values.append({
     spreadsheetId,
-    range: sheetRange(sheet, 'A:AZ'),
+    range: sheetRange(sheet, SHEET_READ_A1),
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [values] },
@@ -505,7 +512,7 @@ export async function appendCourierRow(city, courierRow) {
 
   await api.spreadsheets.values.append({
     spreadsheetId,
-    range: sheetRange(sheet, 'A:AZ'),
+    range: sheetRange(sheet, SHEET_READ_A1),
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [values] },
