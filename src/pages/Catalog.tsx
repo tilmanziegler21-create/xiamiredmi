@@ -88,6 +88,13 @@ const Catalog: React.FC = () => {
       const n = Number(String(v || '').replace(',', '.'));
       return Number.isFinite(n) ? n : NaN;
     };
+    const norm = (v: any) => String(v || '').trim().toLowerCase();
+    const categoryAlias: Record<string, string> = {
+      'жидкости': 'liquids',
+      'одноразки': 'disposables',
+      'поды': 'pods',
+      'картриджи': 'cartridges',
+    };
     const priceMin = toNum(filters.price_min);
     const priceMax = toNum(filters.price_max);
     const tSweetMin = toNum(filters.taste_sweetness_min);
@@ -96,7 +103,16 @@ const Catalog: React.FC = () => {
     const tFruitMin = toNum(filters.taste_fruitiness_min);
 
     let out = source.slice();
-    if (filters.category) out = out.filter((p) => String(p.category) === String(filters.category));
+    const rawCategory = String(filters.category || '');
+    const catKey = norm(rawCategory);
+    const mappedCategory = categoryAlias[catKey] || rawCategory;
+    if (catKey === 'новинки') {
+      out = out.filter((p) => Boolean((p as any).isNew));
+    } else if (catKey === 'хиты') {
+      // no-op: avoid empty catalog due to mismatched labels
+    } else if (rawCategory) {
+      out = out.filter((p) => norm(p.category) === norm(mappedCategory));
+    }
     if (filters.brand) out = out.filter((p) => String(p.brand) === String(filters.brand));
     if (Number.isFinite(priceMin)) out = out.filter((p) => Number(p.price || 0) >= priceMin);
     if (Number.isFinite(priceMax)) out = out.filter((p) => Number(p.price || 0) <= priceMax);
