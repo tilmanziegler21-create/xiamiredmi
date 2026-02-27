@@ -6,6 +6,20 @@ function getEnv(name, fallback = '') {
   return (process.env[name] || fallback || '').toString();
 }
 
+function parseCityMap() {
+  const raw = String(getEnv('SHEETS_CITY_MAP', getEnv('CITY_SHEET_SUFFIX_MAP')) || '').trim();
+  if (!raw) return new Map();
+  const m = new Map();
+  for (const part of raw.split(',').map((s) => s.trim()).filter(Boolean)) {
+    const [k, v] = part.split('=').map((x) => String(x || '').trim()).filter(Boolean);
+    if (!k || !v) continue;
+    m.set(k.toLowerCase(), v);
+  }
+  return m;
+}
+
+const cityMap = parseCityMap();
+
 function normalizePrivateKey(raw) {
   let v = String(raw || '');
   v = v.trim();
@@ -117,6 +131,11 @@ function toNumber(v) {
   return Number.isFinite(n) ? n : 0;
 }
 
+function sheetRange(sheetTitle, a1) {
+  const s = String(sheetTitle || '').replace(/'/g, "''");
+  return `'${s}'!${a1}`;
+}
+
 function normalizeTabKey(s) {
   return String(s || '')
     .trim()
@@ -155,15 +174,27 @@ function baseTabAliases(baseName) {
   return [];
 }
 
+function cityVariants(city) {
+  const c = String(city || '').trim();
+  if (!c) return [];
+  const mapped = cityMap.get(c.toLowerCase());
+  const out = new Set([c, c.toUpperCase(), c.toLowerCase()]);
+  if (mapped) out.add(String(mapped).trim());
+  if (c.length >= 2) out.add(c.slice(0, 2).toUpperCase());
+  if (c.length >= 3) out.add(c.slice(0, 3).toUpperCase());
+  return Array.from(out).filter(Boolean);
+}
+
 function sheetCandidates(base, city) {
   const out = [];
   out.push(base);
   out.push(base.endsWith('_') ? base : `${base}_`);
-  if (city) {
-    out.push(base.endsWith('_') ? `${base}${city}` : `${base}_${city}`);
-    out.push(`${base}${city}`);
-    out.push(`${base}-${city}`);
-    out.push(`${base} ${city}`);
+  const cities = cityVariants(city);
+  for (const c of cities) {
+    out.push(base.endsWith('_') ? `${base}${c}` : `${base}_${c}`);
+    out.push(`${base}${c}`);
+    out.push(`${base}-${c}`);
+    out.push(`${base} ${c}`);
   }
   return Array.from(new Set(out));
 }
@@ -248,7 +279,7 @@ export async function readSheetTable(baseName, city) {
     const stale = cacheGetStale(key);
     const promise = (async () => {
       try {
-        const range = `${actualName}!A:AZ`;
+        const range = sheetRange(actualName, 'A:AZ');
         const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
         const values = resp.data.values || [];
         const headers = (values[0] || []).map((x) => String(x));
@@ -309,7 +340,7 @@ export async function readSheetTable(baseName, city) {
         const key = `${spreadsheetId}:${picked}`;
         const cached = cacheGet(key);
         if (cached) return cached;
-        const range = `${picked}!A:AZ`;
+        const range = sheetRange(picked, 'A:AZ');
         const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
         const values = resp.data.values || [];
         const headers = (values[0] || []).map((x) => String(x));
@@ -422,8 +453,8 @@ export async function updateProductStock(product, newStock, newActive) {
     requestBody: {
       valueInputOption: 'RAW',
       data: [
-        { range: `${product._sheet}!${stockCol}${row}`, values: [[String(newStock)]] },
-        { range: `${product._sheet}!${activeCol}${row}`, values: [[newActive ? 'TRUE' : 'FALSE']] },
+        { range: sheetRange(product._sheet, `${stockCol}${row}`), values: [[String(newStock)]] },
+        { range: sheetRange(product._sheet, `${activeCol}${row}`), values: [[newActive ? 'TRUE' : 'FALSE']] },
       ],
     },
   });
@@ -445,7 +476,7 @@ export async function appendOrderRow(city, orderRow) {
 
   await api.spreadsheets.values.append({
     spreadsheetId,
-    range: `${sheet}!A:AZ`,
+    range: sheetRange(sheet, 'A:AZ'),
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [values] },
@@ -468,7 +499,7 @@ export async function appendCourierRow(city, courierRow) {
 
   await api.spreadsheets.values.append({
     spreadsheetId,
-    range: `${sheet}!A:AZ`,
+    range: sheetRange(sheet, 'A:AZ'),
     valueInputOption: 'RAW',
     insertDataOption: 'INSERT_ROWS',
     requestBody: { values: [values] },
@@ -499,7 +530,7 @@ export async function updateOrderRowByOrderId(city, orderId, patch) {
     const colIdx = headerIndex(headers, k);
     if (colIdx < 0) continue;
     const col = colLetter(colIdx);
-    updates.push({ range: `${sheet}!${col}${targetRowIndex}`, values: [[v == null ? '' : String(v)]] });
+    updates.push({ range: sheetRange(sheet, `${col}${targetRowIndex}`), values: [[v == null ? '' : String(v)]] });
   }
   if (updates.length === 0) return true;
 
@@ -617,7 +648,7 @@ export async function updateCourierRowByCourierId(city, courierId, patch) {
     const colIdx = headerIndex(headers, k);
     if (colIdx < 0) continue;
     const col = colLetter(colIdx);
-    updates.push({ range: `${sheet}!${col}${targetRowIndex}`, values: [[v == null ? '' : String(v)]] });
+    updates.push({ range: sheetRange(sheet, `${col}${targetRowIndex}`), values: [[v == null ? '' : String(v)]] });
   }
   if (updates.length === 0) return true;
 
