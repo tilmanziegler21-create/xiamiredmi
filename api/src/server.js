@@ -119,6 +119,19 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+if (String(process.env.REQUEST_LOG || '') === '1') {
+  app.use((req, res, next) => {
+    const started = Date.now();
+    res.on('finish', () => {
+      const p = String(req.path || '');
+      if (p.startsWith('/api/catalog') || p.startsWith('/api/favorites') || p.startsWith('/api/config')) {
+        const ms = Date.now() - started;
+        console.log(`${res.statusCode} ${req.method} ${req.originalUrl} ${ms}ms`);
+      }
+    });
+    next();
+  });
+}
 
 app.use('/api/auth', authRoutes);
 app.use('/api/catalog', catalogRoutes);
