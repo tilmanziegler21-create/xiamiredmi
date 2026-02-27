@@ -23,9 +23,19 @@ function normalizePrivateKey(raw) {
   return v.trim();
 }
 
+function getSpreadsheetId() {
+  return getEnv('GOOGLE_SHEETS_SPREADSHEET_ID', getEnv('GOOGLE_SHEET_ID'));
+}
+
 function getServiceAccount() {
-  const email = getEnv('GOOGLE_SHEETS_CLIENT_EMAIL', getEnv('GOOGLE_SERVICE_ACCOUNT_EMAIL'));
-  const rawKey = getEnv('GOOGLE_SHEETS_PRIVATE_KEY', getEnv('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY'));
+  const email = getEnv(
+    'GOOGLE_SHEETS_CLIENT_EMAIL',
+    getEnv('GOOGLE_SERVICE_ACCOUNT_EMAIL', getEnv('GOOGLE_CLIENT_EMAIL')),
+  );
+  const rawKey = getEnv(
+    'GOOGLE_SHEETS_PRIVATE_KEY',
+    getEnv('GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY', getEnv('GOOGLE_PRIVATE_KEY')),
+  );
   const key = normalizePrivateKey(rawKey);
   if (!email || !key) {
     const err = new Error('Sheets not configured');
@@ -47,6 +57,31 @@ function sheetsApi() {
   const auth = new google.auth.JWT({ email, key, scopes: SCOPES });
   cachedSheets = google.sheets({ version: 'v4', auth });
   return cachedSheets;
+}
+
+let cachedSpreadsheetMeta = null;
+async function spreadsheetMeta(spreadsheetId) {
+  const ttl = Number(getEnv('SHEETS_CACHE_TTL_SECONDS', '600')) * 1000;
+  if (cachedSpreadsheetMeta && cachedSpreadsheetMeta.id === spreadsheetId && Date.now() - cachedSpreadsheetMeta.ts < ttl) {
+    return cachedSpreadsheetMeta.data;
+  }
+  const api = sheetsApi();
+  const resp = await withRetry(() => api.spreadsheets.get({ spreadsheetId, includeGridData: false }));
+  const data = resp?.data || {};
+  cachedSpreadsheetMeta = { id: spreadsheetId, ts: Date.now(), data };
+  return data;
+}
+
+async function sheetTitleMap(spreadsheetId) {
+  const meta = await spreadsheetMeta(spreadsheetId);
+  const sheets = Array.isArray(meta.sheets) ? meta.sheets : [];
+  const map = new Map();
+  for (const s of sheets) {
+    const title = String(s?.properties?.title || '').trim();
+    if (!title) continue;
+    map.set(title.toLowerCase(), title);
+  }
+  return map;
 }
 
 function headerIndex(headers, name) {
@@ -145,7 +180,7 @@ async function withRetry(fn) {
 }
 
 export async function readSheetTable(baseName, city) {
-  const spreadsheetId = getEnv('GOOGLE_SHEETS_SPREADSHEET_ID');
+  const spreadsheetId = getSpreadsheetId();
   if (!spreadsheetId) {
     const err = new Error('Sheets not configured');
     err.status = 503;
@@ -155,23 +190,25 @@ export async function readSheetTable(baseName, city) {
   }
 
   const api = sheetsApi();
+  const titles = await sheetTitleMap(spreadsheetId);
   const candidates = sheetCandidates(baseName, city);
   let lastErr = null;
 
   for (const name of candidates) {
-    const key = `${spreadsheetId}:${name}`;
+    const actualName = titles.get(String(name).toLowerCase()) || name;
+    const key = `${spreadsheetId}:${actualName}`;
     const cached = cacheGet(key);
     if (cached) return cached;
     if (inflight.has(key)) return inflight.get(key);
     const stale = cacheGetStale(key);
     const promise = (async () => {
       try {
-        const range = `${name}!A:AZ`;
+        const range = `${actualName}!A:AZ`;
         const resp = await withRetry(() => api.spreadsheets.values.get({ spreadsheetId, range }));
         const values = resp.data.values || [];
         const headers = (values[0] || []).map((x) => String(x));
         const rows = values.slice(1);
-        const out = { sheet: name, headers, rows };
+        const out = { sheet: actualName, headers, rows };
         cacheSet(key, out);
         return out;
       } catch (e) {
@@ -180,6 +217,12 @@ export async function readSheetTable(baseName, city) {
           const err = new Error('Sheets auth key format not supported');
           err.status = 503;
           err.code = 'SHEETS_KEY_UNSUPPORTED';
+          throw err;
+        }
+        if (msg.toLowerCase().includes('unable to parse range') || msg.toLowerCase().includes('range') && msg.toLowerCase().includes('parse')) {
+          const err = new Error('Sheet tab not found');
+          err.status = 404;
+          err.code = 'SHEETS_TAB_NOT_FOUND';
           throw err;
         }
         if (stale) return stale;
@@ -206,8 +249,8 @@ export async function getProducts(city) {
   const categoryIdx = headerIndexAny(headers, ['category', 'категория']);
   const brandIdx = headerIndexAny(headers, ['brand', 'бренд', 'марка']);
   const priceIdx = headerIndexAny(headers, ['price']);
-  const stockIdx = headerIndexAny(headers, ['stock', 'qty', 'qty_available']);
-  const activeIdx = headerIndexAny(headers, ['active', 'is_active']);
+  const stockIdx = headerIndexAny(headers, ['stock', 'qty', 'qty_available', 'остаток', 'количество', 'кол-во']);
+  const activeIdx = headerIndexAny(headers, ['active', 'is_active', 'активен', 'активный']);
   const isNewIdx = headerIndexAny(headers, ['is_new', 'new', 'новинка']);
   const discountIdx = headerIndexAny(headers, ['discount', 'sale', 'скидка']);
   const imageIdx = headerIndexAny(headers, ['image', 'photo', 'img', 'картинка', 'фото', 'изображение']);
@@ -262,11 +305,11 @@ export async function getProducts(city) {
 }
 
 export async function updateProductStock(product, newStock, newActive) {
-  const spreadsheetId = getEnv('GOOGLE_SHEETS_SPREADSHEET_ID');
+  const spreadsheetId = getSpreadsheetId();
   const api = sheetsApi();
   const headers = product._headers;
-  const stockIdx = headerIndexAny(headers, ['stock', 'qty', 'qty_available']);
-  const activeIdx = headerIndexAny(headers, ['active', 'is_active']);
+  const stockIdx = headerIndexAny(headers, ['stock', 'qty', 'qty_available', 'остаток', 'количество', 'кол-во']);
+  const activeIdx = headerIndexAny(headers, ['active', 'is_active', 'активен', 'активный']);
   if (stockIdx < 0) throw new Error('Stock column not found in products sheet');
   if (activeIdx < 0) throw new Error('Active column not found in products sheet');
 
@@ -289,7 +332,7 @@ export async function updateProductStock(product, newStock, newActive) {
 }
 
 export async function appendOrderRow(city, orderRow) {
-  const spreadsheetId = getEnv('GOOGLE_SHEETS_SPREADSHEET_ID');
+  const spreadsheetId = getSpreadsheetId();
   const api = sheetsApi();
   const { sheet, headers } = await readSheetTable('orders', city);
 
@@ -312,7 +355,7 @@ export async function appendOrderRow(city, orderRow) {
 }
 
 export async function appendCourierRow(city, courierRow) {
-  const spreadsheetId = getEnv('GOOGLE_SHEETS_SPREADSHEET_ID');
+  const spreadsheetId = getSpreadsheetId();
   const api = sheetsApi();
   const { sheet, headers } = await readSheetTable('couriers', city);
 
@@ -335,7 +378,7 @@ export async function appendCourierRow(city, courierRow) {
 }
 
 export async function updateOrderRowByOrderId(city, orderId, patch) {
-  const spreadsheetId = getEnv('GOOGLE_SHEETS_SPREADSHEET_ID');
+  const spreadsheetId = getSpreadsheetId();
   const api = sheetsApi();
   const { sheet, headers, rows } = await readSheetTable('orders', city);
   const idIdx = headerIndexAny(headers, ['order_id', 'id']);
@@ -451,7 +494,7 @@ export async function getOrders(city) {
 }
 
 export async function updateCourierRowByCourierId(city, courierId, patch) {
-  const spreadsheetId = getEnv('GOOGLE_SHEETS_SPREADSHEET_ID');
+  const spreadsheetId = getSpreadsheetId();
   const api = sheetsApi();
   const { sheet, headers, rows } = await readSheetTable('couriers', city);
   const idIdx = headerIndexAny(headers, ['courier_id', 'id']);
