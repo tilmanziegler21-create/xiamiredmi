@@ -191,16 +191,16 @@ function cityVariants(city) {
 }
 
 function sheetCandidates(base, city) {
-  const out = [];
-  out.push(base);
-  out.push(base.endsWith('_') ? base : `${base}_`);
   const cities = cityVariants(city);
+  const out = [];
   for (const c of cities) {
     out.push(base.endsWith('_') ? `${base}${c}` : `${base}_${c}`);
     out.push(`${base}${c}`);
     out.push(`${base}-${c}`);
     out.push(`${base} ${c}`);
   }
+  out.push(base);
+  out.push(base.endsWith('_') ? base : `${base}_`);
   return Array.from(new Set(out));
 }
 
@@ -318,6 +318,7 @@ export async function readSheetTable(baseName, city) {
             candidate: String(name),
             resolvedTitle: String(actualName),
             range: String(range),
+            city: String(city || ''),
           };
           throw err;
         }
