@@ -63,24 +63,24 @@ const Home: React.FC = () => {
     badgeText: t.badgeText || '',
   }));
 
-  const tabs = useMemo(() => (['Все', 'Новинки', 'Скидки', 'Жидкости']), []);
+  const tabs = useMemo(() => (['Все', 'Новинки', 'Скидки', 'Жидкости', 'Одноразки']), []);
 
   const categoryAtmos = useMemo(() => {
     return {
       'Жидкости': {
-        bg: 'radial-gradient(120% 90% at 20% 18%, rgba(52,211,153,0.35) 0%, rgba(0,0,0,0) 58%), radial-gradient(110% 90% at 78% 26%, rgba(16,185,129,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+        bg: 'radial-gradient(ellipse at 80% 50%, rgba(30,120,60,0.5), transparent 65%), #060e08',
         mascot: 'green' as const,
       },
       'Одноразки': {
-        bg: 'radial-gradient(120% 90% at 18% 18%, rgba(251,191,36,0.34) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(245,158,11,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+        bg: 'radial-gradient(ellipse at 80% 50%, rgba(180,120,20,0.45), transparent 65%), #0d0a04',
         mascot: 'gold' as const,
       },
       'Поды': {
-        bg: 'radial-gradient(120% 90% at 18% 18%, rgba(96,165,250,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(139,92,246,0.26) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+        bg: 'radial-gradient(ellipse at 80% 50%, rgba(50,80,200,0.4), transparent 65%), #05060f',
         mascot: 'cosmic' as const,
       },
       'Картриджи': {
-        bg: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(244,63,94,0.24) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+        bg: 'radial-gradient(ellipse at 80% 50%, rgba(180,20,50,0.4), transparent 65%), #0d0406',
         mascot: 'pink' as const,
       },
     };
@@ -169,26 +169,30 @@ const Home: React.FC = () => {
     if (t === 'все' || !t) return allProducts;
     if (t === 'новинки') return allProducts.filter((p) => Boolean(p.isNew));
     if (t === 'скидки') return allProducts.filter((p) => Number(p.discount || 0) > 0);
-    const alias: Record<string, string> = {
-      'жидкости': 'liquids',
-      'одноразки': 'disposables',
-      'поды': 'pods',
-      'картриджи': 'cartridges',
-    };
-    const mapped = alias[t] || tab;
-    return allProducts.filter((p) => norm(p.category) === norm(mapped));
+    if (t === 'жидкости') return allProducts.filter((p) => ['жидкости', 'liquids'].includes(norm(p.category)));
+    if (t === 'одноразки') return allProducts.filter((p) => ['одноразки', 'disposables'].includes(norm(p.category)));
+    if (t === 'поды') return allProducts.filter((p) => ['поды', 'pods'].includes(norm(p.category)));
+    if (t === 'картриджи') return allProducts.filter((p) => ['картриджи', 'cartridges'].includes(norm(p.category)));
+    return allProducts;
   }, [allProducts, tab]);
 
   const featured = useMemo(() => {
     return filteredProducts.slice(0, 6);
   }, [filteredProducts]);
 
-  const titleFontSize = (title: string) => {
-    const len = String(title || '').trim().length;
-    if (len <= 8) return 26;
-    if (len <= 10) return 22;
-    return 18;
-  };
+  const bannerBottleUrl = useMemo(() => {
+    const norm = (v: any) => String(v || '').trim().toLowerCase();
+    const current = banners[currentBanner];
+    const target = current?.linkType === 'category' ? String(current?.linkTarget || '') : '';
+    const categoryHint = target ? norm(target) : '';
+    const byHint =
+      categoryHint === 'жидкости'
+        ? allProducts.find((p) => p.image && norm(p.category) === 'жидкости')
+        : categoryHint === 'одноразки'
+        ? allProducts.find((p) => p.image && norm(p.category) === 'одноразки')
+        : allProducts.find((p) => p.image);
+    return byHint?.image ? String(byHint.image) : '';
+  }, [allProducts, banners, currentBanner]);
 
   const styles = {
     container: {
@@ -215,7 +219,7 @@ const Home: React.FC = () => {
       bottom: 40,
       left: theme.spacing.lg,
       right: theme.spacing.lg,
-      zIndex: 2,
+      zIndex: 4,
     },
     bannerTitle: {
       fontSize: 36,
@@ -237,7 +241,7 @@ const Home: React.FC = () => {
       display: 'flex',
       gap: 10,
       overflowX: 'auto' as const,
-      padding: '2px 2px 0 2px',
+      padding: '2px 20px 0 2px',
       marginTop: theme.spacing.md,
       WebkitOverflowScrolling: 'touch' as const,
     },
@@ -279,8 +283,8 @@ const Home: React.FC = () => {
       marginBottom: theme.spacing.xl,
     },
     categoryCard: {
-      height: 150,
-      borderRadius: theme.radius.lg,
+      height: 155,
+      borderRadius: 16,
       overflow: 'hidden',
       position: 'relative' as const,
       boxShadow: theme.shadow.card,
@@ -288,28 +292,43 @@ const Home: React.FC = () => {
       cursor: 'pointer',
       touchAction: 'manipulation' as const,
     },
-    categoryTitleWrap: {
+    categoryTitle: {
       position: 'absolute' as const,
-      left: theme.spacing.md,
-      bottom: theme.spacing.md,
-      maxWidth: '56%',
+      left: 12,
+      bottom: 12,
+      maxWidth: '55%',
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
+      fontSize: 22,
+      color: '#fff',
+      textShadow: '0 2px 8px rgba(0,0,0,0.9)',
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase' as const,
+      lineHeight: 0.95,
+      whiteSpace: 'normal' as const,
+      wordBreak: 'break-word' as const,
       zIndex: 2,
     },
-    categoryTitle: (title: string) => ({
-      fontSize: titleFontSize(title),
-      fontWeight: theme.typography.fontWeight.bold,
+    categoryBadge: {
+      position: 'absolute' as const,
+      top: 10,
+      left: 10,
+      borderRadius: 4,
+      padding: '4px 6px',
+      background: 'rgba(255,255,255,0.12)',
+      border: '1px solid rgba(255,255,255,0.18)',
+      fontSize: 9,
+      fontWeight: 800,
+      letterSpacing: '0.10em',
       textTransform: 'uppercase' as const,
-      letterSpacing: '0.08em',
-      textShadow: '0 12px 30px rgba(0,0,0,0.60)',
-      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
-      lineHeight: 0.95,
-    }),
+      color: 'rgba(255,255,255,0.92)',
+      zIndex: 3,
+    },
     categoryMascot: {
       position: 'absolute' as const,
-      right: -30,
-      bottom: -32,
-      width: 200,
-      height: 200,
+      right: -12,
+      bottom: -8,
+      height: '85%',
+      width: '60%',
       pointerEvents: 'none' as const,
       zIndex: 1,
     },
@@ -331,6 +350,17 @@ const Home: React.FC = () => {
 
   return (
     <div style={styles.container}>
+      <div style={styles.searchSection}>
+        <div
+          style={styles.searchButton}
+          onClick={() => navigate('/catalog')}
+          role="button"
+        >
+          <Search size={18} color={theme.colors.dark.textSecondary} />
+          <span>Поиск товаров...</span>
+        </div>
+      </div>
+
       <div style={styles.hero}>
         {banners.length ? (
           <div
@@ -370,6 +400,15 @@ const Home: React.FC = () => {
             ) : null}
             <div className="home-banner-overlay" />
             <div className="home-banner-shine" />
+            {!ultraLite && bannerBottleUrl ? (
+              <img
+                className="home-banner-product"
+                src={bannerBottleUrl}
+                alt=""
+                loading="lazy"
+                decoding="async"
+              />
+            ) : null}
             <div className="home-banner-mascot">
               <CherryMascot
                 variant={currentBanner % 5 === 1 ? 'green' : currentBanner % 5 === 2 ? 'gold' : currentBanner % 5 === 3 ? 'cosmic' : currentBanner % 5 === 4 ? 'pink' : 'classic'}
@@ -380,7 +419,7 @@ const Home: React.FC = () => {
               <h2 style={styles.bannerTitle}>{banners[currentBanner].title}</h2>
               <p style={styles.bannerSubtitle}>{banners[currentBanner].subtitle}</p>
             </div>
-            <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0 }}>
+            <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, zIndex: 5 }}>
               <CarouselDots total={banners.length} current={currentBanner} onDotClick={setCurrentBanner} />
             </div>
           </div>
@@ -401,21 +440,28 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      {/* Search Section */}
-      <div style={styles.searchSection}>
-        <div
-          style={styles.searchButton}
-          onClick={() => navigate('/catalog')}
-          role="button"
-        >
-          <Search size={18} color={theme.colors.dark.textSecondary} />
-          <span>Поиск товаров...</span>
-        </div>
-      </div>
-
       <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
-        <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)' }}>
-          Категории
+        <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
+          КАТЕГОРИИ
+        </div>
+        <div
+          role="button"
+          onClick={() => navigate('/categories')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            color: 'rgba(255,255,255,0.80)',
+            fontSize: theme.typography.fontSize.xs,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            padding: '10px 12px',
+            borderRadius: 999,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.14)',
+          }}
+        >
+          ВСЕ
         </div>
       </div>
 
@@ -456,25 +502,46 @@ const Home: React.FC = () => {
                     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.18, filter: 'saturate(1.1) contrast(1.05)' }}
                   />
                 ) : null}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.82) 100%)', pointerEvents: 'none' }} />
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.68) 100%)', pointerEvents: 'none' }} />
                 <div style={styles.categoryMascot}>
-                  <CherryMascot variant={mascot} size={176} />
+                  <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+                    <CherryMascot variant={mascot} size={140} />
+                  </div>
                 </div>
                 {category.badgeText ? (
-                  <div style={{ position: 'absolute', top: theme.spacing.md, right: theme.spacing.md, zIndex: 3 }}>
-                    <ChipBadge variant="new" size="sm">{category.badgeText}</ChipBadge>
-                  </div>
+                  <div style={styles.categoryBadge}>{category.badgeText}</div>
                 ) : null}
-                <div style={styles.categoryTitleWrap}>
-                  <div style={styles.categoryTitle(category.name)}>{category.name}</div>
-                </div>
+                <div style={styles.categoryTitle}>{category.name}</div>
               </div>
             );
           })
         )}
       </div>
 
-      <SectionDivider title={tab === 'Все' ? 'Все товары' : tab} />
+      <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
+        <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
+          ВСЕ ТОВАРЫ
+        </div>
+        <div
+          role="button"
+          onClick={() => navigate('/catalog')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            color: 'rgba(255,255,255,0.80)',
+            fontSize: theme.typography.fontSize.xs,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            padding: '10px 12px',
+            borderRadius: 999,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.14)',
+          }}
+        >
+          СМОТРЕТЬ ВСЕ
+        </div>
+      </div>
 
       {loadError ? (
         <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.lg }}>

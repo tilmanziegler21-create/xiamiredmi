@@ -5,7 +5,6 @@ import { GlassCard } from './GlassCard';
 import { formatCurrency } from '../lib/currency';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { blurStyle } from './blur';
-import { CherryMascot } from './CherryMascot';
 import { ChevronRight, Gift, Grid, Heart, MapPin, Package, ShoppingCart, Star, Headphones } from 'lucide-react';
 
 interface DrawerMenuProps {
@@ -115,23 +114,20 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
           alignItems: 'center',
           marginBottom: theme.spacing.xl,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
-            <CherryMascot variant="classic" size={40} />
-            <h2 style={{
-              color: theme.colors.dark.text,
-              fontSize: 34,
-              fontWeight: theme.typography.fontWeight.bold,
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              margin: 0,
-            }}>
-              Меню
-            </h2>
-          </div>
+          <h2 style={{
+            color: theme.colors.dark.text,
+            fontSize: 34,
+            fontWeight: theme.typography.fontWeight.bold,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            margin: 0,
+          }}>
+            Меню
+          </h2>
           <button
             onClick={onClose}
             style={{

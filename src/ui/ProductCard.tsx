@@ -1,16 +1,16 @@
 import React from 'react';
 import { theme } from './theme';
-import { IconButton } from './IconButton';
 import { ChipBadge } from './ChipBadge';
-import { Coins, ShoppingCart, Heart } from 'lucide-react';
-import { formatCurrency } from '../lib/currency';
+import { ShoppingCart, Heart } from 'lucide-react';
 import { blurStyle } from './blur';
+import { CherryMascot } from './CherryMascot';
 
 interface ProductCardProps {
   id: string;
   name: string;
   price: number;
   image: string;
+  category?: string;
   brand?: string; // Add brand for brand-based images
   isNew?: boolean;
   stock?: number; // Add stock for availability badges
@@ -39,6 +39,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   name,
   price,
   image,
+  category = '',
   brand = '', // Add brand prop
   isNew = false,
   stock = 0, // Default stock
@@ -141,30 +142,43 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       ? 'radial-gradient(120% 90% at 18% 18%, rgba(96,165,250,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(139,92,246,0.26) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.85) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)'
       : 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(244,63,94,0.24) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.85) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)';
 
+  const norm = (v: any) => String(v || '').trim().toLowerCase();
+  const bgByCategory = () => {
+    const c = norm(category);
+    if (c === 'жидкости' || c === 'liquids') return 'radial-gradient(ellipse at 80% 50%, rgba(30,120,60,0.5), transparent 65%), #060e08';
+    if (c === 'одноразки' || c === 'disposables') return 'radial-gradient(ellipse at 80% 50%, rgba(180,120,20,0.45), transparent 65%), #0d0a04';
+    if (c === 'поды' || c === 'pods') return 'radial-gradient(ellipse at 80% 50%, rgba(50,80,200,0.4), transparent 65%), #05060f';
+    if (c === 'картриджи' || c === 'cartridges') return 'radial-gradient(ellipse at 80% 50%, rgba(180,20,50,0.4), transparent 65%), #0d0406';
+    return atmos;
+  };
+  const bg = bgByCategory();
+  const mascotVariant: any =
+    norm(category) === 'жидкости' || norm(category) === 'liquids'
+      ? 'green'
+      : norm(category) === 'одноразки' || norm(category) === 'disposables'
+      ? 'gold'
+      : norm(category) === 'поды' || norm(category) === 'pods'
+      ? 'cosmic'
+      : norm(category) === 'картриджи' || norm(category) === 'cartridges'
+      ? 'pink'
+      : variant;
+
+  const currencySymbol = (import.meta.env?.VITE_CURRENCY_SYMBOL as string) || '€';
+  const amount = Math.round(Number(price || 0)).toLocaleString();
+
   const styles = {
     card: {
       position: 'relative' as const,
-      height: '250px',
-      borderRadius: theme.radius.lg,
+      height: 230,
+      borderRadius: 16,
       overflow: 'hidden',
-      background: `${atmos}, ${resolvedGradient}`,
+      background: `${bg}, ${resolvedGradient}`,
       boxShadow: theme.shadow.card,
-    },
-    bgImage: {
-      position: 'absolute' as const,
-      inset: 0,
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover' as const,
-      zIndex: 0,
-      pointerEvents: 'none' as const,
-      opacity: 1,
-      filter: 'saturate(1.08) contrast(1.08)',
     },
     scrim: {
       position: 'absolute' as const,
       inset: 0,
-      background: 'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.05) 48%, rgba(0,0,0,0.86) 100%)',
+      background: 'linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.04) 52%, rgba(0,0,0,0.86) 100%)',
       zIndex: 1,
       pointerEvents: 'none' as const,
     },
@@ -172,91 +186,85 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       position: 'absolute' as const,
       inset: 0,
       zIndex: 2,
-      display: 'flex',
-      flexDirection: 'column' as const,
-      justifyContent: 'flex-start',
-      padding: theme.spacing.md,
-    },
-    topRow: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      gap: theme.spacing.sm,
-      minWidth: 0,
+      padding: 0,
     },
     title: {
-      color: theme.colors.dark.text,
-      fontSize: String(name || '').length > 26 ? 12 : 13,
-      fontWeight: theme.typography.fontWeight.bold,
+      position: 'absolute' as const,
+      top: 10,
+      left: 10,
+      right: 50,
+      color: '#fff',
+      fontSize: 15,
+      fontWeight: 800,
       textTransform: 'uppercase' as const,
       lineHeight: 1.05,
-      letterSpacing: '0.05em',
-      textShadow: '0 16px 30px rgba(0,0,0,0.55)',
+      letterSpacing: '0.08em',
+      textShadow: '0 10px 26px rgba(0,0,0,0.70)',
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical' as const,
       overflow: 'hidden',
-      maxHeight: '2.1em',
     },
     pricePill: {
       position: 'absolute' as const,
-      left: theme.spacing.md,
-      bottom: theme.spacing.md,
-      background: 'rgba(255,255,255,0.94)',
+      left: 10,
+      top: 46,
+      background: 'rgba(255,255,255,0.95)',
       color: '#0b0b0b',
-      padding: '10px 12px',
-      borderRadius: 16,
-      fontSize: 18,
-      fontWeight: theme.typography.fontWeight.bold,
+      padding: '3px 10px',
+      borderRadius: 12,
       display: 'flex',
       alignItems: 'center',
       gap: 8,
-      boxShadow: '0 18px 30px rgba(0,0,0,0.38)',
+      boxShadow: '0 14px 26px rgba(0,0,0,0.38)',
       flex: '0 0 auto',
-    },
-    newBadge: {
-      position: 'absolute' as const,
-      top: theme.spacing.md,
-      right: theme.spacing.md,
+      zIndex: 3,
     },
     stockBadge: {
       position: 'absolute' as const,
-      top: theme.spacing.md,
-      left: theme.spacing.md,
-      padding: '6px 10px',
-      borderRadius: 12,
-      fontSize: theme.typography.fontSize.xs,
-      fontWeight: theme.typography.fontWeight.bold,
+      top: 10,
+      left: 10,
+      padding: '4px 6px',
+      borderRadius: 6,
+      fontSize: 8,
+      fontWeight: 800,
       textTransform: 'uppercase' as const,
       letterSpacing: '0.08em',
+      zIndex: 4,
     },
     inStock: {
-      background: 'rgba(0,0,0,0.42)',
-      color: 'rgba(255,255,255,0.92)',
-      border: '1px solid rgba(255,255,255,0.14)',
+      background: 'rgba(0,0,0,0.34)',
+      color: 'rgba(255,255,255,0.86)',
+      border: '1px solid rgba(255,255,255,0.12)',
     },
     outOfStock: {
-      background: 'rgba(0,0,0,0.50)',
-      color: theme.colors.dark.accentRed,
-      border: '1px solid rgba(255,45,85,0.34)',
+      background: 'rgba(15,8,10,0.8)',
+      color: '#c0193a',
+      border: '1px solid rgba(192,25,58,0.4)',
     },
     lowStock: {
-      background: 'rgba(0,0,0,0.46)',
-      color: 'rgba(255,255,255,0.92)',
-      border: '1px solid rgba(255,255,255,0.14)',
+      background: 'rgba(0,0,0,0.34)',
+      color: 'rgba(255,255,255,0.86)',
+      border: '1px solid rgba(255,255,255,0.12)',
     },
     overlayActions: {
       position: 'absolute' as const,
       right: 10,
-      top: 54,
+      top: '50%',
+      transform: 'translateY(-50%)',
       display: 'flex',
       flexDirection: 'column' as const,
-      gap: theme.spacing.sm,
+      gap: 10,
+      zIndex: 4,
     },
     actionSquare: {
       width: 32,
       height: 32,
       borderRadius: 10,
-      background: 'rgba(255,255,255,0.10)',
-      border: '1px solid rgba(255,255,255,0.18)',
-      ...blurStyle(theme.blur.glass),
+      background: 'rgba(255,255,255,0.08)',
+      border: '1px solid rgba(255,255,255,0.12)',
+      ...blurStyle('6px'),
       boxShadow: '0 16px 26px rgba(0,0,0,0.35)',
     },
     titleWrap: {
@@ -264,6 +272,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       left: theme.spacing.md,
       right: 58,
       top: 52,
+    },
+    mascot: {
+      position: 'absolute' as const,
+      left: '50%',
+      bottom: 40,
+      transform: 'translateX(-50%)',
+      height: '55%',
+      opacity: 0.85,
+      pointerEvents: 'none' as const,
+      zIndex: 1,
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+      width: '100%',
+    },
+    bottle: {
+      position: 'absolute' as const,
+      left: '50%',
+      bottom: 36,
+      transform: 'translateX(-50%)',
+      height: '60%',
+      width: '100%',
+      objectFit: 'contain' as const,
+      pointerEvents: 'none' as const,
+      zIndex: 2,
+      filter: 'drop-shadow(0 18px 28px rgba(0,0,0,0.55))',
     },
   };
 
@@ -274,13 +308,19 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
     >
-      {resolvedImage ? <img src={resolvedImage} alt="" style={styles.bgImage} loading="lazy" decoding="async" /> : null}
       <div style={styles.scrim} />
       {stock === 0 ? (
-        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2, borderRadius: 'inherit', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 2, borderRadius: 'inherit', pointerEvents: 'none' }} />
       ) : null}
       <div style={styles.content}>
-        {stock !== undefined && (
+        <div style={styles.mascot}>
+          <div style={{ height: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+            <CherryMascot variant={mascotVariant} size={140} />
+          </div>
+        </div>
+        {resolvedImage ? <img src={resolvedImage} alt="" style={styles.bottle} loading="lazy" decoding="async" /> : null}
+
+        {stock !== undefined ? (
           <div 
             style={{
               ...styles.stockBadge,
@@ -288,45 +328,42 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                   stock <= 5 ? styles.lowStock : styles.inStock)
             }}
           >
-            {stock === 0 ? 'Нет в наличии' : 
-             stock <= 5 ? `Осталось ${stock}` : 'В наличии'}
+            {stock === 0 ? 'нет в наличии' : stock <= 5 ? `осталось ${stock}` : 'в наличии'}
           </div>
-        )}
+        ) : null}
 
-        {isNew && (
-          <div style={styles.newBadge}>
+        {isNew ? (
+          <div style={{ position: 'absolute', top: 10, right: 10, zIndex: 4 }}>
             <ChipBadge variant="new" size="sm">NEW</ChipBadge>
           </div>
-        )}
+        ) : null}
         
         <div style={styles.overlayActions}>
-          <IconButton
-            icon={<Heart size={16} fill={isFavorite ? 'white' : 'none'} />}
+          <button
+            style={{ ...styles.actionSquare, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite?.(id);
             }}
-            variant="glass"
-            size="sm"
-            style={styles.actionSquare}
-          />
-          <IconButton
-            icon={<ShoppingCart size={16} />}
+          >
+            <Heart size={13} color="rgba(255,255,255,0.55)" fill={isFavorite ? 'rgba(255,255,255,0.55)' : 'none'} />
+          </button>
+          <button
+            style={{ ...styles.actionSquare, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
             onClick={(e) => {
               e.stopPropagation();
               onAddToCart?.(id);
             }}
-            variant="glass"
-            size="sm"
-            style={styles.actionSquare}
-          />
+          >
+            <ShoppingCart size={13} color="rgba(255,255,255,0.55)" />
+          </button>
         </div>
         <div style={styles.titleWrap}>
           <h3 style={styles.title}>{name}</h3>
         </div>
         <div style={styles.pricePill}>
-          <Coins size={16} />
-          <span>{formatCurrency(price)}</span>
+          <span style={{ fontSize: 20, fontWeight: 800 }}>{amount}</span>
+          <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(0,0,0,0.55)' }}>{currencySymbol}</span>
         </div>
       </div>
     </div>
