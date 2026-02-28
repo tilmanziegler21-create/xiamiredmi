@@ -117,8 +117,9 @@ const Courier: React.FC = () => {
         setPrefTimeTo(String(me?.time_to || '').trim());
         setPrefPlace(String(me?.meeting_place || '').trim());
       }
-    } catch {
-      toast.push('Не удалось сохранить', 'error');
+    } catch (e) {
+      const msg = String((e as any)?.response?.data?.error || '').trim();
+      toast.push(msg || 'Не удалось сохранить', 'error');
     } finally {
       setSavingPrefs(false);
     }

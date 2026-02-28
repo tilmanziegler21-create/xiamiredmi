@@ -27,8 +27,14 @@ function parseCourierData(order, dbOrder) {
 
 async function resolveCourierIdForUser(city, tgId) {
   try {
+    const normId = (v) => String(v || '').trim().replace(/\.0$/, '').replace(/[^\d]/g, '');
+    const target = normId(tgId);
     const list = await getCouriers(city);
-    const c = list.find((x) => String(x?.tg_id || '') === String(tgId)) || list.find((x) => String(x?.courier_id || '') === String(tgId));
+    const c =
+      list.find((x) => normId(x?.tg_id) === target) ||
+      list.find((x) => normId(x?.courier_id) === target) ||
+      list.find((x) => String(x?.tg_id || '').trim() === String(tgId).trim()) ||
+      list.find((x) => String(x?.courier_id || '').trim() === String(tgId).trim());
     return c ? String(c.courier_id || '').trim() : '';
   } catch {
     return '';

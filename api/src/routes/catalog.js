@@ -26,6 +26,29 @@ function errorMessage(e) {
   return typeof msg === 'string' ? msg : '';
 }
 
+function normText(v) {
+  return String(v || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+function categoryMatches(query, productCategory) {
+  const q = normText(query);
+  const c = normText(productCategory);
+  if (!q) return true;
+  const aliases = {
+    'жидкости': ['жидкости', 'жидкость', 'liquids', 'liquid'],
+    'одноразки': ['одноразки', 'одноразка', 'disposables', 'disposable'],
+    'поды': ['поды', 'под', 'pods', 'pod'],
+    'картриджи': ['картриджи', 'картридж', 'cartridges', 'cartridge'],
+  };
+  for (const [key, list] of Object.entries(aliases)) {
+    if (q === key) return list.includes(c);
+  }
+  return c === q;
+}
+
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { city, category, brand, price_min, price_max, discount, new: isNew, taste_sweetness_min, taste_sweetness_max, taste_coolness_min, taste_fruitiness_min } = req.query;
@@ -94,11 +117,12 @@ router.get('/', requireAuth, async (req, res) => {
     }
 
     if (category) {
-      filteredProducts = filteredProducts.filter(product => product.category === category);
+      filteredProducts = filteredProducts.filter((product) => categoryMatches(category, product.category));
     }
 
     if (brand) {
-      filteredProducts = filteredProducts.filter(product => product.brand === brand);
+      const qb = normText(brand);
+      filteredProducts = filteredProducts.filter((product) => normText(product.brand) === qb);
     }
 
     if (price_min) {
