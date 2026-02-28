@@ -49,6 +49,16 @@ const normalizeProvidedImage = (v: string) => {
   if (['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower)) return '';
   if (lower.includes('via.placeholder.com')) return '';
   if (lower.startsWith('data:image/')) return raw;
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    if (lower.includes('googleusercontent.com') || lower.includes('lh3.googleusercontent.com')) return raw;
+    if (lower.includes('drive.google.com')) {
+      const m1 = raw.match(/\/file\/d\/([^/]+)\//);
+      const m2 = raw.match(/[?&]id=([^&]+)/);
+      const id = (m1 && m1[1]) || (m2 && m2[1]) || '';
+      if (id) return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(id)}`;
+      return raw;
+    }
+  }
   const base = lower.split('#')[0].split('?')[0];
   const isImageUrl = /\.(png|jpe?g|webp|gif|svg)$/.test(base);
   if (!isImageUrl) return '';

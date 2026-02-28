@@ -60,7 +60,11 @@ export const requireAuth = (req, res, next) => {
     }
 
     const token = authHeader.slice('Bearer '.length);
-    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    let secret = String(process.env.JWT_SECRET || '').trim();
+    if (!secret) {
+      if (String(process.env.NODE_ENV || '') === 'production') return res.status(500).json({ error: 'Server misconfigured' });
+      secret = 'dev-secret';
+    }
     const payload = jwt.verify(token, secret);
 
     const user = db.prepare('SELECT * FROM users WHERE tg_id = ?').get(payload.tgId);
@@ -96,7 +100,11 @@ export const requireAuthAllowUnverified = (req, res, next) => {
     }
 
     const token = authHeader.slice('Bearer '.length);
-    const secret = process.env.JWT_SECRET || 'your-secret-key';
+    let secret = String(process.env.JWT_SECRET || '').trim();
+    if (!secret) {
+      if (String(process.env.NODE_ENV || '') === 'production') return res.status(500).json({ error: 'Server misconfigured' });
+      secret = 'dev-secret';
+    }
     const payload = jwt.verify(token, secret);
 
     const user = db.prepare('SELECT * FROM users WHERE tg_id = ?').get(payload.tgId);

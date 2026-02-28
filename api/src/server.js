@@ -1,8 +1,10 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
+import { createHash } from 'crypto';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 
@@ -97,11 +99,27 @@ function originAllowed(origin, allowedList) {
 }
 
 app.use(helmet());
-const limiter = rateLimit({ windowMs: 60_000, max: 60 });
+const limiter = rateLimit({
+  windowMs: 60_000,
+  max: 60,
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  keyGenerator(req) {
+    const auth = String(req.headers?.authorization || '');
+    if (auth.startsWith('Bearer ')) {
+      const token = auth.slice('Bearer '.length).trim();
+      if (token) {
+        return `t:${createHash('sha256').update(token).digest('hex').slice(0, 24)}`;
+      }
+    }
+    const ip = String(req.ip || req.headers['x-forwarded-for'] || 'unknown');
+    return `ip:${ip}`;
+  },
+});
 app.use('/api/', limiter);
-const authLimiter = rateLimit({ windowMs: 60_000, max: 10, message: 'Слишком много попыток' });
+const authLimiter = rateLimit({ windowMs: 60_000, max: 10, message: 'Слишком много попыток', standardHeaders: 'draft-7', legacyHeaders: false });
 app.use('/api/auth', authLimiter);
-const spinLimiter = rateLimit({ windowMs: 3_600_000, max: 3, message: 'Лимит спинов' });
+const spinLimiter = rateLimit({ windowMs: 3_600_000, max: 3, message: 'Лимит спинов', standardHeaders: 'draft-7', legacyHeaders: false });
 app.use('/api/fortune/spin', spinLimiter);
 app.use(
   cors({
@@ -117,6 +135,7 @@ app.use(
     credentials: true,
   })
 );
+app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 if (String(process.env.REQUEST_LOG || '') === '1') {

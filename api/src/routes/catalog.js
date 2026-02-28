@@ -199,7 +199,7 @@ router.get('/brands', requireAuth, async (req, res) => {
   try {
     const city = String(req.query.city || '');
     if (!city) return res.status(400).json({ error: 'City parameter is required' });
-    const brands = await getMasterBrands();
+    const brands = await getMasterBrands(city);
     res.json({ brands });
   } catch (e) {
     console.error('Brands error:', e);

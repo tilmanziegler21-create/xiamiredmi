@@ -55,10 +55,16 @@ router.post('/verify', verifyTelegramAuth, async (req, res) => {
       'INSERT OR IGNORE INTO users (tg_id, username, first_name, last_name, age_verified, status, bonus_balance) VALUES (?, ?, ?, ?, ?, ?, 0)',
     ).run(tgId, username, firstName, lastName, ageVerified ? 1 : 0, status);
     db.prepare('UPDATE users SET username=?, first_name=?, last_name=?, status=? WHERE tg_id=?').run(username, firstName, lastName, status, tgId);
-    
+    let secret = String(process.env.JWT_SECRET || '').trim();
+    if (!secret) {
+      if (String(process.env.NODE_ENV || '') === 'production') {
+        return res.status(500).json({ error: 'Server misconfigured' });
+      }
+      secret = 'dev-secret';
+    }
     const token = jwt.sign(
       { tgId, username },
-      process.env.JWT_SECRET || 'your-secret-key',
+      secret,
       { expiresIn: '7d' }
     );
     

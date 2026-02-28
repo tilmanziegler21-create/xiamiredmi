@@ -18,6 +18,9 @@ class InMemoryDB {
     this.promos = new Map();
     this.courierPayouts = [];
     this.courierCashouts = [];
+    this._persistTimer = null;
+    this._persistInFlight = false;
+    this._persistPending = false;
 
     const here = path.dirname(fileURLToPath(import.meta.url));
     this.dataFilePath = path.resolve(process.env.MOCK_DB_FILE || path.resolve(here, '..', '..', '.data', 'mockdb.json'));
@@ -100,22 +103,51 @@ class InMemoryDB {
   persistState() {
     try {
       this.ensureDataDir();
-      const payload = {
-        users: Array.from(this.users.values()),
-        favorites: Array.from(this.favorites.values()),
-        bonusLedger: this.bonusLedger,
-        orders: Array.from(this.orders.values()),
-        orderItems: Array.from(this.orderItems.values()),
-        carts: Array.from(this.carts.values()),
-        cartItems: Array.from(this.cartItems.values()),
-        reservations: Array.from(this.reservations.values()),
-        promos: Array.from(this.promos.values()),
-        courierPayouts: this.courierPayouts,
-        courierCashouts: this.courierCashouts,
-      };
-      fs.writeFileSync(this.dataFilePath, JSON.stringify(payload, null, 2), 'utf8');
+      this._persistPending = true;
+      const debounceMs = Math.max(0, Number(process.env.MOCK_DB_DEBOUNCE_MS || 200));
+      if (this._persistTimer) clearTimeout(this._persistTimer);
+      this._persistTimer = setTimeout(() => {
+        this._persistTimer = null;
+        this._flushPersist().catch(() => {
+        });
+      }, debounceMs);
     } catch {
       // ignore
+    }
+  }
+
+  _buildPersistPayload() {
+    return {
+      users: Array.from(this.users.values()),
+      favorites: Array.from(this.favorites.values()),
+      bonusLedger: this.bonusLedger,
+      orders: Array.from(this.orders.values()),
+      orderItems: Array.from(this.orderItems.values()),
+      carts: Array.from(this.carts.values()),
+      cartItems: Array.from(this.cartItems.values()),
+      reservations: Array.from(this.reservations.values()),
+      promos: Array.from(this.promos.values()),
+      courierPayouts: this.courierPayouts,
+      courierCashouts: this.courierCashouts,
+    };
+  }
+
+  async _flushPersist() {
+    if (this._persistInFlight) return;
+    if (!this._persistPending) return;
+    this._persistInFlight = true;
+    try {
+      while (this._persistPending) {
+        this._persistPending = false;
+        this.ensureDataDir();
+        const payload = this._buildPersistPayload();
+        const json = JSON.stringify(payload, null, 2);
+        const tmp = `${this.dataFilePath}.tmp`;
+        await fs.promises.writeFile(tmp, json, 'utf8');
+        await fs.promises.rename(tmp, this.dataFilePath);
+      }
+    } finally {
+      this._persistInFlight = false;
     }
   }
 

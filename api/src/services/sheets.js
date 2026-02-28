@@ -227,6 +227,11 @@ function cacheGet(key) {
   const v = cache.get(key);
   if (!v) return null;
   if (Date.now() - v.ts > ttl) return null;
+  try {
+    cache.delete(key);
+    cache.set(key, v);
+  } catch {
+  }
   return v.data;
 }
 
@@ -237,7 +242,17 @@ function cacheGetStale(key) {
 }
 
 function cacheSet(key, data) {
+  const max = Math.max(1, Number(getEnv('SHEETS_CACHE_MAX_ENTRIES', '60')));
+  try {
+    if (cache.has(key)) cache.delete(key);
+  } catch {
+  }
   cache.set(key, { ts: Date.now(), data });
+  while (cache.size > max) {
+    const firstKey = cache.keys().next().value;
+    if (firstKey == null) break;
+    cache.delete(firstKey);
+  }
 }
 
 function sleep(ms) {
@@ -476,8 +491,11 @@ export async function getProducts(city) {
   return products;
 }
 
-export async function getMasterBrands() {
-  const { headers, rows } = await readSheetTable('products', 'MU');
+export async function getMasterBrands(cityHint) {
+  const explicit = String(getEnv('SHEETS_MASTER_CITY', getEnv('MASTER_CITY_CODE')) || '').trim();
+  const fromList = String(getEnv('CITY_CODES') || '').split(',')[0].trim();
+  const masterCity = explicit || String(cityHint || '').trim() || fromList || 'MU';
+  const { headers, rows } = await readSheetTable('products', masterCity);
   const norm = (v) => String(v || '').trim().toLowerCase();
   const idx = headers.findIndex((h) => ['brands', 'brand'].includes(norm(h)));
   if (idx < 0) return [];
