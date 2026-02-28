@@ -279,7 +279,7 @@ const Home: React.FC = () => {
       padding: `0 ${theme.padding.screen}`,
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
-      gap: theme.spacing.md,
+      gap: '10px',
       marginBottom: theme.spacing.xl,
     },
     categoryCard: {
@@ -336,7 +336,7 @@ const Home: React.FC = () => {
       padding: `0 ${theme.padding.screen}`,
       display: 'grid',
       gridTemplateColumns: '1fr 1fr',
-      gap: theme.spacing.md,
+      gap: '10px',
       marginBottom: theme.spacing.xl,
     },
     skeleton: {
