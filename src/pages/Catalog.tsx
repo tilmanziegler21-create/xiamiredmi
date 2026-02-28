@@ -74,7 +74,8 @@ const Catalog: React.FC = () => {
 
   useEffect(() => {
     const qCategory = searchParams.get('category');
-    setFilters((s) => ({ ...s, category: qCategory ? String(qCategory) : '' }));
+    const qBrand = searchParams.get('brand');
+    setFilters((s) => ({ ...s, category: qCategory ? String(qCategory) : '', brand: qBrand ? String(qBrand) : '' }));
   }, [searchParams]);
 
   useEffect(() => {
@@ -358,7 +359,7 @@ const Catalog: React.FC = () => {
           </div>
         </div>
       ) : null}
-      <SectionDivider title="Все товары" />
+      <SectionDivider title={String(filters.brand || 'Все товары')} />
 
       <div style={styles.searchRow}>
         <div style={styles.searchBox}>

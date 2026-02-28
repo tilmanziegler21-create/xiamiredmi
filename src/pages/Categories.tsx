@@ -20,7 +20,15 @@ const Categories: React.FC = () => {
     { slug: 'Новинки', title: 'Новинки', imageUrl: '/assets/elfcherry/banners/banner-2.jpg', badgeText: 'NEW', to: '/catalog?category=Новинки', key: 'new' },
     { slug: 'Хиты', title: 'Хиты', imageUrl: '/assets/elfcherry/banners/banner-3.jpg', badgeText: 'TOP', to: '/catalog?category=Хиты', key: 'hits' },
   ];
-  const all = [...extra, ...tiles.map((t: any) => ({ ...t, to: `/catalog?category=${encodeURIComponent(t.slug)}`, key: String(t.slug) }))];
+  const isMainCategory = (slug: string) => ['Жидкости', 'Одноразки', 'Поды', 'Картриджи'].includes(String(slug || ''));
+  const all = [
+    ...extra,
+    ...tiles.map((t: any) => ({
+      ...t,
+      to: isMainCategory(t.slug) ? `/brands?category=${encodeURIComponent(t.slug)}` : `/catalog?category=${encodeURIComponent(t.slug)}`,
+      key: String(t.slug),
+    })),
+  ];
 
   return (
     <div style={{ padding: theme.padding.screen }}>

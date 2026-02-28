@@ -10,6 +10,7 @@ interface TopBarProps {
   onMenuClick: () => void;
   onCartClick?: () => void;
   userName?: string;
+  subtitle?: string;
   cartCount?: number;
   showBackButton?: boolean;
   onBackClick?: () => void;
@@ -22,6 +23,7 @@ export const TopBar: React.FC<TopBarProps> = ({
   onMenuClick,
   onCartClick,
   cartCount = 0,
+  subtitle,
   showBackButton = false,
   onBackClick,
   showSettings = false,
@@ -207,7 +209,7 @@ export const TopBar: React.FC<TopBarProps> = ({
               <CherryMascot variant="classic" size={isNarrow ? 34 : 40} />
               <div style={{ minWidth: 0 }}>
                 <div style={styles.brand}>ELFCHERRY</div>
-                <div style={styles.brandSub}>mini app 24/7</div>
+                <div style={styles.brandSub}>{subtitle || 'mini app 24/7'}</div>
               </div>
             </div>
           </div>

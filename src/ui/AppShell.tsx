@@ -39,6 +39,18 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
 
   // Determine if we should show back button
   const showBackButton = location.pathname !== '/home' && location.pathname !== '/';
+  const subtitle = React.useMemo(() => {
+    try {
+      const params = new URLSearchParams(location.search || '');
+      const category = String(params.get('category') || '').trim();
+      const brand = String(params.get('brand') || '').trim();
+      if (location.pathname === '/brands') return category || 'категории';
+      if (location.pathname === '/catalog' && brand) return category ? `${category} / ${brand}` : brand;
+      return 'mini app 24/7';
+    } catch {
+      return 'mini app 24/7';
+    }
+  }, [location.pathname, location.search]);
 
   React.useEffect(() => {
     (async () => {
@@ -111,6 +123,7 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
         onCartClick={() => navigate('/cart')}
         cartCount={cart?.items?.length || 0}
         userName={user?.firstName}
+        subtitle={subtitle}
         showBackButton={showBackButton}
         showSettings={user?.status === 'admin'}
         onSettingsClick={() => navigate('/admin')}

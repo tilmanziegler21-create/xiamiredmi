@@ -117,6 +117,12 @@ router.get('/', requireAuth, async (req, res) => {
       filteredProducts = filteredProducts.filter((product) => Boolean(product.isNew));
     }
 
+    filteredProducts.sort((a, b) => {
+      const ai = Number(Number(a.qtyAvailable || 0) > 0);
+      const bi = Number(Number(b.qtyAvailable || 0) > 0);
+      return bi - ai;
+    });
+
     res.json({ products: filteredProducts });
   } catch (error) {
     console.error('Catalog error:', error);

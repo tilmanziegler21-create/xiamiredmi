@@ -40,7 +40,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
     {
       title: 'МАГАЗИН',
       items: [
-        { id: 'catalog', title: 'Каталог', icon: <Grid size={18} />, right: '', onClick: () => go('catalog', '/catalog') },
+        { id: 'catalog', title: 'Каталог', icon: <Grid size={18} />, right: '', onClick: () => go('catalog', '/categories') },
         { id: 'promotions', title: 'Акции', icon: <Gift size={18} />, right: '', onClick: () => go('promotions', '/promotions') },
       ],
     },

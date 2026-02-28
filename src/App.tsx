@@ -17,6 +17,7 @@ import Favorites from './pages/Favorites';
 import Referral from './pages/Referral';
 import Support from './pages/Support';
 import Categories from './pages/Categories';
+import Brands from './pages/Brands';
 import Admin from './pages/Admin';
 import Courier from './pages/Courier';
 import Promotions from './pages/Promotions';
@@ -291,6 +292,7 @@ function App() {
                   <Route path="/" element={<Navigate to="/home" replace />} />
                   <Route path="/home" element={<AppShell><Home /></AppShell>} />
                   <Route path="/categories" element={<AppShell><Categories /></AppShell>} />
+                  <Route path="/brands" element={<AppShell><Brands /></AppShell>} />
                   <Route path="/catalog" element={<AppShell><Catalog /></AppShell>} />
                   <Route path="/product/:id" element={<AppShell showMenu={false}><Product /></AppShell>} />
                   <Route path="/cart" element={<AppShell showMenu={false}><Cart /></AppShell>} />

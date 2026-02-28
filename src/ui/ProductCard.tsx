@@ -193,27 +193,27 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     },
     title: {
       position: 'absolute' as const,
-      top: 10,
+      bottom: 50,
       left: 10,
-      right: 50,
+      right: 10,
       color: '#fff',
-      fontSize: 15,
+      fontSize: 14,
       fontWeight: 800,
       textTransform: 'uppercase' as const,
       lineHeight: 1.05,
       letterSpacing: '0.08em',
-      textShadow: '0 10px 26px rgba(0,0,0,0.70)',
+      textShadow: '0 1px 6px rgba(0,0,0,1)',
       fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
       display: '-webkit-box',
       WebkitLineClamp: 2,
       WebkitBoxOrient: 'vertical' as const,
       overflow: 'hidden',
-      zIndex: 5,
+      zIndex: 3,
     },
     pricePill: {
       position: 'absolute' as const,
-      left: 10,
-      top: 46,
+      right: 10,
+      top: 10,
       background: 'rgba(255,255,255,0.95)',
       color: '#0b0b0b',
       padding: '3px 10px',
@@ -255,8 +255,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     overlayActions: {
       position: 'absolute' as const,
       right: 10,
-      top: '50%',
-      transform: 'translateY(-50%)',
+      bottom: 10,
       display: 'flex',
       flexDirection: 'column' as const,
       gap: 10,
@@ -270,12 +269,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       border: '1px solid rgba(255,255,255,0.12)',
       ...blurStyle('6px'),
       boxShadow: '0 16px 26px rgba(0,0,0,0.35)',
-    },
-    titleWrap: {
-      position: 'absolute' as const,
-      left: theme.spacing.md,
-      right: 58,
-      top: 52,
     },
     mascot: {
       position: 'absolute' as const,
@@ -378,9 +371,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </button>
           )}
         </div>
-        <div style={styles.titleWrap}>
-          <h3 style={styles.title}>{name}</h3>
-        </div>
+        <h3 style={styles.title}>{name}</h3>
         <div style={styles.pricePill}>
           <span style={{ fontSize: 20, fontWeight: 800 }}>{amount}</span>
           <span style={{ fontSize: 11, fontWeight: 700, color: 'rgba(0,0,0,0.55)' }}>{currencySymbol}</span>

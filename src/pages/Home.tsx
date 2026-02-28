@@ -506,7 +506,11 @@ const Home: React.FC = () => {
                   ...styles.categoryCard,
                   background: bg,
                 }}
-                onClick={() => navigate(`/catalog?category=${encodeURIComponent(category.slug)}`)}
+                onClick={() =>
+                  ['Жидкости', 'Одноразки', 'Поды', 'Картриджи'].includes(String(category.slug || ''))
+                    ? navigate(`/brands?category=${encodeURIComponent(category.slug)}`)
+                    : navigate(`/catalog?category=${encodeURIComponent(category.slug)}`)
+                }
                 role="button"
               >
                 {!ultraLite && category.image ? (
