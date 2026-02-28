@@ -289,6 +289,36 @@ router.post('/create', requireAuth, validateBody({ city: 'required' }), async (r
       }
     }
 
+    let cherryDiscountType = '';
+    let cherryDiscountValue = 0;
+    let cherryDiscountAt = 0;
+    try {
+      const u = db.getUser(tgId);
+      const list = Array.isArray(u?.pending_discounts) ? u.pending_discounts : [];
+      const pending = list
+        .filter((x) => x && String(x.status || 'pending') === 'pending')
+        .filter((x) => (String(x.type || '') === 'percent' || String(x.type || '') === 'fixed') && Number(x.value || 0) > 0)
+        .slice()
+        .sort((a, b) => Number(a.at || 0) - Number(b.at || 0));
+      const one = pending[0];
+      if (one) {
+        const type = String(one.type || '');
+        const value = Number(one.value || 0);
+        const afterOtherDiscounts = Math.max(0, subtotalAmount - discountAmount);
+        let add = 0;
+        if (type === 'fixed') add = Math.min(afterOtherDiscounts, Math.max(0, value));
+        if (type === 'percent') add = (afterOtherDiscounts * Math.max(0, value)) / 100;
+        add = Math.round(add * 100) / 100;
+        if (add > 0) {
+          cherryDiscountType = type;
+          cherryDiscountValue = value;
+          cherryDiscountAt = Math.round(Number(one.at || 0));
+          discountAmount += add;
+        }
+      }
+    } catch {
+    }
+
     discountAmount = Math.round(discountAmount * 100) / 100;
     const totalAmount = Math.max(0, Math.round((subtotalAmount - discountAmount) * 100) / 100);
 
@@ -301,6 +331,10 @@ router.post('/create', requireAuth, validateBody({ city: 'required' }), async (r
       subtotal_amount: subtotalAmount,
       discount_amount: discountAmount,
       promo_code: promoObj && promoObj.active ? promo : '',
+      cherry_discount_type: cherryDiscountType,
+      cherry_discount_value: cherryDiscountValue ? Math.round(cherryDiscountValue * 100) / 100 : 0,
+      cherry_discount_at: cherryDiscountAt || 0,
+      cherry_discount_consumed: false,
       delivery_method: null,
       courier_data: null,
       created_at: new Date().toISOString(),
@@ -608,6 +642,36 @@ router.post('/payment', requireAuth, validateBody({ orderId: 'required' }), asyn
       order.payment_method = String(paymentMethod || '');
       order.bonus_applied = Math.round(Number(bonusUsed || 0) * 100) / 100;
       order.final_amount = Math.round(Number(paidAmount || 0) * 100) / 100;
+      if (String(order.cherry_discount_type || '').trim() && !order.cherry_discount_consumed) {
+        try {
+          const u = db.getUser(req.user.tgId);
+          const list = Array.isArray(u?.pending_discounts) ? u.pending_discounts.slice() : [];
+          const at = Math.round(Number(order.cherry_discount_at || 0));
+          const type = String(order.cherry_discount_type || '').trim();
+          const val = Math.round(Number(order.cherry_discount_value || 0) * 100) / 100;
+          const idx = list.findIndex(
+            (x) =>
+              x &&
+              String(x.status || 'pending') === 'pending' &&
+              Math.round(Number(x.at || 0)) === at &&
+              String(x.type || '').trim() === type &&
+              Math.round(Number(x.value || 0) * 100) / 100 === val,
+          );
+          if (idx >= 0) {
+            list[idx] = { ...list[idx], status: 'used', used_at: new Date().toISOString(), order_id: String(orderId || '') };
+            db.setUser(req.user.tgId, { pending_discounts: list });
+            db.addBonusEvent({
+              user_id: String(req.user.tgId),
+              type: 'cherry_discount_used',
+              amount: 0,
+              meta: { order_id: String(orderId || ''), at, type, value: val },
+              created_at: new Date().toISOString(),
+            });
+          }
+          order.cherry_discount_consumed = true;
+        } catch {
+        }
+      }
       if (!order.cherries_credited) {
         try {
           awardCherryProgress(req.user.tgId, orderId);
@@ -627,21 +691,61 @@ router.post('/payment', requireAuth, validateBody({ orderId: 'required' }), asyn
       try {
         const u = db.getUser(req.user.tgId);
         const referredBy = String(u?.referred_by || '').trim();
-        const hadFirst = String(u?.first_paid_order_at || '').trim();
-        if (referredBy && !hadFirst) {
-          db.setUser(req.user.tgId, { first_paid_order_at: new Date().toISOString() });
-          const ref = db.getUser(referredBy);
-          if (ref) {
-            const nextConv = Number(ref.referral_conversions || 0) + 1;
-            db.setUser(referredBy, { referral_conversions: nextConv });
-            const bonusAmount = Number(process.env.REFERRAL_BONUS_AMOUNT || 10);
-            if (bonusAmount > 0) {
-              db.addBonusDelta(referredBy, bonusAmount, 'referral', { order_id: orderId, referred_user: req.user.tgId, conversions: nextConv });
+        if (referredBy) {
+          if (!String(u?.first_paid_order_at || '').trim()) {
+            db.setUser(req.user.tgId, { first_paid_order_at: new Date().toISOString() });
+          }
+          const countInvited = (refId) => {
+            const id = String(refId || '').trim();
+            if (!id) return 0;
+            let n = 0;
+            for (const uu of db.users.values()) {
+              if (String(uu?.referred_by || '').trim() === id) n++;
+            }
+            return n;
+          };
+          const invited = countInvited(referredBy);
+          const stage = invited >= 10 ? 'ambassador' : 'partner';
+          const percent =
+            stage === 'partner'
+              ? 30
+              : invited >= 50
+              ? 20
+              : invited >= 30
+              ? 15
+              : invited >= 20
+              ? 10
+              : 5;
+          const amount = Math.round((paidAmount * percent / 100) * 100) / 100;
+          if (amount > 0) {
+            const ref = db.getUser(referredBy);
+            if (ref) {
+              const prevStore = Number(ref.referral_balance_store || 0);
+              const prevCash = Number(ref.referral_balance_cash || 0);
+              if (stage === 'partner') {
+                db.setUser(referredBy, { referral_balance_store: Math.round((prevStore + amount) * 100) / 100 });
+              } else {
+                db.setUser(referredBy, { referral_balance_cash: Math.round((prevCash + amount) * 100) / 100 });
+              }
+              db.addBonusEvent({
+                user_id: String(referredBy),
+                type: 'referral_revshare',
+                amount,
+                meta: {
+                  order_id: String(orderId || ''),
+                  referred_user: String(req.user.tgId || ''),
+                  turnover: paidAmount,
+                  percent,
+                  stage,
+                  invited,
+                },
+                created_at: new Date().toISOString(),
+              });
             }
           }
         }
       } catch (e) {
-        console.error('Referral apply failed:', e);
+        console.error('Referral revshare failed:', e);
       }
 
       db.releaseReservationsByOrder(orderId);

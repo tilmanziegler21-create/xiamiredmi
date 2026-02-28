@@ -27,7 +27,10 @@ const Bonuses: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [referralCode, setReferralCode] = useState('');
   const [referralLink, setReferralLink] = useState('');
-  const [referralBonusAmount, setReferralBonusAmount] = useState(20);
+  const [referralStage, setReferralStage] = useState<'partner' | 'ambassador'>('partner');
+  const [referralPercent, setReferralPercent] = useState(0);
+  const [referralInvited, setReferralInvited] = useState(0);
+  const [referralRemaining, setReferralRemaining] = useState(0);
   const [cherryTier, setCherryTier] = useState<CherryTier | null>(null);
   const [cherryNext, setCherryNext] = useState<CherryNext>(null);
   const [cherryProgress, setCherryProgress] = useState<CherryProgress | null>(null);
@@ -86,7 +89,10 @@ const Bonuses: React.FC = () => {
 
       const code = String(ref.data?.referralCode || user?.tgId || '');
       setReferralCode(code);
-      setReferralBonusAmount(Number(ref.data?.bonusAmount || 20));
+      setReferralStage(String(ref.data?.stage || 'partner') === 'ambassador' ? 'ambassador' : 'partner');
+      setReferralPercent(Math.max(0, Number(ref.data?.percent || 0)));
+      setReferralInvited(Math.max(0, Number(ref.data?.invited || 0)));
+      setReferralRemaining(Math.max(0, Number(ref.data?.remainingToUnlock || 0)));
       const botUsername = String(import.meta.env.VITE_BOT_USERNAME || '').trim();
       setReferralLink(
         botUsername
@@ -260,11 +266,11 @@ const Bonuses: React.FC = () => {
   const progressToNext = cherryNext ? Number(cherryProgress?.percent || 0) : 100;
   const teaser =
     cherryNext?.key === 'silver'
-      ? { title: 'GOLD', extra: 1 }
+      ? { title: 'GOLD', perOrder: 2 }
       : cherryNext?.key === 'gold'
-      ? { title: 'PLATINUM', extra: 2 }
+      ? { title: 'PLATINUM', perOrder: 3 }
       : cherryNext?.key === 'platinum'
-      ? { title: 'LEGEND', extra: 3 }
+      ? { title: 'LEGEND', perOrder: 4 }
       : null;
 
   if (loading) {
@@ -290,7 +296,7 @@ const Bonuses: React.FC = () => {
           <div style={styles.heroTitle}>CHERRY CLUB</div>
           <div style={styles.heroSub}>Твои бонусы:</div>
           <div style={styles.heroCount}>{cherries.toLocaleString()} 🍒</div>
-          <div style={styles.heroSub}>1 🍒 = 1€ скидки</div>
+          <div style={styles.heroSub}>За каждый заказ +{cherriesPerOrder} 🍒</div>
           <div style={styles.pillRow}>
             <PrimaryButton size="sm" onClick={() => navigate('/catalog')}>Потратить</PrimaryButton>
             <SecondaryButton
@@ -327,6 +333,11 @@ const Bonuses: React.FC = () => {
             <div>{remainingOrders} заказа</div>
           </div>
         ) : null}
+        {teaser ? (
+          <div style={{ marginTop: theme.spacing.sm, fontSize: theme.typography.fontSize.sm, color: theme.colors.dark.textSecondary }}>
+            🔥 До {teaser.title} ты получишь +{teaser.perOrder} 🍒 за каждый заказ
+          </div>
+        ) : null}
       </div>
 
       <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
@@ -350,6 +361,7 @@ const Bonuses: React.FC = () => {
             <div>-10% на всё</div>
             <div>+3 бесплатных жидкости</div>
             <div>+1 🍒 за заказ</div>
+            <div>+1 бесплатный бокс</div>
           </div>
         </div>
         <div style={styles.levelCard('linear-gradient(135deg, rgba(147,51,234,0.18) 0%, rgba(236,72,153,0.06) 100%)', '1px solid rgba(236,72,153,0.22)')}>
@@ -359,6 +371,7 @@ const Bonuses: React.FC = () => {
             <div>-15% на всё</div>
             <div>+5 бесплатных жидкостей</div>
             <div>+2 🍒 за заказ</div>
+            <div>+3 бесплатных бокса</div>
           </div>
         </div>
         <div style={styles.levelCard('linear-gradient(135deg, rgba(255,45,85,0.20) 0%, rgba(255,0,130,0.06) 100%)', '1px solid rgba(255,45,85,0.22)')}>
@@ -368,6 +381,8 @@ const Bonuses: React.FC = () => {
             <div>-20% на всё</div>
             <div>+10 бесплатных жидкостей</div>
             <div>+3 🍒 за заказ</div>
+            <div>каждые +10 🍒 → +1 жидкость</div>
+            <div>+5 бесплатных боксов</div>
           </div>
         </div>
       </div>
@@ -422,7 +437,9 @@ const Bonuses: React.FC = () => {
                     Приглашай друзей
                   </div>
                   <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-                    {referralBonusAmount} 🍒 за друга, который сделал первый заказ
+                    {referralStage === 'partner'
+                      ? `30% ревшэйр, вывод после ${Math.max(0, referralRemaining)} приглашённых`
+                      : `${referralPercent}% ревшэйр • приглашено ${referralInvited}`}
                   </div>
                 </div>
               </div>

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { User, Star, Gift, Clock, Package, ChevronRight, Heart } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
-import { bonusesAPI, favoritesAPI, orderAPI } from '../services/api';
+import { bonusesAPI, favoritesAPI, orderAPI, referralAPI } from '../services/api';
 import { useAnalytics } from '../hooks/useAnalytics';
 import WebApp from '@twa-dev/sdk';
 import { useCityStore } from '../store/useCityStore';
@@ -41,6 +41,14 @@ const Profile: React.FC = () => {
   const [cherryNextTitle, setCherryNextTitle] = useState('SILVER');
   const [cherryNextMin, setCherryNextMin] = useState(10);
   const [cherriesPerOrder, setCherriesPerOrder] = useState(1);
+  const [refStage, setRefStage] = useState<'partner' | 'ambassador'>('partner');
+  const [refInvited, setRefInvited] = useState(0);
+  const [refPercent, setRefPercent] = useState(0);
+  const [refNextAt, setRefNextAt] = useState(10);
+  const [refNextPercent, setRefNextPercent] = useState(5);
+  const [refHasNext, setRefHasNext] = useState(false);
+  const [refBalanceTotal, setRefBalanceTotal] = useState(0);
+  const [refRemaining, setRefRemaining] = useState(0);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const { city } = useCityStore();
 
@@ -69,17 +77,31 @@ const Profile: React.FC = () => {
 
   const loadBonuses = async () => {
     try {
-      const [b, h] = await Promise.all([bonusesAPI.balance(), bonusesAPI.history()]);
+      const [b, h, r] = await Promise.all([bonusesAPI.balance(), bonusesAPI.history(), referralAPI.info()]);
       setBonusBalance(Number(b.data.balance || 0));
       setCherries(Number(b.data.cherries || 0));
       setCherryNextTitle(String(b.data?.cherryNext?.title || 'SILVER'));
       setCherryNextMin(Number(b.data?.cherryNext?.min || 10));
       setCherriesPerOrder(Math.max(1, Number(b.data?.cherriesPerOrder || 1)));
+      const stage = String(r.data?.stage || 'partner') === 'ambassador' ? 'ambassador' : 'partner';
+      setRefStage(stage);
+      setRefInvited(Math.max(0, Number(r.data?.invited || 0)));
+      setRefPercent(Math.max(0, Number(r.data?.percent || 0)));
+      const n = r.data?.next || null;
+      setRefHasNext(Boolean(n && Number(n?.at || 0) > 0));
+      setRefNextAt(Math.max(10, Number(n?.at || 10)));
+      setRefNextPercent(Math.max(0, Number(n?.percent || 0)));
+      setRefBalanceTotal(Math.max(0, Number(r.data?.balances?.total || 0)));
+      setRefRemaining(Math.max(0, Number(r.data?.remainingToUnlock || 0)));
       setBonusHistory(h.data.history || []);
     } catch (e) {
       console.error('Failed to load bonuses:', e);
       setBonusBalance(0);
       setCherries(0);
+      setRefInvited(0);
+      setRefPercent(0);
+      setRefBalanceTotal(0);
+      setRefRemaining(0);
       setBonusHistory([]);
     }
   };
@@ -153,6 +175,19 @@ const Profile: React.FC = () => {
   const userLevel = getUserLevelInfo();
   const remainingCherries = Math.max(0, Number(cherryNextMin || 0) - Number(cherries || 0));
   const remainingOrders = Math.ceil(remainingCherries / Math.max(1, Number(cherriesPerOrder || 1)));
+  const cherryTeaser =
+    String(cherryNextTitle || '').toUpperCase() === 'SILVER'
+      ? { title: 'GOLD', perOrder: 2 }
+      : String(cherryNextTitle || '').toUpperCase() === 'GOLD'
+      ? { title: 'PLATINUM', perOrder: 3 }
+      : String(cherryNextTitle || '').toUpperCase() === 'PLATINUM'
+      ? { title: 'LEGEND', perOrder: 4 }
+      : null;
+  const refProgress = refStage === 'partner'
+    ? Math.min(100, Math.max(0, Math.round((refInvited / 10) * 100)))
+    : refHasNext
+    ? Math.min(100, Math.max(0, Math.round((refInvited / Math.max(1, refNextAt)) * 100)))
+    : 100;
 
   const styles = {
     page: {
@@ -308,6 +343,40 @@ const Profile: React.FC = () => {
           </div>
           <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
             Осталось {remainingOrders} заказа
+          </div>
+          {cherryTeaser ? (
+            <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+              🔥 До {cherryTeaser.title} ты получишь +{cherryTeaser.perOrder} 🍒 за каждый заказ
+            </div>
+          ) : null}
+
+          <div style={{ marginTop: theme.spacing.md, borderRadius: 14, border: '1px solid rgba(255,255,255,0.10)', background: 'rgba(0,0,0,0.18)', padding: theme.spacing.md }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: theme.spacing.md, alignItems: 'baseline' }}>
+              <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, fontSize: 20, letterSpacing: '0.12em', textTransform: 'uppercase' as const }}>
+                {refStage === 'partner' ? 'PARTNER' : 'AMBASSADOR'}
+              </div>
+              <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.xs, letterSpacing: '0.10em', textTransform: 'uppercase' as const }}>
+                👥 {refStage === 'partner' ? `${refInvited} / 10` : refInvited}
+              </div>
+            </div>
+            <div style={{ height: 10, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.10)', marginTop: 10 }}>
+              <div style={{ height: '100%', width: `${refProgress}%`, background: theme.gradients.primary }} />
+            </div>
+            <div style={{ marginTop: 10, color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+              💰 Баланс: {refBalanceTotal.toFixed(2)}€ {refStage === 'partner' ? '(доступно для покупок)' : '(доступно для вывода)'}
+            </div>
+            <div style={{ marginTop: 6, color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+              {refStage === 'partner'
+                ? `🔥 Пригласи ещё ${refRemaining} человека → откроется вывод денег`
+                : refHasNext
+                ? `После ${refNextAt} человек → ${refNextPercent}% • осталось ${Math.max(0, refNextAt - refInvited)}`
+                : `Текущий процент: ${refPercent}%`}
+            </div>
+            <div style={{ marginTop: theme.spacing.md }}>
+              <SecondaryButton fullWidth onClick={() => navigate('/referral')}>
+                Получить реферальную ссылку
+              </SecondaryButton>
+            </div>
           </div>
 
           <div style={{ ...styles.tierBox, background: userLevel.bgColor }}>

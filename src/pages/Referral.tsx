@@ -9,7 +9,15 @@ const Referral: React.FC = () => {
   const { user } = useAuthStore();
   const toast = useToastStore();
   const [loading, setLoading] = React.useState(true);
-  const [info, setInfo] = React.useState<{ referralCode: string; conversions: number; required: number; bonusAmount: number } | null>(null);
+  const [info, setInfo] = React.useState<{
+    referralCode: string;
+    stage: 'partner' | 'ambassador';
+    invited: number;
+    percent: number;
+    next: { at: number; percent: number } | null;
+    remainingToUnlock: number;
+    balances: { total: number; store: number; cash: number; withdrawUnlocked: boolean; minWithdraw: number; canWithdraw: boolean };
+  } | null>(null);
 
   React.useEffect(() => {
     (async () => {
@@ -29,10 +37,16 @@ const Referral: React.FC = () => {
   const botUsername = String(import.meta.env.VITE_BOT_USERNAME || '').trim();
   const link = botUsername ? `https://t.me/${botUsername}?startapp=ref_${encodeURIComponent(refCode || 'unknown')}` : '';
 
-  const reward = Number(info?.bonusAmount || 0);
-  const invited = Number(info?.conversions || 0);
-  const required = Math.max(1, Number(info?.required || 1));
-  const earned = Math.floor(invited / required) * reward;
+  const stage = String(info?.stage || 'partner') as 'partner' | 'ambassador';
+  const invited = Math.max(0, Number(info?.invited || 0));
+  const percent = Math.max(0, Number(info?.percent || 0));
+  const next = info?.next || null;
+  const remainingToUnlock = Math.max(0, Number(info?.remainingToUnlock || 0));
+  const balances = info?.balances || { total: 0, store: 0, cash: 0, withdrawUnlocked: false, minWithdraw: 50, canWithdraw: false };
+  const unlockAt = 10;
+  const progressPartner = Math.min(100, Math.max(0, Math.round((invited / Math.max(1, unlockAt)) * 100)));
+  const nextTarget = next?.at || unlockAt;
+  const progressAmb = next ? Math.min(100, Math.max(0, Math.round((invited / nextTarget) * 100))) : 100;
 
   const copy = async () => {
     try {
@@ -75,10 +89,10 @@ const Referral: React.FC = () => {
     <div style={{ padding: theme.padding.screen }}>
       <div style={{ textAlign: 'center', marginTop: theme.spacing.md, marginBottom: theme.spacing.lg }}>
         <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, fontSize: 34, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-          Приведи друга
+          Зарабатывай на друзьях
         </div>
         <div style={{ color: theme.colors.dark.textSecondary, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: theme.typography.fontSize.sm }}>
-          Получи {reward ? `${reward} вишенок` : 'вишенки'} за каждого
+          Они покупают — ты получаешь %
         </div>
       </div>
 
@@ -88,7 +102,7 @@ const Referral: React.FC = () => {
 
       <GlassCard padding="lg" variant="elevated">
         <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.xs, letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: theme.spacing.md }}>
-          1 вишенка = 1 € • списание до 50% от суммы
+          Выплаты 1 раз в месяц • мин. вывод {balances.minWithdraw}€
         </div>
         <div style={{ marginBottom: theme.spacing.md, letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
           Реферальная ссылка
@@ -125,11 +139,37 @@ const Referral: React.FC = () => {
           </div>
           <div style={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.10)', background: 'rgba(0,0,0,0.20)', padding: theme.spacing.md }}>
             <div style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', marginBottom: 6 }}>
-              Заработано
+              Баланс
             </div>
             <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, fontSize: 28, letterSpacing: '0.10em' }}>
-              {loading ? '—' : `${earned} виш.`}
+              {loading ? '—' : `${balances.total.toFixed(2)}€`}
             </div>
+          </div>
+        </div>
+
+        <div style={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.10)', background: 'rgba(0,0,0,0.20)', padding: theme.spacing.md, marginBottom: theme.spacing.md }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: theme.spacing.md, alignItems: 'baseline', marginBottom: 8 }}>
+            <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, letterSpacing: '0.12em', textTransform: 'uppercase', fontSize: 20 }}>
+              {stage === 'partner' ? 'PARTNER' : 'AMBASSADOR'}
+            </div>
+            <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 12, letterSpacing: '0.10em', textTransform: 'uppercase' }}>
+              {stage === 'partner' ? `${invited} / ${unlockAt} приглашённых` : `текущий процент: ${percent}%`}
+            </div>
+          </div>
+          <div style={{ height: 10, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.10)' }}>
+            <div style={{ height: '100%', width: `${stage === 'partner' ? progressPartner : progressAmb}%`, background: theme.gradients.primary }} />
+          </div>
+          <div style={{ marginTop: 10, color: 'rgba(255,255,255,0.75)', fontSize: 13 }}>
+            {stage === 'partner' ? (
+              <>🔥 Пригласи ещё {remainingToUnlock} человека → откроется вывод денег</>
+            ) : next ? (
+              <>После {next.at} человек → {next.percent}% • осталось {Math.max(0, next.at - invited)}</>
+            ) : (
+              <>Ты на максимальном проценте</>
+            )}
+          </div>
+          <div style={{ marginTop: 6, color: 'rgba(255,255,255,0.65)', fontSize: 12 }}>
+            {stage === 'partner' ? '💰 30% ревшэйр (тратить только на товары)' : '💰 Вывод доступен, процент динамический'}
           </div>
         </div>
 

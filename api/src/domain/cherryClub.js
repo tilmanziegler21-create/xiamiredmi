@@ -38,7 +38,7 @@ export function cherryMilestoneRewards() {
     { at: 1, type: 'next_discount_fixed', value: 2 },
     { at: 2, type: 'next_discount_percent', value: 10 },
     { at: 3, type: 'next_discount_percent', value: 15 },
-    { at: 4, type: 'next_discount_percent', value: 15, extraCherries: 1 },
+    { at: 4, type: 'next_discount_percent', value: 15, extraCherries: 2 },
     { at: 5, type: 'next_discount_percent', value: 20 },
     { at: 6, type: 'next_discount_percent', value: 20, extraCherries: 2 },
     { at: 7, type: 'free_liquid', value: 1 },

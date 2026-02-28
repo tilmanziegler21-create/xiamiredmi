@@ -70,6 +70,7 @@ function App() {
   const { user, setUser, setLoading, isLoading } = useAuthStore();
   const authStartedRef = React.useRef(false);
   const [authErrorDetails, setAuthErrorDetails] = React.useState<string>('');
+  const [showSmoke, setShowSmoke] = React.useState(true);
 
   const safeAlert = (message: string) => {
     try {
@@ -213,9 +214,22 @@ function App() {
     };
   }, [setUser, setLoading]);
 
+  useEffect(() => {
+    try {
+      if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setShowSmoke(false);
+        return;
+      }
+    } catch {
+    }
+    const id = window.setTimeout(() => setShowSmoke(false), 1200);
+    return () => window.clearTimeout(id);
+  }, []);
+
   if (isLoading) {
     return (
       <SafeAreaProvider>
+        {showSmoke ? <div className="smoke-overlay" /> : null}
         <div style={{
           minHeight: '100vh',
           background: theme.colors.dark.bg,
@@ -243,6 +257,7 @@ function App() {
   if (!user) {
     return (
       <SafeAreaProvider>
+        {showSmoke ? <div className="smoke-overlay" /> : null}
         <div style={{
           minHeight: '100vh',
           background: theme.colors.dark.bg,
@@ -274,6 +289,7 @@ function App() {
     <SafeAreaProvider>
       <Router>
         <div className="min-h-screen bg-app safe-bottom">
+          {showSmoke ? <div className="smoke-overlay" /> : null}
           <div className="aurora a1" />
           <div className="aurora a2" />
           <div className="noise" />
