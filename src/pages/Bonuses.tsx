@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { theme, GlassCard, SectionDivider, PrimaryButton, SecondaryButton } from '../ui';
 import { useAuthStore } from '../store/useAuthStore';
 import { useToastStore } from '../store/useToastStore';
-import { Gift, TrendingUp, Users, History, Crown, Star } from 'lucide-react';
+import { Gift, Users, Crown, Star } from 'lucide-react';
 import { bonusesAPI, referralAPI } from '../services/api';
 
 interface BonusTransaction {
@@ -34,7 +34,16 @@ const Bonuses: React.FC = () => {
   const [cherriesPerOrder, setCherriesPerOrder] = useState(1);
   const [freeLiquids, setFreeLiquids] = useState(0);
   const [freeBoxes, setFreeBoxes] = useState(0);
+  const [showHow, setShowHow] = useState(false);
   const historyRef = React.useRef<HTMLDivElement>(null);
+  const howRef = React.useRef<HTMLDivElement>(null);
+
+  const assetUrl = (p: string) => {
+    const base = String(import.meta.env.BASE_URL || '/');
+    const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
+    const path = p.startsWith('/') ? p : `/${p}`;
+    return `${prefix}${path}`;
+  };
 
   useEffect(() => {
     loadBonusData();
@@ -139,28 +148,53 @@ const Bonuses: React.FC = () => {
       fontFamily: theme.typography.fontFamily,
       paddingBottom: theme.spacing.xl,
     },
-    balanceCard: {
-      background: 'linear-gradient(135deg, rgba(255,45,85,0.18) 0%, rgba(176,0,58,0.10) 100%)',
-      border: '1px solid rgba(255,45,85,0.28)',
-      borderRadius: theme.radius.lg,
-      padding: theme.spacing.lg,
+    hero: {
       margin: `0 ${theme.padding.screen} ${theme.spacing.lg}`,
-      position: 'relative' as const,
+      borderRadius: 26,
       overflow: 'hidden' as const,
+      border: '1px solid rgba(255,45,85,0.22)',
+      backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.65) 100%), url(${assetUrl('/assets/elfcherry/tiles/tile-bonuses.jpg')})`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      boxShadow: theme.shadow.card,
     },
-    statusCard: {
-      background: 'linear-gradient(135deg, rgba(255,193,7,0.15) 0%, rgba(255,152,0,0.1) 100%)',
-      border: '1px solid rgba(255,193,7,0.3)',
-      borderRadius: theme.radius.lg,
+    heroInner: {
       padding: theme.spacing.lg,
-      margin: `0 ${theme.padding.screen} ${theme.spacing.lg}`,
+      display: 'grid',
+      justifyItems: 'center' as const,
+      gap: theme.spacing.md,
+      textAlign: 'center' as const,
     },
-    referralCard: {
-      background: 'linear-gradient(135deg, rgba(76,175,80,0.15) 0%, rgba(56,142,60,0.1) 100%)',
-      border: '1px solid rgba(76,175,80,0.3)',
-      borderRadius: theme.radius.lg,
-      padding: theme.spacing.lg,
+    heroTitle: {
+      fontSize: theme.typography.fontSize['2xl'],
+      fontWeight: theme.typography.fontWeight.bold,
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase' as const,
+      marginTop: theme.spacing.sm,
+    },
+    heroSub: {
+      color: 'rgba(255,255,255,0.8)',
+      fontSize: theme.typography.fontSize.sm,
+    },
+    heroCount: {
+      fontSize: 56,
+      fontWeight: theme.typography.fontWeight.bold,
+      lineHeight: 1,
+      letterSpacing: '0.02em',
+    },
+    pillRow: {
+      display: 'flex',
+      gap: theme.spacing.sm,
+      justifyContent: 'center',
+      width: '100%',
+    },
+    progressCard: {
       margin: `0 ${theme.padding.screen} ${theme.spacing.lg}`,
+      borderRadius: 18,
+      border: '1px solid rgba(255,255,255,0.14)',
+      background: 'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
+      padding: theme.spacing.lg,
+      boxShadow: theme.shadow.card,
     },
     transactionCard: {
       background: 'rgba(255,255,255,0.05)',
@@ -168,62 +202,49 @@ const Bonuses: React.FC = () => {
       padding: theme.spacing.md,
       marginBottom: theme.spacing.sm,
     },
-    balanceAmount: {
-      fontSize: theme.typography.fontSize['3xl'],
-      fontWeight: theme.typography.fontWeight.bold,
-      color: theme.colors.dark.primary,
-      marginBottom: theme.spacing.xs,
+    levelGrid: {
+      padding: `0 ${theme.padding.screen}`,
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: theme.spacing.md,
     },
-    balanceLabel: {
-      fontSize: theme.typography.fontSize.sm,
-      color: theme.colors.dark.textSecondary,
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.08em',
-    },
-    statusBadge: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: theme.spacing.sm,
-      marginBottom: theme.spacing.md,
-    },
-    statusIcon: {
-      width: 32,
-      height: 32,
-      borderRadius: '50%',
-      background: 'linear-gradient(135deg, #ffc107 0%, #ff9800 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    benefitItem: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: theme.spacing.sm,
-      marginBottom: theme.spacing.xs,
-      fontSize: theme.typography.fontSize.sm,
-    },
-    referralCode: {
-      background: 'rgba(255,255,255,0.1)',
-      borderRadius: theme.radius.md,
-      padding: theme.spacing.md,
-      fontFamily: 'monospace',
+    levelCard: (bg: string, border: string) => ({
+      borderRadius: 18,
+      border,
+      background: bg,
+      padding: theme.spacing.lg,
+      minHeight: 160,
+      boxShadow: theme.shadow.card,
+    }),
+    levelTitle: {
       fontSize: theme.typography.fontSize.lg,
       fontWeight: theme.typography.fontWeight.bold,
-      textAlign: 'center' as const,
-      marginBottom: theme.spacing.md,
-      letterSpacing: '0.1em',
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase' as const,
+      marginBottom: theme.spacing.sm,
+    },
+    levelMin: {
+      color: 'rgba(255,255,255,0.75)',
+      fontSize: theme.typography.fontSize.sm,
+      marginBottom: theme.spacing.sm,
+    },
+    levelList: {
+      color: 'rgba(255,255,255,0.78)',
+      fontSize: theme.typography.fontSize.sm,
+      display: 'grid',
+      gap: 6,
+      lineHeight: 1.2,
     },
     progressBar: {
-      height: 8,
-      background: 'rgba(255,255,255,0.1)',
-      borderRadius: theme.radius.sm,
+      height: 10,
+      background: 'rgba(255,255,255,0.10)',
+      borderRadius: 999,
       overflow: 'hidden' as const,
-      marginTop: theme.spacing.md,
     },
     progressFill: {
       height: '100%',
-      background: theme.gradients.primary,
-      borderRadius: theme.radius.sm,
+      background: 'linear-gradient(90deg, rgba(255,45,85,1) 0%, rgba(255,0,130,1) 100%)',
+      borderRadius: 999,
       transition: 'width 0.3s ease',
     },
   };
@@ -249,11 +270,11 @@ const Bonuses: React.FC = () => {
   if (loading) {
     return (
       <div style={styles.container}>
-        <SectionDivider title="Мои бонусы" />
         <div style={{ padding: `0 ${theme.padding.screen}` }}>
-          {[...Array(3)].map((_, i) => (
-            <div key={i} style={{...styles.balanceCard, animation: 'pulse 1.5s ease-in-out infinite'}} />
-          ))}
+          <div style={{ ...styles.hero, opacity: 0.6 }} />
+          <div style={{ ...styles.progressCard, opacity: 0.6 }} />
+          <div style={{ height: theme.spacing.lg }} />
+          <div style={{ ...styles.progressCard, opacity: 0.35 }} />
         </div>
       </div>
     );
@@ -261,136 +282,174 @@ const Bonuses: React.FC = () => {
 
   return (
     <div style={styles.container}>
-      <SectionDivider title="Мои бонусы" />
-
-      {/* Balance Card */}
-      <div style={styles.balanceCard}>
-        <div style={styles.balanceAmount}>
-          {cherries.toLocaleString()} 🍒
-        </div>
-        <div style={styles.balanceLabel}>Твои вишенки</div>
-        <div style={{ display: 'flex', gap: theme.spacing.sm, marginTop: theme.spacing.lg }}>
-          <PrimaryButton
-            size="sm"
-            onClick={() => navigate('/catalog')}
-          >
-            В каталог
-          </PrimaryButton>
-          <SecondaryButton
-            size="sm"
-            onClick={() => historyRef.current?.scrollIntoView({ behavior: 'smooth' })}
-          >
-            История
-          </SecondaryButton>
-        </div>
-      </div>
-
-      {/* Status Card */}
-      <div style={styles.statusCard}>
-        <div style={styles.statusBadge}>
-          <div style={styles.statusIcon}>
-            <Crown size={18} color="#000" />
+      <div style={styles.hero}>
+        <div style={styles.heroInner}>
+          <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,45,85,0.20)', border: '1px solid rgba(255,45,85,0.35)', display: 'grid', placeItems: 'center' as const }}>
+            <Crown size={22} color="#ff2d55" />
           </div>
-          <div>
-            <div style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold }}>
-              {tierTitle}
-            </div>
-            <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-              Постоянная скидка {tierDiscount}%
-            </div>
-          </div>
-        </div>
-
-        <div style={{ marginBottom: theme.spacing.md }}>
-          <div style={{ fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.sm }}>
-            Ваши привилегии:
-          </div>
-          <div style={styles.benefitItem}>
-            <Star size={14} color="#ffc107" />
-            +{1 + tierExtra} 🍒 за заказ
-          </div>
-          <div style={styles.benefitItem}>
-            <Star size={14} color="#ffc107" />
-            Бесплатных жидкостей: {freeLiquids}
-          </div>
-          <div style={styles.benefitItem}>
-            <Star size={14} color="#ffc107" />
-            Бесплатных боксов: {freeBoxes}
-          </div>
-        </div>
-
-        {cherryNext && (
-          <div>
-            <div style={{ fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.sm }}>
-              🍒 {cherries} / {nextMin} до {nextTitle} • осталось {remainingOrders} заказа
-            </div>
-            <div style={styles.progressBar}>
-              <div style={{...styles.progressFill, width: `${Math.min(progressToNext, 100)}%`}} />
-            </div>
-            {teaser ? (
-              <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary, marginTop: theme.spacing.sm }}>
-                🔥 До {teaser.title} ты получишь +{teaser.extra} 🍒 за каждый заказ
-              </div>
-            ) : null}
-          </div>
-        )}
-      </div>
-
-      {/* Referral Card */}
-      <div style={styles.referralCard}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm, marginBottom: theme.spacing.md }}>
-          <div style={{...styles.statusIcon, background: 'linear-gradient(135deg, #4caf50 0%, #388e3c 100%)' }}>
-            <Users size={18} color="#fff" />
-          </div>
-          <div>
-            <div style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold }}>
-              Пригласи друзей
-            </div>
-            <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-              Получай бонусы за друзей
-            </div>
-          </div>
-        </div>
-
-        <div style={{ fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.md }}>
-          Получите {referralBonusAmount} 🍒 за каждого друга, который сделает первый заказ
-        </div>
-
-        <div style={styles.referralCode}>
-          {referralCode}
-        </div>
-
-        <div style={{ display: 'flex', gap: theme.spacing.sm }}>
-          <PrimaryButton
-            size="sm"
-            onClick={copyReferralCode}
-          >
-            Скопировать код
-          </PrimaryButton>
-          <SecondaryButton
-            size="sm"
-            onClick={shareReferral}
-          >
-            Поделиться
-          </SecondaryButton>
-          {referralLink ? (
+          <div style={styles.heroTitle}>CHERRY CLUB</div>
+          <div style={styles.heroSub}>Твои бонусы:</div>
+          <div style={styles.heroCount}>{cherries.toLocaleString()} 🍒</div>
+          <div style={styles.heroSub}>1 🍒 = 1€ скидки</div>
+          <div style={styles.pillRow}>
+            <PrimaryButton size="sm" onClick={() => navigate('/catalog')}>Потратить</PrimaryButton>
             <SecondaryButton
               size="sm"
-              onClick={copyReferralLink}
+              onClick={() => {
+                setShowHow((v) => !v);
+                setTimeout(() => {
+                  try {
+                    howRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  } catch {
+                  }
+                }, 50);
+              }}
             >
-              Скопировать ссылку
+              + Как заработать
             </SecondaryButton>
-          ) : null}
+          </div>
         </div>
       </div>
 
-      {/* Recent Transactions */}
-      <div style={{ padding: `0 ${theme.padding.screen}` }} ref={historyRef}>
-        <h3 style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, marginBottom: theme.spacing.md, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>История бонусов</h3>
+      <div style={styles.progressCard}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
+          <div style={{ fontSize: theme.typography.fontSize.sm, letterSpacing: '0.10em', textTransform: 'uppercase' as const, opacity: 0.9 }}>
+            {tierTitle} • {cherryNext ? `${cherries} / ${nextMin}` : `${cherries}+`} 🍒
+          </div>
+          <div style={{ fontSize: theme.typography.fontSize.sm, opacity: 0.9 }}>{Math.round(Math.min(progressToNext, 100))}%</div>
+        </div>
+        <div style={styles.progressBar}>
+          <div style={{ ...styles.progressFill, width: `${Math.min(progressToNext, 100)}%` }} />
+        </div>
+        {cherryNext ? (
+          <div style={{ marginTop: theme.spacing.md, display: 'flex', justifyContent: 'space-between', gap: theme.spacing.sm, fontSize: theme.typography.fontSize.sm, color: theme.colors.dark.textSecondary }}>
+            <div>До {nextTitle} осталось {remainingCherries} 🍒</div>
+            <div>{remainingOrders} заказа</div>
+          </div>
+        ) : null}
+      </div>
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
+        <SectionDivider title="Уровни" />
+      </div>
+
+      <div style={styles.levelGrid}>
+        <div style={styles.levelCard('linear-gradient(135deg, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.06) 100%)', '1px solid rgba(255,255,255,0.14)')}>
+          <div style={styles.levelTitle}>SILVER</div>
+          <div style={styles.levelMin}>от 10 🍒</div>
+          <div style={styles.levelList}>
+            <div>-5% на всё</div>
+            <div>+1 бесплатная жидкость</div>
+            <div>+1 бесплатный бокс</div>
+          </div>
+        </div>
+        <div style={styles.levelCard('linear-gradient(135deg, rgba(255,193,7,0.18) 0%, rgba(255,152,0,0.06) 100%)', '1px solid rgba(255,193,7,0.22)')}>
+          <div style={styles.levelTitle}>GOLD</div>
+          <div style={styles.levelMin}>от 25 🍒</div>
+          <div style={styles.levelList}>
+            <div>-10% на всё</div>
+            <div>+3 бесплатных жидкости</div>
+            <div>+1 🍒 за заказ</div>
+          </div>
+        </div>
+        <div style={styles.levelCard('linear-gradient(135deg, rgba(147,51,234,0.18) 0%, rgba(236,72,153,0.06) 100%)', '1px solid rgba(236,72,153,0.22)')}>
+          <div style={styles.levelTitle}>PLATINUM</div>
+          <div style={styles.levelMin}>от 50 🍒</div>
+          <div style={styles.levelList}>
+            <div>-15% на всё</div>
+            <div>+5 бесплатных жидкостей</div>
+            <div>+2 🍒 за заказ</div>
+          </div>
+        </div>
+        <div style={styles.levelCard('linear-gradient(135deg, rgba(255,45,85,0.20) 0%, rgba(255,0,130,0.06) 100%)', '1px solid rgba(255,45,85,0.22)')}>
+          <div style={styles.levelTitle}>LEGEND</div>
+          <div style={styles.levelMin}>от 100 🍒</div>
+          <div style={styles.levelList}>
+            <div>-20% на всё</div>
+            <div>+10 бесплатных жидкостей</div>
+            <div>+3 🍒 за заказ</div>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginTop: theme.spacing.xl }}>
+        <PrimaryButton
+          fullWidth
+          onClick={() => {
+            shareReferral();
+          }}
+        >
+          Пригласить друга 🍒
+        </PrimaryButton>
+      </div>
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginTop: theme.spacing.lg }}>
+        <SecondaryButton
+          fullWidth
+          onClick={() => {
+            try {
+              historyRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch {
+            }
+          }}
+        >
+          История
+        </SecondaryButton>
+      </div>
+
+      {showHow ? (
+        <div style={{ padding: `0 ${theme.padding.screen}`, marginTop: theme.spacing.xl }} ref={howRef}>
+          <h3 style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, marginBottom: theme.spacing.md, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>Как заработать</h3>
+          <div style={{ display: 'grid', gap: theme.spacing.md }}>
+            <GlassCard padding="md" variant="elevated">
+              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+                <Gift size={20} color={theme.colors.dark.primary} />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
+                    За каждый заказ +{cherriesPerOrder} 🍒
+                  </div>
+                  <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
+                    Чем выше статус — тем больше 🍒 за заказ
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+            <GlassCard padding="md" variant="elevated">
+              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+                <Users size={20} color="#4caf50" />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
+                    Приглашай друзей
+                  </div>
+                  <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
+                    {referralBonusAmount} 🍒 за друга, который сделал первый заказ
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+            <GlassCard padding="md" variant="elevated">
+              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+                <Star size={20} color="#ffc107" />
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
+                    Плюшки автоматически
+                  </div>
+                  <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
+                    На уровнях ты получаешь скидки и подарки
+                  </div>
+                </div>
+              </div>
+            </GlassCard>
+          </div>
+        </div>
+      ) : null}
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginTop: theme.spacing.xl }} ref={historyRef}>
+        <h3 style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, marginBottom: theme.spacing.md, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>История</h3>
         {transactions.map((transaction) => (
           <div key={transaction.id} style={styles.transactionCard}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: theme.spacing.md }}>
+              <div style={{ minWidth: 0 }}>
                 <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
                   {transaction.description}
                 </div>
@@ -398,63 +457,17 @@ const Bonuses: React.FC = () => {
                   {new Date(transaction.date).toLocaleDateString()}
                 </div>
               </div>
-              <div style={{ 
-                fontSize: theme.typography.fontSize.sm, 
+              <div style={{
+                fontSize: theme.typography.fontSize.sm,
                 fontWeight: theme.typography.fontWeight.bold,
-                color: transaction.type === 'earned' ? '#4caf50' : 
-                       transaction.type === 'spent' ? '#ef4444' : '#ffc107'
+                color: transaction.type === 'earned' ? '#4caf50' : transaction.type === 'spent' ? '#ef4444' : '#ffc107',
+                whiteSpace: 'nowrap' as const
               }}>
                 {transaction.type === 'earned' ? '+' : ''}{transaction.amount} 🍒
               </div>
             </div>
           </div>
         ))}
-      </div>
-
-      {/* How to Earn */}
-      <div style={{ padding: `0 ${theme.padding.screen}`, marginTop: theme.spacing.xl }}>
-        <h3 style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, marginBottom: theme.spacing.md, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>Как заработать бонусы</h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.md }}>
-          <GlassCard padding="md" variant="elevated">
-            <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
-              <Gift size={20} color={theme.colors.dark.primary} />
-              <div>
-                <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
-                  Делайте покупки
-                </div>
-                <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-                  Получайте кэшбэк с каждого заказа
-                </div>
-              </div>
-            </div>
-          </GlassCard>
-          <GlassCard padding="md" variant="elevated">
-            <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
-              <Users size={20} color="#4caf50" />
-              <div>
-                <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
-                  Приглашайте друзей
-                </div>
-                <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-                  {referralBonusAmount} 🍒 за каждого друга
-                </div>
-              </div>
-            </div>
-          </GlassCard>
-          <GlassCard padding="md" variant="elevated">
-            <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
-              <Star size={20} color="#ffc107" />
-              <div>
-                <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
-                  Участвуйте в акциях
-                </div>
-                <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-                  Дополнительные бонусы в специальных предложениях
-                </div>
-              </div>
-            </div>
-          </GlassCard>
-        </div>
       </div>
     </div>
   );
