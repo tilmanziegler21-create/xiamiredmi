@@ -626,7 +626,9 @@ export async function getCouriers(city) {
   const activeIdx = headerIndexAny(headers, ['active', 'is_active']);
   const fromIdx = headerIndexAny(headers, ['time_from']);
   const toIdx = headerIndexAny(headers, ['time_to']);
-  const placeIdx = headerIndexAny(headers, ['meeting_place', 'place', 'location', 'address', 'место', 'локация', 'адрес']);
+  const meetingIdx = headerIndexAny(headers, ['meeting_place', 'meeting place', 'место встречи', 'точка встречи']);
+  const placeIdx = meetingIdx >= 0 ? meetingIdx : headerIndexAny(headers, ['place', 'location', 'pickup_point', 'pickup point', 'точка', 'место', 'локация']);
+  const addrIdx = meetingIdx >= 0 || placeIdx >= 0 ? -1 : headerIndexAny(headers, ['address', 'адрес']);
   const out = [];
   for (const r of rows) {
     const active = activeIdx >= 0 ? toBool(r[activeIdx]) : true;
@@ -637,7 +639,7 @@ export async function getCouriers(city) {
       active,
       time_from: fromIdx >= 0 ? String(r[fromIdx] || '').trim() : '',
       time_to: toIdx >= 0 ? String(r[toIdx] || '').trim() : '',
-      meeting_place: placeIdx >= 0 ? String(r[placeIdx] || '').trim() : '',
+      meeting_place: placeIdx >= 0 ? String(r[placeIdx] || '').trim() : addrIdx >= 0 ? String(r[addrIdx] || '').trim() : '',
     });
   }
   return out;
@@ -719,11 +721,44 @@ export async function updateCourierRowByCourierId(city, courierId, patch) {
   if (targetRowIndex < 0) return false;
 
   const updates = [];
-  for (const [k, v] of Object.entries(patch)) {
+  const seen = new Set();
+  const pushUpdate = (colIdx, value) => {
+    if (colIdx < 0) return;
+    const col = colLetter(colIdx);
+    const range = sheetRange(sheet, `${col}${targetRowIndex}`);
+    if (seen.has(range)) return;
+    seen.add(range);
+    updates.push({ range, values: [[value == null ? '' : String(value)]] });
+  };
+  const findIdx = (names) => headerIndexAny(headers, names);
+
+  const timeFrom = patch?.time_from ?? patch?.timeFrom;
+  const timeTo = patch?.time_to ?? patch?.timeTo;
+  const meetingPlace = patch?.meeting_place ?? patch?.meetingPlace ?? patch?.place ?? patch?.location;
+  const updatedAt = patch?.updated_at ?? patch?.updatedAt;
+
+  if (timeFrom != null && String(timeFrom).trim()) {
+    pushUpdate(findIdx(['time_from', 'time from', 'время с', 'с']), timeFrom);
+  }
+  if (timeTo != null && String(timeTo).trim()) {
+    pushUpdate(findIdx(['time_to', 'time to', 'время до', 'до']), timeTo);
+  }
+  if (meetingPlace != null && String(meetingPlace).trim()) {
+    const meetingIdx = findIdx(['meeting_place', 'meeting place', 'место встречи', 'точка встречи']);
+    const placeIdx = meetingIdx >= 0 ? meetingIdx : findIdx(['place', 'location', 'pickup_point', 'pickup point', 'точка', 'место', 'локация']);
+    const addrIdx = meetingIdx >= 0 || placeIdx >= 0 ? -1 : findIdx(['address', 'адрес']);
+    if (placeIdx >= 0) pushUpdate(placeIdx, meetingPlace);
+    else if (addrIdx >= 0) pushUpdate(addrIdx, meetingPlace);
+  }
+  if (updatedAt != null && String(updatedAt).trim()) {
+    pushUpdate(findIdx(['updated_at', 'updated at', 'обновлено', 'обновлено в', 'дата обновления']), updatedAt);
+  }
+
+  for (const [k, v] of Object.entries(patch || {})) {
+    if (k === 'time_from' || k === 'time_to' || k === 'meeting_place' || k === 'updated_at') continue;
     const colIdx = headerIndex(headers, k);
     if (colIdx < 0) continue;
-    const col = colLetter(colIdx);
-    updates.push({ range: sheetRange(sheet, `${col}${targetRowIndex}`), values: [[v == null ? '' : String(v)]] });
+    pushUpdate(colIdx, v);
   }
   if (updates.length === 0) return true;
 
