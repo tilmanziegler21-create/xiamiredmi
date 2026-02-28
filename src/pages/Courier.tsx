@@ -15,6 +15,7 @@ type CourierOrder = {
   userName?: string;
   userPhone?: string;
   status: 'pending' | 'assigned' | 'picked_up' | 'delivered' | 'cancelled';
+  paymentMethod?: string;
   totalAmount: number;
   payoutAmount?: number;
   courierId?: string;
@@ -41,7 +42,10 @@ const Courier: React.FC = () => {
   const [paidDates, setPaidDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<'today' | 'tomorrow' | 'day_after'>('today');
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(true);
+  const [cashoutFrom, setCashoutFrom] = useState('');
+  const [cashoutTo, setCashoutTo] = useState('');
+  const [cashoutBusy, setCashoutBusy] = useState(false);
   const [prefTimeFrom, setPrefTimeFrom] = useState('');
   const [prefTimeTo, setPrefTimeTo] = useState('');
   const [prefPlace, setPrefPlace] = useState('');
@@ -167,9 +171,9 @@ const Courier: React.FC = () => {
     switch (status) {
       case 'pending': return 'Ожидает';
       case 'assigned': return 'Назначен';
-      case 'picked_up': return 'В пути';
-      case 'delivered': return 'Доставлен';
-      case 'cancelled': return 'Отменен';
+      case 'picked_up': return 'В работе';
+      case 'delivered': return 'Выдано';
+      case 'cancelled': return 'Не выдано';
       default: return 'Неизвестно';
     }
   };
@@ -211,6 +215,7 @@ const Courier: React.FC = () => {
   const dayRevenue = deliveredOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0);
   const dayPayout = deliveredOrders.reduce((s, o) => s + Number(o.payoutAmount ?? (Math.round(Number(o.totalAmount || 0) * 0.2 * 100) / 100)), 0);
   const paidForDay = paidDates.includes(selectedDateKey);
+  const dayCard = deliveredOrders.reduce((s, o) => s + (String(o.paymentMethod || '').trim().toLowerCase() === 'card' ? Number(o.totalAmount || 0) : 0), 0);
 
   const styles = {
     container: {
@@ -432,6 +437,9 @@ const Courier: React.FC = () => {
               Касса: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayRevenue)}</span>
             </div>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+              На карте: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayCard)}</span>
+            </div>
+            <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
               Комиссия курьера: <span style={{ color: '#37d67a', fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayPayout)}</span>
             </div>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
@@ -464,6 +472,64 @@ const Courier: React.FC = () => {
             }}
           >
             {paidForDay ? 'Комиссия выплачена' : 'Выплатить комиссию'}
+          </PrimaryButton>
+        </GlassCard>
+      </div>
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
+        <GlassCard padding="md" variant="elevated">
+          <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.sm }}>
+            Сдача кассы (период)
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
+            <input
+              type="date"
+              value={cashoutFrom}
+              onChange={(e) => setCashoutFrom(e.target.value)}
+              style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}
+            />
+            <input
+              type="date"
+              value={cashoutTo}
+              onChange={(e) => setCashoutTo(e.target.value)}
+              style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}
+            />
+          </div>
+          <PrimaryButton
+            fullWidth
+            size="sm"
+            disabled={cashoutBusy || !cashoutFrom || !cashoutTo}
+            onClick={async () => {
+              if (!city) return;
+              const from = String(cashoutFrom || '').slice(0, 10);
+              const to = String(cashoutTo || '').slice(0, 10);
+              if (!from || !to) return;
+              const inRange = (d: string) => d && d >= from && d <= to;
+              const deliveredInRange = orders.filter((o) => o.status === 'delivered' && inRange(normDate(o.deliveryDate)));
+              const total = deliveredInRange.reduce((s, o) => s + Number(o.totalAmount || 0), 0);
+              const card = deliveredInRange.reduce((s, o) => s + (String(o.paymentMethod || '').trim().toLowerCase() === 'card' ? Number(o.totalAmount || 0) : 0), 0);
+              const commission = deliveredInRange.reduce((s, o) => s + Number(o.payoutAmount ?? (Math.round(Number(o.totalAmount || 0) * 0.2 * 100) / 100)), 0);
+              const handed = Math.max(0, Math.round((total - commission) * 100) / 100);
+              const confirmed = await new Promise<boolean>((resolve) => {
+                try {
+                  WebApp.showConfirm(`Сдать кассу за период?`, (ok) => resolve(Boolean(ok)));
+                } catch {
+                  resolve(window.confirm('Сдать кассу за период?'));
+                }
+              });
+              if (!confirmed) return;
+              try {
+                setCashoutBusy(true);
+                await courierAPI.requestCashout({ city: String(city), dateFrom: from, dateTo: to, total, card, commission, handed });
+                toast.push('Отчёт сдачи кассы отправлен админу', 'success');
+              } catch {
+                toast.push('Не удалось отправить отчёт', 'error');
+              } finally {
+                setCashoutBusy(false);
+              }
+            }}
+          >
+            {cashoutBusy ? 'Отправка…' : 'Сдать кассу'}
           </PrimaryButton>
         </GlassCard>
       </div>
@@ -554,34 +620,25 @@ const Courier: React.FC = () => {
                     onClick={() => updateOrderStatus(order.id, 'assigned')}
                   >
                     <Truck size={16} style={{ marginRight: '4px' }} />
-                    Взять заказ
+                    Получил заказ
                   </PrimaryButton>
                 )}
-                {order.status === 'assigned' && (
-                  <PrimaryButton
-                    size="sm"
-                    onClick={() => updateOrderStatus(order.id, 'picked_up')}
-                  >
-                    <Package size={16} style={{ marginRight: '4px' }} />
-                    В пути
-                  </PrimaryButton>
-                )}
-                {order.status === 'picked_up' && (
+                {(order.status === 'assigned' || order.status === 'picked_up') && (
                   <PrimaryButton
                     size="sm"
                     onClick={() => updateOrderStatus(order.id, 'delivered')}
                   >
                     <CheckCircle size={16} style={{ marginRight: '4px' }} />
-                    Доставлено
+                    Выдал
                   </PrimaryButton>
                 )}
-                {(order.status === 'pending' || order.status === 'assigned') && (
+                {(order.status === 'assigned' || order.status === 'picked_up') && (
                   <SecondaryButton
                     size="sm"
                     onClick={() => updateOrderStatus(order.id, 'cancelled')}
                   >
                     <XCircle size={16} style={{ marginRight: '4px' }} />
-                    Отменить
+                    Не выдал
                   </SecondaryButton>
                 )}
                 {order.status === 'delivered' && (
@@ -596,7 +653,22 @@ const Courier: React.FC = () => {
                     fontWeight: theme.typography.fontWeight.bold,
                     width: '100%'
                   }}>
-                    ✓ Заказ доставлен
+                    ✓ Выдано
+                  </div>
+                )}
+                {order.status === 'cancelled' && (
+                  <div style={{ 
+                    background: 'rgba(244,67,54,0.10)', 
+                    border: '1px solid rgba(244,67,54,0.30)',
+                    borderRadius: theme.radius.md,
+                    padding: theme.spacing.sm,
+                    textAlign: 'center' as const,
+                    color: '#f44336',
+                    fontSize: theme.typography.fontSize.sm,
+                    fontWeight: theme.typography.fontWeight.bold,
+                    width: '100%'
+                  }}>
+                    ✕ Не выдано
                   </div>
                 )}
               </div>

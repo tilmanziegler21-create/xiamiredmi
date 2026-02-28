@@ -86,6 +86,7 @@ router.get('/orders', requireAuth, async (req, res) => {
           comment: cd.comment,
           status: normalizeOrderStatus(o.status),
           totalAmount,
+          paymentMethod: String(o.payment_method || ''),
           payoutAmount,
           courierId: String(o.courier_id || ''),
           deliveryDate: String(o.delivery_date || ''),
@@ -180,6 +181,85 @@ router.post('/payout', requireAuth, async (req, res) => {
       return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
     }
     res.status(500).json({ error: 'Failed to request payout' });
+  }
+});
+
+router.post('/cashout', requireAuth, async (req, res) => {
+  try {
+    const city = String(req.body?.city || req.query.city || '');
+    if (!city) return res.status(400).json({ error: 'City parameter is required' });
+
+    const status = String(req.user?.status || '');
+    if (status !== 'courier' && status !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const myCourierId = status === 'admin' ? String(req.body?.courierId || '').trim() : await resolveCourierIdForUser(city, req.user.tgId);
+    if (status !== 'admin' && !myCourierId) {
+      return res.status(403).json({ error: 'Courier profile not found. Contact admin.' });
+    }
+
+    const dateFrom = String(req.body?.dateFrom || '').trim();
+    const dateTo = String(req.body?.dateTo || '').trim();
+    const total = Math.max(0, Number(req.body?.total || 0));
+    const card = Math.max(0, Number(req.body?.card || 0));
+    const commission = Math.max(0, Number(req.body?.commission || 0));
+    const handed = Math.max(0, Number(req.body?.handed || 0));
+    if (!dateFrom || !dateTo) return res.status(400).json({ error: 'dateFrom and dateTo are required' });
+
+    const key = `${city}:${myCourierId}:${dateFrom}:${dateTo}`;
+    const existing = (Array.isArray(db.courierCashouts) ? db.courierCashouts : []).find((p) => String(p?.id || '') === key);
+    if (existing) return res.json({ ok: true, already: true });
+
+    const record = {
+      id: key,
+      city,
+      courier_id: myCourierId,
+      courier_tg_id: String(req.user?.tgId || ''),
+      date_from: dateFrom,
+      date_to: dateTo,
+      total: Math.round(total * 100) / 100,
+      card: Math.round(card * 100) / 100,
+      commission: Math.round(commission * 100) / 100,
+      handed: Math.round(handed * 100) / 100,
+      created_at: new Date().toISOString(),
+    };
+    if (!Array.isArray(db.courierCashouts)) db.courierCashouts = [];
+    db.courierCashouts.push(record);
+    db.persistState();
+
+    const admins = parseIdList(process.env.TELEGRAM_ADMIN_IDS);
+    const fmt = (d) => {
+      const s = String(d || '').slice(0, 10);
+      const [y, m, dd] = s.split('-');
+      if (!y || !m || !dd) return s;
+      return `${dd}.${m}`;
+    };
+    const keepPercent = 100 - Number(process.env.COURIER_PAYOUT_PERCENT || 20);
+    const text =
+      `${fmt(dateFrom)}-${fmt(dateTo)}\n\n` +
+      `Общая касса: ${total}€\n` +
+      `На карте: ${card}€\n\n` +
+      `${total}€-${keepPercent}%=${commission}€\n` +
+      `${total}€ - ${commission}€ = ${handed}€\n\n` +
+      `Комиссия курьера: ${commission}€\n` +
+      `Сдал кассу: ${handed}€\n` +
+      `Город: ${city}\n` +
+      `Курьер: ${myCourierId}`;
+    for (const id of admins) {
+      try {
+        await sendTelegramMessage(id, text);
+      } catch {
+      }
+    }
+
+    res.json({ ok: true });
+  } catch (e) {
+    const status = Number(e?.status) || 500;
+    if (status === 503) {
+      return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
+    }
+    res.status(500).json({ error: 'Failed to request cashout' });
   }
 });
 

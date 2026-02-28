@@ -224,6 +224,7 @@ export const courierAPI = {
   updateOrderStatus: (orderId: string, status: string, city: string, reason?: string) => api.post('/courier/orders/status', { orderId, status, city, reason }),
   updatePreferences: (payload: { city: string; time_from?: string; time_to?: string; meeting_place?: string }) => api.post('/courier/preferences', payload),
   requestPayout: (payload: { city: string; date: string; amount: number; revenue: number; delivered: number }) => api.post('/courier/payout', payload),
+  requestCashout: (payload: { city: string; dateFrom: string; dateTo: string; total: number; card: number; commission: number; handed: number }) => api.post('/courier/cashout', payload),
 };
 
 export const adminAPI = {

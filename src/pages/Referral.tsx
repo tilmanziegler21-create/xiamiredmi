@@ -26,8 +26,8 @@ const Referral: React.FC = () => {
   }, []);
 
   const refCode = String(info?.referralCode || user?.tgId || '');
-  const ref = refCode ? `ref=${encodeURIComponent(refCode)}` : 'ref=unknown';
-  const link = `${window.location.origin}/home?${ref}`;
+  const botUsername = String(import.meta.env.VITE_BOT_USERNAME || '').trim();
+  const link = botUsername ? `https://t.me/${botUsername}?startapp=ref_${encodeURIComponent(refCode || 'unknown')}` : '';
 
   const reward = Number(info?.bonusAmount || 0);
   const invited = Number(info?.conversions || 0);
@@ -36,6 +36,10 @@ const Referral: React.FC = () => {
 
   const copy = async () => {
     try {
+      if (!link) {
+        toast.push('Укажите VITE_BOT_USERNAME, чтобы появилась ссылка', 'info');
+        return;
+      }
       await navigator.clipboard.writeText(link);
       try {
         WebApp?.HapticFeedback?.impactOccurred?.('light');
@@ -48,6 +52,10 @@ const Referral: React.FC = () => {
   };
 
   const share = async () => {
+    if (!link) {
+      toast.push('Укажите VITE_BOT_USERNAME, чтобы появилась ссылка', 'info');
+      return;
+    }
     const text = `ELFCHERRY mini app 24/7 — присоединяйся: ${link}`;
     try {
       if (WebApp.openTelegramLink) {
