@@ -331,6 +331,18 @@ a {
   animation: homeShineMove 6.5s ease-in-out infinite;
 }
 
+.home-banner-mascot {
+  position: absolute;
+  right: -40px;
+  bottom: -44px;
+  width: 240px;
+  height: 240px;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0.95;
+  transform: rotate(-6deg);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .home-banner-shine {
     animation: none;

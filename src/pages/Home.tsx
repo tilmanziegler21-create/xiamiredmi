@@ -271,12 +271,13 @@ const Home: React.FC = () => {
       zIndex: 2,
     },
     bannerTitle: {
-      fontSize: theme.typography.fontSize['2xl'],
+      fontSize: 36,
       fontWeight: theme.typography.fontWeight.bold,
       marginBottom: theme.spacing.xs,
       textShadow: '0 10px 30px rgba(0,0,0,0.55)',
       textTransform: 'uppercase' as const,
       letterSpacing: '0.06em',
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
     },
     bannerSubtitle: {
       fontSize: theme.typography.fontSize.sm,
@@ -528,6 +529,12 @@ const Home: React.FC = () => {
             ) : null}
             <div className="home-banner-overlay" />
             <div className="home-banner-shine" />
+            <div className="home-banner-mascot">
+              <CherryMascot
+                variant={currentBanner % 5 === 1 ? 'green' : currentBanner % 5 === 2 ? 'gold' : currentBanner % 5 === 3 ? 'cosmic' : currentBanner % 5 === 4 ? 'pink' : 'classic'}
+                size={210}
+              />
+            </div>
             <div style={styles.bannerContent}>
               <h2 style={styles.bannerTitle}>{banners[currentBanner].title}</h2>
               <p style={styles.bannerSubtitle}>{banners[currentBanner].subtitle}</p>

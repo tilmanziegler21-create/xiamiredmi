@@ -5,7 +5,6 @@ import { ChipBadge } from './ChipBadge';
 import { Coins, ShoppingCart, Heart } from 'lucide-react';
 import { formatCurrency } from '../lib/currency';
 import { blurStyle } from './blur';
-import { CherryMascot } from './CherryMascot';
 
 interface ProductCardProps {
   id: string;
@@ -159,13 +158,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       objectFit: 'cover' as const,
       zIndex: 0,
       pointerEvents: 'none' as const,
-      opacity: 0.55,
-      filter: 'saturate(1.05) contrast(1.05)',
+      opacity: 1,
+      filter: 'saturate(1.08) contrast(1.08)',
     },
     scrim: {
       position: 'absolute' as const,
       inset: 0,
-      background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.0) 38%, rgba(0,0,0,0.78) 100%)',
+      background: 'linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.05) 48%, rgba(0,0,0,0.86) 100%)',
       zIndex: 1,
       pointerEvents: 'none' as const,
     },
@@ -175,7 +174,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       zIndex: 2,
       display: 'flex',
       flexDirection: 'column' as const,
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       padding: theme.spacing.md,
     },
     topRow: {
@@ -199,11 +198,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       overflow: 'hidden',
     },
     pricePill: {
+      position: 'absolute' as const,
+      left: theme.spacing.md,
+      bottom: theme.spacing.md,
       background: 'rgba(255,255,255,0.94)',
       color: '#0b0b0b',
-      padding: '8px 12px',
-      borderRadius: 999,
-      fontSize: theme.typography.fontSize.base,
+      padding: '10px 12px',
+      borderRadius: 16,
+      fontSize: 18,
       fontWeight: theme.typography.fontWeight.bold,
       display: 'flex',
       alignItems: 'center',
@@ -214,35 +216,38 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     newBadge: {
       position: 'absolute' as const,
       top: theme.spacing.md,
-      left: theme.spacing.md,
+      right: theme.spacing.md,
     },
     stockBadge: {
       position: 'absolute' as const,
       top: theme.spacing.md,
-      right: theme.spacing.md,
-      padding: '4px 10px',
-      borderRadius: 999,
+      left: theme.spacing.md,
+      padding: '6px 10px',
+      borderRadius: 12,
       fontSize: theme.typography.fontSize.xs,
       fontWeight: theme.typography.fontWeight.bold,
       textTransform: 'uppercase' as const,
       letterSpacing: '0.08em',
     },
     inStock: {
-      background: '#ffffff',
-      color: '#0b0b0b',
+      background: 'rgba(0,0,0,0.42)',
+      color: 'rgba(255,255,255,0.92)',
+      border: '1px solid rgba(255,255,255,0.14)',
     },
     outOfStock: {
-      background: theme.colors.dark.accentRed,
-      color: '#ffffff',
+      background: 'rgba(0,0,0,0.50)',
+      color: theme.colors.dark.accentRed,
+      border: '1px solid rgba(255,45,85,0.34)',
     },
     lowStock: {
-      background: '#ffffff',
-      color: '#0b0b0b',
+      background: 'rgba(0,0,0,0.46)',
+      color: 'rgba(255,255,255,0.92)',
+      border: '1px solid rgba(255,255,255,0.14)',
     },
     overlayActions: {
       position: 'absolute' as const,
       right: theme.spacing.md,
-      top: 64,
+      top: 62,
       display: 'flex',
       flexDirection: 'column' as const,
       gap: theme.spacing.sm,
@@ -256,18 +261,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       ...blurStyle(theme.blur.glass),
       boxShadow: '0 16px 26px rgba(0,0,0,0.35)',
     },
-    mascotWrap: {
+    titleWrap: {
       position: 'absolute' as const,
-      right: -10,
-      bottom: -18,
-      width: 160,
-      height: 160,
-      pointerEvents: 'none' as const,
-      display: 'flex',
-      alignItems: 'flex-end',
-      justifyContent: 'flex-end',
-      transform: `rotate(${Math.round((h - 0.5) * 6)}deg)`,
-      opacity: stock === 0 ? 0.55 : 1,
+      left: theme.spacing.md,
+      right: 58,
+      top: 52,
     },
   };
 
@@ -325,19 +323,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             style={styles.actionSquare}
           />
         </div>
-
-        <div style={styles.mascotWrap}>
-          <CherryMascot variant={variant as any} size={148} />
+        <div style={styles.titleWrap}>
+          <h3 style={styles.title}>{name}</h3>
         </div>
-
-        <div style={styles.topRow}>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <h3 style={styles.title}>{name}</h3>
-          </div>
-          <div style={styles.pricePill}>
-            <Coins size={16} />
-            <span>{formatCurrency(price)}</span>
-          </div>
+        <div style={styles.pricePill}>
+          <Coins size={16} />
+          <span>{formatCurrency(price)}</span>
         </div>
       </div>
     </div>

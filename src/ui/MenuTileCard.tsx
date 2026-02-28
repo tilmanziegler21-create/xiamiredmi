@@ -31,6 +31,12 @@ export const MenuTileCard: React.FC<MenuTileCardProps> = ({
     promotions: 'radial-gradient(120% 90% at 18% 18%, rgba(251,191,36,0.34) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(245,158,11,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
     bonuses: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(244,63,94,0.24) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
     orders: 'radial-gradient(120% 90% at 18% 18%, rgba(96,165,250,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(139,92,246,0.26) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+    cart: 'radial-gradient(120% 90% at 18% 18%, rgba(255,45,85,0.32) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(176,0,58,0.24) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.90) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+    favorites: 'radial-gradient(120% 90% at 18% 18%, rgba(236,72,153,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(244,63,94,0.20) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.90) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+    referral: 'radial-gradient(120% 90% at 18% 18%, rgba(34,197,94,0.24) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(251,191,36,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.90) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+    support: 'radial-gradient(120% 90% at 18% 18%, rgba(56,189,248,0.26) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(99,102,241,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.90) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+    admin: 'radial-gradient(120% 90% at 18% 18%, rgba(139,92,246,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(96,165,250,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.90) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+    courier: 'radial-gradient(120% 90% at 18% 18%, rgba(16,185,129,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(52,211,153,0.18) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.90) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
   };
   const skin = skinById[String(tile.id || '')] || 'classic';
   const atmos = bgById[String(tile.id || '')] || 'linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)';
@@ -113,18 +119,18 @@ export const MenuTileCard: React.FC<MenuTileCardProps> = ({
       alignItems: 'flex-end',
     },
     ctaButton: {
-      background: theme.gradients.primary,
-      border: '1px solid rgba(255,255,255,0.2)',
-      borderRadius: '9999px',
-      padding: '6px 12px',
+      background: 'linear-gradient(180deg, rgba(255,45,85,0.96) 0%, rgba(176,0,58,0.92) 100%)',
+      border: '1px solid rgba(255,255,255,0.18)',
+      borderRadius: 6,
+      padding: '8px 10px',
       fontSize: theme.typography.fontSize.xs,
       fontWeight: theme.typography.fontWeight.semibold,
-      letterSpacing: '0.08em',
+      letterSpacing: '0.12em',
       textTransform: 'uppercase' as const,
       color: '#ffffff',
       cursor: 'pointer',
       transition: 'all 0.2s ease',
-      boxShadow: '0 10px 22px rgba(255,45,85,0.18)',
+      boxShadow: '0 14px 26px rgba(0,0,0,0.40), 0 0 22px rgba(255,45,85,0.14)',
     },
     badge: {
       position: 'absolute' as const,
