@@ -95,12 +95,28 @@ router.get('/', (_req, res) => {
         linkTarget: 'Новинки',
       },
       {
+        title: 'ЖИДКОСТИ',
+        subtitle: 'Подборка вкусов • 24/7',
+        gradient: 'linear-gradient(135deg, rgba(255,45,85,0.78) 0%, rgba(15,12,26,0.82) 100%)',
+        imageUrl: '/assets/elfcherry/categories/category-liquids.jpg',
+        linkType: 'category',
+        linkTarget: 'Жидкости',
+      },
+      {
         title: 'ХИТЫ НЕДЕЛИ',
         subtitle: 'Топ продаж и рекомендации',
-        gradient: 'linear-gradient(135deg, rgba(255,168,0,0.70) 0%, rgba(255,45,85,0.78) 100%)',
+        gradient: 'linear-gradient(135deg, rgba(255,168,0,0.55) 0%, rgba(255,45,85,0.78) 100%)',
         imageUrl: '/assets/elfcherry/banners/banner-2.jpg',
         linkType: 'category',
         linkTarget: 'Хиты',
+      },
+      {
+        title: 'ОДНОРАЗКИ',
+        subtitle: 'Готовые устройства • в наличии',
+        gradient: 'linear-gradient(135deg, rgba(176,0,58,0.72) 0%, rgba(0,0,0,0.82) 100%)',
+        imageUrl: '/assets/elfcherry/categories/category-disposables.jpg',
+        linkType: 'category',
+        linkTarget: 'Одноразки',
       },
       {
         title: 'ПОДДЕРЖКА',
@@ -113,9 +129,9 @@ router.get('/', (_req, res) => {
     ],
     categoryTiles: [
       { slug: 'Жидкости', title: 'ЖИДКОСТИ', imageUrl: '/assets/elfcherry/categories/category-liquids.jpg', badgeText: 'NEW DROP' },
-      { slug: 'Одноразки', title: 'ОДНОРАЗКИ', imageUrl: '/assets/elfcherry/categories/category-disposables.jpg' },
-      { slug: 'Поды', title: 'ПОДЫ', imageUrl: '/assets/elfcherry/categories/category-pods.jpg' },
-      { slug: 'Картриджи', title: 'КАРТРИДЖИ', imageUrl: '/assets/elfcherry/categories/category-cartridges.jpg' },
+      { slug: 'Одноразки', title: 'ОДНОРАЗКИ', imageUrl: '/assets/elfcherry/categories/category-disposables.jpg', badgeText: 'HOT' },
+      { slug: 'Поды', title: 'ПОДЫ', imageUrl: '/assets/elfcherry/categories/category-pods.jpg', badgeText: 'PREMIUM' },
+      { slug: 'Картриджи', title: 'КАРТРИДЖИ', imageUrl: '/assets/elfcherry/categories/category-cartridges.jpg', badgeText: 'TOP' },
     ],
     pickupPoints: pickupPoints(),
     referralRules: {
