@@ -83,7 +83,9 @@ const Catalog: React.FC = () => {
 
   const applyFilters = (source: Product[]) => {
     const toNum = (v: string) => {
-      const n = Number(String(v || '').replace(',', '.'));
+      const s = String(v || '').trim();
+      if (!s) return NaN;
+      const n = Number(s.replace(',', '.'));
       return Number.isFinite(n) ? n : NaN;
     };
     const norm = (v: any) => String(v || '').trim().toLowerCase();
