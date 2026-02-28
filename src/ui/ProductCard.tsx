@@ -186,16 +186,14 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     },
     title: {
       color: theme.colors.dark.text,
-      fontSize: theme.typography.fontSize.base,
+      fontSize: String(name || '').length > 26 ? 12 : 13,
       fontWeight: theme.typography.fontWeight.bold,
       textTransform: 'uppercase' as const,
-      lineHeight: '1.15',
-      letterSpacing: '0.06em',
+      lineHeight: 1.05,
+      letterSpacing: '0.05em',
       textShadow: '0 16px 30px rgba(0,0,0,0.55)',
-      display: '-webkit-box',
-      WebkitLineClamp: 2,
-      WebkitBoxOrient: 'vertical' as const,
       overflow: 'hidden',
+      maxHeight: '2.1em',
     },
     pricePill: {
       position: 'absolute' as const,
@@ -246,16 +244,16 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     },
     overlayActions: {
       position: 'absolute' as const,
-      right: theme.spacing.md,
-      top: 62,
+      right: 10,
+      top: 54,
       display: 'flex',
       flexDirection: 'column' as const,
       gap: theme.spacing.sm,
     },
     actionSquare: {
-      width: 42,
-      height: 42,
-      borderRadius: 14,
+      width: 32,
+      height: 32,
+      borderRadius: 10,
       background: 'rgba(255,255,255,0.10)',
       border: '1px solid rgba(255,255,255,0.18)',
       ...blurStyle(theme.blur.glass),
@@ -303,7 +301,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         
         <div style={styles.overlayActions}>
           <IconButton
-            icon={<Heart size={18} fill={isFavorite ? 'white' : 'none'} />}
+            icon={<Heart size={16} fill={isFavorite ? 'white' : 'none'} />}
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite?.(id);
@@ -313,7 +311,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             style={styles.actionSquare}
           />
           <IconButton
-            icon={<ShoppingCart size={18} />}
+            icon={<ShoppingCart size={16} />}
             onClick={(e) => {
               e.stopPropagation();
               onAddToCart?.(id);

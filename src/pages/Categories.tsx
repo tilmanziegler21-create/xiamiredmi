@@ -7,12 +7,25 @@ const Categories: React.FC = () => {
   const navigate = useNavigate();
   const { config } = useConfigStore();
   const tiles = config?.categoryTiles || [];
+  const titleFontSize = (title: string) => {
+    const len = String(title || '').trim().length;
+    if (len <= 8) return 26;
+    if (len <= 10) return 22;
+    return 18;
+  };
   const atmos: Record<string, { bg: string; mascot: any }> = {
     'Жидкости': { bg: 'radial-gradient(120% 90% at 20% 18%, rgba(52,211,153,0.35) 0%, rgba(0,0,0,0) 58%), radial-gradient(110% 90% at 78% 26%, rgba(16,185,129,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)', mascot: 'green' },
     'Одноразки': { bg: 'radial-gradient(120% 90% at 18% 18%, rgba(251,191,36,0.34) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(245,158,11,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)', mascot: 'gold' },
     'Поды': { bg: 'radial-gradient(120% 90% at 18% 18%, rgba(96,165,250,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(139,92,246,0.26) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)', mascot: 'cosmic' },
     'Картриджи': { bg: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(244,63,94,0.24) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)', mascot: 'pink' },
   };
+
+  const extra = [
+    { slug: 'Все', title: 'Все товары', imageUrl: '/assets/elfcherry/banners/banner-1.jpg', badgeText: '', to: '/catalog', key: 'all' },
+    { slug: 'Новинки', title: 'Новинки', imageUrl: '/assets/elfcherry/banners/banner-2.jpg', badgeText: 'NEW', to: '/catalog?category=Новинки', key: 'new' },
+    { slug: 'Хиты', title: 'Хиты', imageUrl: '/assets/elfcherry/banners/banner-3.jpg', badgeText: 'TOP', to: '/catalog?category=Хиты', key: 'hits' },
+  ];
+  const all = [...extra, ...tiles.map((t: any) => ({ ...t, to: `/catalog?category=${encodeURIComponent(t.slug)}`, key: String(t.slug) }))];
 
   return (
     <div style={{ padding: theme.padding.screen }}>
@@ -32,7 +45,7 @@ const Categories: React.FC = () => {
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.md }}>
-        {!tiles.length ? (
+        {!all.length ? (
           [...Array(4)].map((_, i) => (
             <GlassCard
               key={i}
@@ -43,14 +56,14 @@ const Categories: React.FC = () => {
               <div style={{ height: 140 }} className="animate-pulse" />
             </GlassCard>
           ))
-        ) : tiles.map((t) => (
+        ) : all.map((t: any) => (
           (() => {
             const a = atmos[String(t.slug)] || atmos[String(t.title)];
             const bg = a?.bg || 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)';
             const mascot = a?.mascot || 'classic';
             return (
           <GlassCard
-            key={t.slug}
+            key={t.key}
             padding="md"
             variant="elevated"
             style={{
@@ -61,7 +74,7 @@ const Categories: React.FC = () => {
               cursor: 'pointer',
               position: 'relative',
             }}
-            onClick={() => navigate(`/catalog?category=${encodeURIComponent(t.slug)}`)}
+            onClick={() => navigate(String(t.to))}
           >
             {t.imageUrl ? (
               <img
@@ -88,13 +101,14 @@ const Categories: React.FC = () => {
                 right: theme.spacing.md,
                 bottom: theme.spacing.md,
                 textAlign: 'left',
-                fontSize: 30,
+                fontSize: titleFontSize(String(t.title)),
                 fontWeight: theme.typography.fontWeight.bold,
-                letterSpacing: '0.14em',
+                letterSpacing: '0.08em',
                 textTransform: 'uppercase',
                 textShadow: '0 12px 30px rgba(0,0,0,0.60)',
                 fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
                 zIndex: 2,
+                maxWidth: '60%',
               }}
             >
               {t.title}

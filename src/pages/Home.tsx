@@ -1,13 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
-import { theme, GlassCard, PrimaryButton, SecondaryButton, ChipBadge, ProductCard, CarouselDots, SectionDivider, AddToCartModal, CherryMascot } from '../ui';
+import { theme, GlassCard, ChipBadge, ProductCard, CarouselDots, SectionDivider, AddToCartModal, CherryMascot } from '../ui';
 import { useCartStore } from '../store/useCartStore';
-import { useAuthStore } from '../store/useAuthStore';
 import { cartAPI, catalogAPI } from '../services/api';
-import { ChevronRight, Grid, Gift, Star, Search, ShoppingCart, History, Info } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { useToastStore } from '../store/useToastStore';
-import { formatCurrency } from '../lib/currency';
 import { useCityStore } from '../store/useCityStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
 import { useConfigStore } from '../store/useConfigStore';
@@ -28,7 +26,6 @@ const Home: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastStore();
   const { setCart } = useCartStore();
-  const { user } = useAuthStore();
   const [currentBanner, setCurrentBanner] = useState(0);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -66,14 +63,7 @@ const Home: React.FC = () => {
     badgeText: t.badgeText || '',
   }));
 
-  const tabs = useMemo(() => {
-    const base = ['Все', 'Новинки', 'Скидки', 'Жидкости', 'Одноразки', 'Поды', 'Картриджи'];
-    const fromConfig = (config?.categoryTiles || [])
-      .map((t) => String(t.slug || '').trim())
-      .filter(Boolean);
-    const merged = Array.from(new Set([...base, ...fromConfig]));
-    return merged.slice(0, 10);
-  }, [config?.categoryTiles]);
+  const tabs = useMemo(() => (['Все', 'Новинки', 'Скидки', 'Жидкости']), []);
 
   const categoryAtmos = useMemo(() => {
     return {
@@ -95,17 +85,6 @@ const Home: React.FC = () => {
       },
     };
   }, []);
-
-  const qtyDiscount = config?.quantityDiscount;
-  const qtyDiscountMin = Number(qtyDiscount?.minQty || 3);
-  const qtyDiscountPrice = Number(qtyDiscount?.unitPrice || 40);
-
-  const quickTiles = useMemo(() => ([
-    { title: 'Каталог', subtitle: 'Все товары', to: '/catalog', image: '/assets/elfcherry/tiles/tile-catalog.jpg', icon: Grid },
-    { title: 'Акции', subtitle: 'Скидки и промо', to: '/promotions', image: '/assets/elfcherry/tiles/tile-promo.jpg', icon: Gift },
-    { title: 'Корзина', subtitle: 'Быстрый заказ', to: '/cart', image: '/assets/elfcherry/tiles/tile-cart.jpg', icon: ShoppingCart },
-    { title: 'Бонусы', subtitle: 'Баланс и история', to: '/bonuses', image: '/assets/elfcherry/tiles/tile-bonuses.jpg', icon: Star },
-  ]), []);
 
   useEffect(() => {
     if (ultraLite) return;
@@ -204,6 +183,13 @@ const Home: React.FC = () => {
     return filteredProducts.slice(0, 6);
   }, [filteredProducts]);
 
+  const titleFontSize = (title: string) => {
+    const len = String(title || '').trim().length;
+    if (len <= 8) return 26;
+    if (len <= 10) return 22;
+    return 18;
+  };
+
   const styles = {
     container: {
       minHeight: '100vh',
@@ -213,45 +199,6 @@ const Home: React.FC = () => {
     hero: {
       padding: `0 ${theme.padding.screen}`,
       marginBottom: theme.spacing.lg,
-    },
-    heroTop: {
-      display: 'flex',
-      alignItems: 'flex-start',
-      justifyContent: 'space-between',
-      gap: theme.spacing.md,
-      paddingTop: theme.spacing.sm,
-      marginBottom: theme.spacing.md,
-    },
-    heroBrand: {
-      display: 'flex',
-      flexDirection: 'column' as const,
-      gap: 6,
-    },
-    heroEyebrow: {
-      fontSize: theme.typography.fontSize.xs,
-      letterSpacing: '0.18em',
-      textTransform: 'uppercase' as const,
-      color: 'rgba(255,255,255,0.70)',
-    },
-    heroTitle: {
-      fontSize: theme.typography.fontSize['2xl'],
-      fontWeight: theme.typography.fontWeight.bold,
-      letterSpacing: '0.06em',
-      textTransform: 'uppercase' as const,
-      lineHeight: 1.05,
-    },
-    heroSubtitle: {
-      fontSize: theme.typography.fontSize.sm,
-      color: 'rgba(255,255,255,0.72)',
-      letterSpacing: '0.04em',
-      textTransform: 'uppercase' as const,
-      lineHeight: 1.35,
-    },
-    heroCta: {
-      display: 'flex',
-      gap: theme.spacing.sm,
-      alignItems: 'center',
-      justifyContent: 'flex-end',
     },
     banner: {
       height: 240,
@@ -307,87 +254,6 @@ const Home: React.FC = () => {
       cursor: 'pointer',
       userSelect: 'none' as const,
     }),
-    quickActionsGrid: {
-      padding: `0 ${theme.padding.screen}`,
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: theme.spacing.md,
-      marginBottom: theme.spacing.lg,
-    },
-    quickActionButton: {
-      height: 100,
-      borderRadius: theme.radius.lg,
-      display: 'flex',
-      flexDirection: 'column' as const,
-      alignItems: 'flex-start',
-      justifyContent: 'flex-end',
-      gap: 6,
-      padding: theme.spacing.md,
-      background: 'rgba(255,255,255,0.06)',
-      border: '1px solid rgba(255,255,255,0.14)',
-      color: theme.colors.dark.text,
-      textDecoration: 'none',
-      transition: 'transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1)',
-      cursor: 'pointer',
-      touchAction: 'manipulation' as const,
-      position: 'relative' as const,
-      overflow: 'hidden',
-    },
-    quickActionIcon: {
-      width: 34,
-      height: 34,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      borderRadius: 12,
-      background: 'rgba(0,0,0,0.35)',
-      border: '1px solid rgba(255,255,255,0.14)',
-    },
-    quickActionText: {
-      fontSize: theme.typography.fontSize.sm,
-      fontWeight: theme.typography.fontWeight.medium,
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.08em',
-    },
-    quickActionSub: {
-      fontSize: theme.typography.fontSize.xs,
-      color: 'rgba(255,255,255,0.70)',
-      letterSpacing: '0.10em',
-      textTransform: 'uppercase' as const,
-    },
-    categoryRow: {
-      padding: `0 ${theme.padding.screen}`,
-      display: 'flex',
-      gap: theme.spacing.md,
-      overflowX: 'auto' as const,
-      marginBottom: theme.spacing.xl,
-      WebkitOverflowScrolling: 'touch' as const,
-    },
-    categoryChip: {
-      flex: '0 0 auto',
-      width: 240,
-      height: 150,
-      borderRadius: theme.radius.lg,
-      overflow: 'hidden',
-      position: 'relative' as const,
-      boxShadow: theme.shadow.card,
-      border: '1px solid rgba(255,255,255,0.14)',
-      cursor: 'pointer',
-      touchAction: 'manipulation' as const,
-    },
-    categoryChipTitle: {
-      position: 'absolute' as const,
-      left: theme.spacing.md,
-      right: theme.spacing.md,
-      bottom: theme.spacing.md,
-      fontSize: 30,
-      fontWeight: theme.typography.fontWeight.bold,
-      textTransform: 'uppercase' as const,
-      letterSpacing: '0.14em',
-      textShadow: '0 10px 30px rgba(0,0,0,0.55)',
-      zIndex: 2,
-      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
-    },
     searchSection: {
       padding: `0 ${theme.padding.screen}`,
       marginBottom: theme.spacing.lg,
@@ -413,7 +279,7 @@ const Home: React.FC = () => {
       marginBottom: theme.spacing.xl,
     },
     categoryCard: {
-      height: 160,
+      height: 150,
       borderRadius: theme.radius.lg,
       overflow: 'hidden',
       position: 'relative' as const,
@@ -422,17 +288,30 @@ const Home: React.FC = () => {
       cursor: 'pointer',
       touchAction: 'manipulation' as const,
     },
-    categoryTitle: {
+    categoryTitleWrap: {
       position: 'absolute' as const,
-      inset: 0,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: theme.typography.fontSize.lg,
+      left: theme.spacing.md,
+      bottom: theme.spacing.md,
+      maxWidth: '56%',
+      zIndex: 2,
+    },
+    categoryTitle: (title: string) => ({
+      fontSize: titleFontSize(title),
       fontWeight: theme.typography.fontWeight.bold,
       textTransform: 'uppercase' as const,
-      letterSpacing: '0.14em',
-      textShadow: '0 10px 30px rgba(0,0,0,0.55)',
+      letterSpacing: '0.08em',
+      textShadow: '0 12px 30px rgba(0,0,0,0.60)',
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
+      lineHeight: 0.95,
+    }),
+    categoryMascot: {
+      position: 'absolute' as const,
+      right: -30,
+      bottom: -32,
+      width: 200,
+      height: 200,
+      pointerEvents: 'none' as const,
+      zIndex: 1,
     },
     productGrid: {
       padding: `0 ${theme.padding.screen}`,
@@ -448,49 +327,11 @@ const Home: React.FC = () => {
       animation: 'pulse 1.5s ease-in-out infinite',
       border: '1px solid rgba(255,255,255,0.10)',
     },
-    orderHistoryButton: {
-      background: 'rgba(255,255,255,0.05)',
-      border: '1px solid rgba(255,255,255,0.1)',
-      borderRadius: theme.radius.lg,
-      padding: theme.spacing.md,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      color: theme.colors.dark.text,
-      cursor: 'pointer',
-      margin: `0 ${theme.padding.screen} ${theme.spacing.lg}`,
-      transition: 'all 0.2s ease',
-      touchAction: 'manipulation' as const,
-    },
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.hero}>
-        <div style={styles.heroTop}>
-          <div style={styles.heroBrand}>
-            <div style={styles.heroEyebrow}>{city ? `город ${city}` : 'выберите город'}</div>
-            <div style={styles.heroTitle}>ELFCHERRY</div>
-            <div style={styles.heroSubtitle}>
-              {user?.firstName ? `${user.firstName}, добро пожаловать` : 'mini app 24/7'}
-            </div>
-          </div>
-          <div style={styles.heroCta}>
-            <SecondaryButton
-              onClick={() => navigate('/catalog')}
-              style={{ borderRadius: 999, padding: '10px 12px' }}
-            >
-              <Search size={18} />
-            </SecondaryButton>
-            <SecondaryButton
-              onClick={() => navigate('/cart')}
-              style={{ borderRadius: 999, padding: '10px 12px' }}
-            >
-              <ShoppingCart size={18} />
-            </SecondaryButton>
-          </div>
-        </div>
-
         {banners.length ? (
           <div
             className="home-banner"
@@ -560,40 +401,6 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      <SectionDivider title="Быстрые действия" />
-
-      <div style={styles.quickActionsGrid}>
-        {quickTiles.map((t) => {
-          const Icon = t.icon;
-          return (
-            <div
-              key={t.title}
-              style={styles.quickActionButton}
-              onClick={() => navigate(t.to)}
-              role="button"
-            >
-              {!ultraLite ? (
-                <img
-                  src={t.image}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
-                />
-              ) : null}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.76) 100%)', pointerEvents: 'none' }} />
-              <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={styles.quickActionIcon}>
-                  <Icon size={20} color="rgba(255,255,255,0.92)" />
-                </div>
-                <div style={styles.quickActionText}>{t.title}</div>
-                <div style={styles.quickActionSub}>{t.subtitle}</div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
       {/* Search Section */}
       <div style={styles.searchSection}>
         <div
@@ -606,53 +413,19 @@ const Home: React.FC = () => {
         </div>
       </div>
 
-      {/* Order History Button */}
-      <div
-        style={styles.orderHistoryButton}
-        onClick={() => navigate('/orders')}
-        role="button"
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
-          <History size={20} color={theme.colors.dark.textSecondary} />
-          <span>История заказов</span>
-        </div>
-        <span style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-          Повторить заказ
-        </span>
-      </div>
-
       <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
         <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)' }}>
           Категории
         </div>
-        <div
-          role="button"
-          onClick={() => navigate('/categories')}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            color: 'rgba(255,255,255,0.80)',
-            fontSize: theme.typography.fontSize.xs,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            padding: '10px 12px',
-            borderRadius: 999,
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.14)',
-          }}
-        >
-          Все <ChevronRight size={16} />
-        </div>
       </div>
 
-      <div style={styles.categoryRow}>
+      <div style={styles.categoryGrid}>
         {categories.length === 0 ? (
           [...Array(4)].map((_, i) => (
             <div
               key={i}
               style={{
-                ...styles.categoryChip,
+                ...styles.categoryCard,
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.10)',
                 animation: 'pulse 1.5s ease-in-out infinite',
@@ -660,80 +433,48 @@ const Home: React.FC = () => {
             />
           ))
         ) : (
-          categories.map((category) => (
-            (() => {
-              const a = (categoryAtmos as any)[String(category.slug || category.name)] || (categoryAtmos as any)[String(category.name)];
-              const bg = a?.bg || 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)';
-              const mascot = a?.mascot || 'classic';
-              return (
-            <div
-              key={category.name}
-              style={{
-                ...styles.categoryChip,
-                background: bg,
-              }}
-              onClick={() => navigate(`/catalog?category=${encodeURIComponent(category.slug)}`)}
-              role="button"
-            >
-              {!ultraLite && category.image ? (
-                <img
-                  src={category.image}
-                  alt=""
-                  loading="lazy"
-                  decoding="async"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.26, filter: 'saturate(1.1) contrast(1.05)' }}
-                />
-              ) : null}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.16) 0%, rgba(0,0,0,0.82) 100%)', pointerEvents: 'none' }} />
-              <div style={{ position: 'absolute', right: -34, bottom: -30, width: 210, height: 210, pointerEvents: 'none', zIndex: 1 }}>
-                <CherryMascot variant={mascot} size={190} />
-              </div>
-              {category.badgeText ? (
-                <div style={{ position: 'absolute', top: theme.spacing.md, right: theme.spacing.md }}>
-                  <ChipBadge variant="new" size="sm">{category.badgeText}</ChipBadge>
+          categories.slice(0, 4).map((category) => {
+            const a = (categoryAtmos as any)[String(category.slug || category.name)] || (categoryAtmos as any)[String(category.name)];
+            const bg = a?.bg || 'linear-gradient(160deg, rgba(8,6,14,0.90) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)';
+            const mascot = a?.mascot || 'classic';
+            return (
+              <div
+                key={category.name}
+                style={{
+                  ...styles.categoryCard,
+                  background: bg,
+                }}
+                onClick={() => navigate(`/catalog?category=${encodeURIComponent(category.slug)}`)}
+                role="button"
+              >
+                {!ultraLite && category.image ? (
+                  <img
+                    src={category.image}
+                    alt=""
+                    loading="lazy"
+                    decoding="async"
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.18, filter: 'saturate(1.1) contrast(1.05)' }}
+                  />
+                ) : null}
+                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.82) 100%)', pointerEvents: 'none' }} />
+                <div style={styles.categoryMascot}>
+                  <CherryMascot variant={mascot} size={176} />
                 </div>
-              ) : null}
-              <div style={styles.categoryChipTitle}>{category.name}</div>
-            </div>
-              );
-            })()
-          ))
+                {category.badgeText ? (
+                  <div style={{ position: 'absolute', top: theme.spacing.md, right: theme.spacing.md, zIndex: 3 }}>
+                    <ChipBadge variant="new" size="sm">{category.badgeText}</ChipBadge>
+                  </div>
+                ) : null}
+                <div style={styles.categoryTitleWrap}>
+                  <div style={styles.categoryTitle(category.name)}>{category.name}</div>
+                </div>
+              </div>
+            );
+          })
         )}
       </div>
 
-      <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)' }}>
-            Подборка
-          </div>
-          <div style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-            {tab === 'Все' ? 'Все товары' : tab}
-          </div>
-        </div>
-        <div
-          role="button"
-          onClick={() => {
-            if (tab === 'Все') return navigate('/catalog');
-            if (tab === 'Скидки') return navigate('/catalog');
-            return navigate(`/catalog?category=${encodeURIComponent(tab)}`);
-          }}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            color: 'rgba(255,255,255,0.80)',
-            fontSize: theme.typography.fontSize.xs,
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            padding: '10px 12px',
-            borderRadius: 999,
-            background: 'rgba(255,255,255,0.06)',
-            border: '1px solid rgba(255,255,255,0.14)',
-          }}
-        >
-          Смотреть все <ChevronRight size={16} />
-        </div>
-      </div>
+      <SectionDivider title={tab === 'Все' ? 'Все товары' : tab} />
 
       {loadError ? (
         <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.lg }}>
@@ -787,45 +528,8 @@ const Home: React.FC = () => {
                 }}
             />
           ))}
-          <GlassCard
-            padding="lg"
-            variant="elevated"
-            style={{
-              height: 280,
-              borderRadius: theme.radius.lg,
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              alignItems: 'center',
-              background: 'linear-gradient(135deg, rgba(255,45,85,0.22) 0%, rgba(176,0,58,0.14) 100%)',
-              border: '1px solid rgba(255,255,255,0.14)',
-            }}
-          >
-            <div style={{ marginBottom: theme.spacing.sm, opacity: 0.9 }}>
-              <Info size={36} />
-            </div>
-            <div style={{ textAlign: 'center', fontSize: theme.typography.fontSize.sm, letterSpacing: '0.08em', textTransform: 'uppercase', opacity: 0.9, marginBottom: theme.spacing.md }}>
-              При покупке {qtyDiscountMin}+ шт. цена за 1 шт. составит
-            </div>
-            <div style={{
-              background: 'rgba(255,255,255,0.92)',
-              color: '#000',
-              borderRadius: 999,
-              padding: '8px 14px',
-              fontWeight: theme.typography.fontWeight.bold,
-              boxShadow: '0 14px 30px rgba(0,0,0,0.35)',
-            }}>
-              {formatCurrency(qtyDiscountPrice)}
-            </div>
-          </GlassCard>
         </div>
       )}
-
-      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.xl }}>
-        <PrimaryButton fullWidth onClick={() => navigate('/referral')}>
-          Пригласить друга
-        </PrimaryButton>
-      </div>
 
       <AddToCartModal
         open={addOpen}

@@ -111,7 +111,6 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
         onCartClick={() => navigate('/cart')}
         cartCount={cart?.items?.length || 0}
         userName={user?.firstName}
-        bonusMultiplier={config?.bonusMultiplier || 4}
         showBackButton={showBackButton}
         showSettings={user?.status === 'admin'}
         onSettingsClick={() => navigate('/admin')}

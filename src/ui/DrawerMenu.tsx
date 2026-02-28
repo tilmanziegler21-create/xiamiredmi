@@ -2,13 +2,11 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { theme } from './theme';
 import { GlassCard } from './GlassCard';
-import { PrimaryButton } from './PrimaryButton';
 import { formatCurrency } from '../lib/currency';
-import { MenuTileCard } from './MenuTileCard';
-import { menuTiles, adminTiles, courierTiles } from '../config/menuTiles';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { blurStyle } from './blur';
 import { CherryMascot } from './CherryMascot';
+import { ChevronRight, Gift, Grid, Heart, MapPin, Package, ShoppingCart, Star, Headphones } from 'lucide-react';
 
 interface DrawerMenuProps {
   isOpen: boolean;
@@ -27,35 +25,42 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
   cartItemsCount = 0,
   city = null,
   onCityClick,
-  userStatus = null,
 }) => {
   const navigate = useNavigate();
   const { trackEvent } = useAnalytics();
   if (!isOpen) return null;
 
-  const handleTileClick = (tile: any) => {
-    trackEvent(tile.analyticsEvent, { tileId: tile.id, route: tile.route });
-    navigate(tile.route);
+  const go = (id: string, route: string) => {
+    trackEvent('drawer_nav', { id, route });
+    navigate(route);
     onClose();
   };
 
-  // Update cart badge text dynamically
-  const updatedMenuTiles = menuTiles.map(tile => {
-    if (tile.id === 'cart') {
-      return {
-        ...tile,
-        badgeText: cartItemsCount > 0 ? String(cartItemsCount) : undefined,
-        subtitle: cartItemsCount > 0 ? `${cartItemsCount} товаров` : 'пусто'
-      };
-    }
-    if (tile.id === 'bonuses') {
-      return {
-        ...tile,
-        subtitle: `${formatCurrency(userBalance)} кэшбек`
-      };
-    }
-    return tile;
-  });
+  const groups = [
+    {
+      title: 'МАГАЗИН',
+      items: [
+        { id: 'catalog', title: 'Каталог', icon: <Grid size={18} />, right: '', onClick: () => go('catalog', '/catalog') },
+        { id: 'promotions', title: 'Акции', icon: <Gift size={18} />, right: '', onClick: () => go('promotions', '/promotions') },
+      ],
+    },
+    {
+      title: 'АККАУНТ',
+      items: [
+        { id: 'bonuses', title: 'Бонусы', icon: <Star size={18} />, right: `${formatCurrency(userBalance)}`, onClick: () => go('bonuses', '/bonuses') },
+        { id: 'cart', title: 'Корзина', icon: <ShoppingCart size={18} />, right: cartItemsCount > 0 ? String(cartItemsCount) : '', onClick: () => go('cart', '/cart') },
+        { id: 'favorites', title: 'Избранное', icon: <Heart size={18} />, right: '', onClick: () => go('favorites', '/favorites') },
+        { id: 'orders', title: 'История', icon: <Package size={18} />, right: '', onClick: () => go('orders', '/orders') },
+      ],
+    },
+    {
+      title: 'ПРОЧЕЕ',
+      items: [
+        { id: 'support', title: 'Поддержка', icon: <Headphones size={18} />, right: '', onClick: () => go('support', '/support') },
+        { id: 'city', title: 'Город', icon: <MapPin size={18} />, right: city || 'не выбран', onClick: () => { onCityClick?.(); onClose(); } },
+      ],
+    },
+  ];
 
   return (
     <div style={{
@@ -141,72 +146,85 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
           </button>
         </div>
 
-        <GlassCard padding="md" variant="elevated" style={{ marginBottom: theme.spacing.lg }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: theme.spacing.md }}>
-            <div style={{ minWidth: 0 }}>
-              <div style={{
-                color: theme.colors.dark.textSecondary,
-                fontSize: theme.typography.fontSize.xs,
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                marginBottom: 4,
-              }}>
-                Город
-              </div>
-              <div style={{
-                color: theme.colors.dark.text,
-                fontSize: theme.typography.fontSize.base,
-                fontWeight: theme.typography.fontWeight.bold,
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-              }}>
-                {city || 'не выбран'}
-              </div>
+        {groups.map((g) => (
+          <div key={g.title} style={{ marginBottom: theme.spacing.lg }}>
+            <div style={{
+              fontSize: theme.typography.fontSize.xs,
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+              color: 'rgba(255,255,255,0.62)',
+              marginBottom: theme.spacing.sm,
+              fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
+            }}>
+              {g.title}
             </div>
-            <PrimaryButton
-              size="sm"
-              onClick={() => {
-                onCityClick?.();
-              }}
-            >
-              сменить
-            </PrimaryButton>
+            <GlassCard padding="md" variant="elevated" style={{ padding: 0, overflow: 'hidden' }}>
+              {g.items.map((it, idx) => (
+                <div
+                  key={it.id}
+                  role="button"
+                  onClick={it.onClick}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: theme.spacing.md,
+                    padding: '14px 14px',
+                    borderTop: idx === 0 ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                    cursor: 'pointer',
+                    touchAction: 'manipulation',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, minWidth: 0 }}>
+                    <div style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 10,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      background: 'rgba(0,0,0,0.30)',
+                      border: '1px solid rgba(255,255,255,0.10)',
+                    }}>
+                      {it.icon}
+                    </div>
+                    <div style={{
+                      color: theme.colors.dark.text,
+                      fontSize: theme.typography.fontSize.base,
+                      letterSpacing: '0.06em',
+                      textTransform: 'uppercase',
+                      fontWeight: theme.typography.fontWeight.bold,
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      maxWidth: 170,
+                      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
+                    }}>
+                      {it.title}
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: '0 0 auto' }}>
+                    {it.right ? (
+                      <div style={{
+                        fontSize: theme.typography.fontSize.xs,
+                        letterSpacing: '0.10em',
+                        textTransform: 'uppercase',
+                        color: 'rgba(255,255,255,0.70)',
+                        whiteSpace: 'nowrap',
+                        maxWidth: 92,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      }}>
+                        {it.right}
+                      </div>
+                    ) : null}
+                    <ChevronRight size={18} color="rgba(255,255,255,0.55)" />
+                  </div>
+                </div>
+              ))}
+            </GlassCard>
           </div>
-        </GlassCard>
-
-        {/* Menu Tiles */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.md }}>
-          {/* Regular menu tiles */}
-          {updatedMenuTiles.map((tile) => (
-            <MenuTileCard
-              key={tile.id}
-              tile={tile}
-              onClick={() => handleTileClick(tile)}
-              badgeText={tile.badgeText}
-            />
-          ))}
-          
-          {/* Admin tiles */}
-          {String(userStatus || '') === 'admin' && adminTiles.map((tile) => (
-            <MenuTileCard
-              key={tile.id}
-              tile={tile}
-              onClick={() => handleTileClick(tile)}
-            />
-          ))}
-          
-          {/* Courier tiles */}
-          {(String(userStatus || '') === 'courier' || String(userStatus || '') === 'admin') && courierTiles.map((tile) => (
-            <MenuTileCard
-              key={tile.id}
-              tile={tile}
-              onClick={() => handleTileClick(tile)}
-            />
-          ))}
-        </div>
+        ))}
       </div>
     </div>
   );
