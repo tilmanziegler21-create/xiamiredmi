@@ -1,15 +1,14 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
-import { theme, GlassCard, ChipBadge, ProductCard, CarouselDots, SectionDivider, AddToCartModal, CherryMascot } from '../ui';
-import { useCartStore } from '../store/useCartStore';
-import { cartAPI, catalogAPI } from '../services/api';
+import { theme, GlassCard, CarouselDots, CherryMascot } from '../ui';
+import { catalogAPI } from '../services/api';
 import { RefreshCw, Search } from 'lucide-react';
 import { useToastStore } from '../store/useToastStore';
 import { useCityStore } from '../store/useCityStore';
-import { useFavoritesStore } from '../store/useFavoritesStore';
 import { useConfigStore } from '../store/useConfigStore';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
+import { useAuthStore } from '../store/useAuthStore';
 
 interface Product {
   id: string;
@@ -26,17 +25,14 @@ interface Product {
 const Home: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastStore();
-  const { setCart } = useCartStore();
+  const { user } = useAuthStore();
   const [currentBanner, setCurrentBanner] = useState(0);
   const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [brandDirectory, setBrandDirectory] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [addOpen, setAddOpen] = useState(false);
-  const [addProduct, setAddProduct] = useState<Product | null>(null);
   const { city } = useCityStore();
-  const favorites = useFavoritesStore();
   const { config } = useConfigStore();
-  const [tab, setTab] = useState<string>('Все');
   const bannerTouch = React.useRef<{ x: number; t: number } | null>(null);
 
   const ultraLite = (() => {
@@ -63,8 +59,6 @@ const Home: React.FC = () => {
     image: t.imageUrl,
     badgeText: t.badgeText || '',
   }));
-
-  const tabs = useMemo(() => (['Все', 'Новинки', 'Скидки', 'Жидкости', 'Одноразки']), []);
 
   const categoryAtmos = useMemo(() => {
     return {
@@ -128,12 +122,10 @@ const Home: React.FC = () => {
 
   useEffect(() => {
     loadProducts();
-    if (city) favorites.load(city);
   }, [city]);
 
   const { pull, refreshing: ptrRefreshing, armed: ptrArmed } = usePullToRefresh(async () => {
     await loadProducts();
-    if (city) await favorites.load(city);
   }, true);
 
   const loadProducts = async () => {
@@ -143,6 +135,7 @@ const Home: React.FC = () => {
       if (!city) {
         setLoadError('Выберите город');
         setAllProducts([]);
+        setBrandDirectory([]);
         return;
       }
       const response = await catalogAPI.getProducts({ city });
@@ -158,6 +151,12 @@ const Home: React.FC = () => {
         qtyAvailable: Number(p.qtyAvailable || 0),
       }));
       setAllProducts(list);
+      try {
+        const b = await catalogAPI.getBrands(city);
+        setBrandDirectory(Array.isArray(b.data?.brands) ? b.data.brands : []);
+      } catch {
+        setBrandDirectory([]);
+      }
     } catch (error) {
       console.error('Failed to load products:', error);
       const status = (error as any)?.response?.status;
@@ -168,27 +167,26 @@ const Home: React.FC = () => {
         setLoadError('Не удалось загрузить каталог');
       }
       setAllProducts([]);
+      setBrandDirectory([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredProducts = useMemo(() => {
-    const norm = (v: any) => String(v || '').trim().toLowerCase();
-    const t = norm(tab);
-    if (t === 'все' || !t) return allProducts;
-    if (t === 'новинки') return allProducts.filter((p) => Boolean(p.isNew));
-    if (t === 'скидки') return allProducts.filter((p) => Number(p.discount || 0) > 0);
-    if (t === 'жидкости') return allProducts.filter((p) => ['жидкости', 'liquids'].includes(norm(p.category)));
-    if (t === 'одноразки') return allProducts.filter((p) => ['одноразки', 'disposables'].includes(norm(p.category)));
-    if (t === 'поды') return allProducts.filter((p) => ['поды', 'pods'].includes(norm(p.category)));
-    if (t === 'картриджи') return allProducts.filter((p) => ['картриджи', 'cartridges'].includes(norm(p.category)));
-    return allProducts;
-  }, [allProducts, tab]);
-
-  const featured = useMemo(() => {
-    return filteredProducts.slice(0, 6);
-  }, [filteredProducts]);
+  const brandRows = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const p of allProducts) {
+      const b = String(p.brand || '').trim();
+      if (!b) continue;
+      map.set(b, (map.get(b) || 0) + 1);
+    }
+    if (brandDirectory.length) {
+      return brandDirectory
+        .map((b) => ({ brand: String(b || '').trim(), count: map.get(String(b || '').trim()) || 0 }))
+        .filter((r) => r.brand && r.count > 0);
+    }
+    return Array.from(map.entries()).map(([brand, count]) => ({ brand, count })).sort((a, b) => a.brand.localeCompare(b.brand));
+  }, [allProducts, brandDirectory]);
 
   const bannerBottleUrl = useMemo(() => {
     const norm = (v: any) => String(v || '').trim().toLowerCase();
@@ -209,6 +207,25 @@ const Home: React.FC = () => {
       minHeight: '100vh',
       color: theme.colors.dark.text,
       fontFamily: theme.typography.fontFamily,
+    },
+    greeting: {
+      padding: `0 ${theme.padding.screen}`,
+      marginTop: theme.spacing.md,
+      marginBottom: theme.spacing.md,
+    },
+    greetingTitle: {
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
+      fontSize: 26,
+      letterSpacing: '0.10em',
+      textTransform: 'uppercase' as const,
+      color: 'rgba(255,255,255,0.92)',
+      marginBottom: 2,
+    },
+    greetingSub: {
+      fontSize: theme.typography.fontSize.xs,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase' as const,
+      color: 'rgba(255,255,255,0.60)',
     },
     hero: {
       padding: `0 ${theme.padding.screen}`,
@@ -247,27 +264,6 @@ const Home: React.FC = () => {
       letterSpacing: '0.04em',
       textTransform: 'uppercase' as const,
     },
-    tabsRow: {
-      display: 'flex',
-      gap: 10,
-      overflowX: 'auto' as const,
-      padding: '2px 20px 0 2px',
-      marginTop: theme.spacing.md,
-      WebkitOverflowScrolling: 'touch' as const,
-    },
-    tabPill: (active: boolean) => ({
-      flex: '0 0 auto',
-      borderRadius: 999,
-      padding: '10px 12px',
-      border: active ? '1px solid rgba(255,45,85,0.55)' : '1px solid rgba(255,255,255,0.14)',
-      background: active ? 'rgba(255,45,85,0.16)' : 'rgba(255,255,255,0.06)',
-      color: active ? theme.colors.dark.primary : 'rgba(255,255,255,0.86)',
-      fontSize: theme.typography.fontSize.xs,
-      letterSpacing: '0.10em',
-      textTransform: 'uppercase' as const,
-      cursor: 'pointer',
-      userSelect: 'none' as const,
-    }),
     searchSection: {
       padding: `0 ${theme.padding.screen}`,
       marginBottom: theme.spacing.lg,
@@ -341,16 +337,42 @@ const Home: React.FC = () => {
       pointerEvents: 'none' as const,
       zIndex: 1,
     },
-    productGrid: {
+    brandList: {
       padding: `0 ${theme.padding.screen}`,
       display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
       gap: '10px',
       marginBottom: theme.spacing.xl,
     },
+    brandCard: {
+      height: 80,
+      borderRadius: 12,
+      border: '1px solid rgba(255,255,255,0.14)',
+      background: 'rgba(12, 10, 26, 0.62)',
+      cursor: 'pointer',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      padding: '12px 14px',
+    },
+    brandTitle: {
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
+      fontSize: 24,
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase' as const,
+      color: 'rgba(255,255,255,0.92)',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap' as const,
+    },
+    brandMeta: {
+      fontSize: 12,
+      color: theme.colors.dark.textSecondary,
+      letterSpacing: '0.06em',
+      marginTop: 2,
+    },
     skeleton: {
       borderRadius: theme.radius.lg,
-      height: 280,
+      height: 80,
       border: '1px solid rgba(255,255,255,0.10)',
     },
   };
@@ -366,6 +388,14 @@ const Home: React.FC = () => {
           </div>
         </div>
       ) : null}
+      <div style={styles.greeting}>
+        <div style={styles.greetingTitle}>
+          Привет, {String(user?.firstName || user?.username || 'друг')}
+        </div>
+        <div style={styles.greetingSub}>
+          Выбирай вкус • оформляй заказ
+        </div>
+      </div>
       <div style={styles.searchSection}>
         <div
           style={styles.searchButton}
@@ -446,14 +476,6 @@ const Home: React.FC = () => {
             </GlassCard>
           </div>
         )}
-
-        <div style={styles.tabsRow}>
-          {tabs.map((t) => (
-            <div key={t} style={styles.tabPill(String(tab) === String(t))} role="button" onClick={() => setTab(t)}>
-              {t}
-            </div>
-          ))}
-        </div>
       </div>
 
       <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
@@ -540,7 +562,7 @@ const Home: React.FC = () => {
 
       <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
         <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
-          ВСЕ ТОВАРЫ
+          БРЕНДЫ
         </div>
         <div
           role="button"
@@ -559,7 +581,7 @@ const Home: React.FC = () => {
             border: '1px solid rgba(255,255,255,0.14)',
           }}
         >
-          СМОТРЕТЬ ВСЕ
+          ВКУСЫ
         </div>
       </div>
 
@@ -572,72 +594,29 @@ const Home: React.FC = () => {
       ) : null}
 
       {loading ? (
-        <div style={styles.productGrid}>
-          {[...Array(6)].map((_, i) => (
+        <div style={styles.brandList}>
+          {[...Array(8)].map((_, i) => (
             <div key={i} style={styles.skeleton} className="skeleton-shimmer" />
           ))}
         </div>
       ) : (
-        <div style={styles.productGrid}>
-          {featured.map((product) => (
-            <ProductCard
-              key={product.id}
-              {...product}
-              onClick={(id) => navigate(`/product/${id}`)}
-              onAddToCart={() => {
-                setAddProduct(product);
-                setAddOpen(true);
-              }}
-                isFavorite={favorites.isFavorite(product.id)}
-                onToggleFavorite={async () => {
-                  if (!city) {
-                    toast.push('Выберите город', 'error');
-                    return;
-                  }
-                  const enabled = !favorites.isFavorite(product.id);
-                  try {
-                    await favorites.toggle({
-                      city,
-                      product: {
-                        id: product.id,
-                        name: product.name,
-                        category: product.category,
-                        brand: product.brand,
-                        price: product.price,
-                        image: product.image,
-                      },
-                      enabled,
-                    });
-                    toast.push(enabled ? 'Добавлено в избранное' : 'Удалено из избранного', 'success');
-                  } catch {
-                    toast.push('Ошибка избранного', 'error');
-                  }
-                }}
-            />
+        <div style={styles.brandList}>
+          {brandRows.slice(0, 12).map((r) => (
+            <div
+              key={r.brand}
+              style={styles.brandCard}
+              role="button"
+              onClick={() => navigate(`/catalog?brand=${encodeURIComponent(r.brand)}`)}
+            >
+              <div style={{ minWidth: 0 }}>
+                <div style={styles.brandTitle}>{r.brand}</div>
+                <div style={styles.brandMeta}>{r.count} вкусов</div>
+              </div>
+              <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 18, paddingRight: 4 }}>→</div>
+            </div>
           ))}
         </div>
       )}
-
-      <AddToCartModal
-        open={addOpen}
-        product={addProduct ? { id: addProduct.id, name: addProduct.name, price: addProduct.price, image: addProduct.image } : null}
-        onClose={() => setAddOpen(false)}
-        onConfirm={async ({ quantity, variant }) => {
-          if (!addProduct) return;
-          if (!city) {
-            toast.push('Выберите город', 'error');
-            return;
-          }
-          try {
-            await cartAPI.addItem({ productId: addProduct.id, quantity, city, price: addProduct.price, variant });
-            const resp = await cartAPI.getCart(city);
-            setCart(resp.data.cart);
-            toast.push('Товар добавлен в корзину', 'success');
-          } catch {
-            toast.push('Ошибка добавления в корзину', 'error');
-          }
-        }}
-      />
     </div>
   );
 };

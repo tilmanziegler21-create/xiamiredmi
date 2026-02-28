@@ -198,10 +198,11 @@ const Checkout: React.FC = () => {
       const { orderId, orderText, totalAmount } = createResp.data;
 
       let applied = 0;
-      const want = wantBonus;
+      const maxWant = Math.max(0, Number(totalAmount || cart.total) * 0.5);
+      const want = Math.min(wantBonus, maxWant);
       if (want > 0) {
         try {
-          const resp = await bonusesAPI.apply(want);
+          const resp = await bonusesAPI.apply(want, Number(totalAmount || cart.total));
           applied = Number(resp.data.applied || 0);
         } catch (e) {
           console.error('Bonuses apply failed:', e);

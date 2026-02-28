@@ -70,7 +70,7 @@ const Referral: React.FC = () => {
           Приведи друга
         </div>
         <div style={{ color: theme.colors.dark.textSecondary, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: theme.typography.fontSize.sm }}>
-          Получи {reward ? `${reward} €` : 'бонус'} за каждого
+          Получи {reward ? `${reward} вишенок` : 'вишенки'} за каждого
         </div>
       </div>
 
@@ -79,6 +79,9 @@ const Referral: React.FC = () => {
       </div>
 
       <GlassCard padding="lg" variant="elevated">
+        <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.xs, letterSpacing: '0.10em', textTransform: 'uppercase', marginBottom: theme.spacing.md }}>
+          1 вишенка = 1 € • списание до 50% от суммы
+        </div>
         <div style={{ marginBottom: theme.spacing.md, letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
           Реферальная ссылка
         </div>
@@ -116,7 +119,7 @@ const Referral: React.FC = () => {
               Заработано
             </div>
             <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, fontSize: 28, letterSpacing: '0.10em' }}>
-              {loading ? '—' : `${earned} €`}
+              {loading ? '—' : `${earned} виш.`}
             </div>
           </div>
         </div>

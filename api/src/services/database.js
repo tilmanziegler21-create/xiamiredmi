@@ -16,6 +16,7 @@ class InMemoryDB {
     this.bonusLedger = [];
     this.analyticsEvents = [];
     this.promos = new Map();
+    this.courierPayouts = [];
 
     const here = path.dirname(fileURLToPath(import.meta.url));
     this.dataFilePath = path.resolve(process.env.MOCK_DB_FILE || path.resolve(here, '..', '..', '.data', 'mockdb.json'));
@@ -84,6 +85,9 @@ class InMemoryDB {
         if (!p?.id) continue;
         this.promos.set(String(p.id), p);
       }
+
+      const courierPayouts = Array.isArray(parsed.courierPayouts) ? parsed.courierPayouts : [];
+      this.courierPayouts = courierPayouts;
     } catch {
       // ignore
     }
@@ -102,6 +106,7 @@ class InMemoryDB {
         cartItems: Array.from(this.cartItems.values()),
         reservations: Array.from(this.reservations.values()),
         promos: Array.from(this.promos.values()),
+        courierPayouts: this.courierPayouts,
       };
       fs.writeFileSync(this.dataFilePath, JSON.stringify(payload, null, 2), 'utf8');
     } catch {

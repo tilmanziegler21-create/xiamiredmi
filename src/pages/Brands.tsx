@@ -67,9 +67,22 @@ const Brands: React.FC = () => {
           if (!b) continue;
           map.set(b, (map.get(b) || 0) + 1);
         }
-        const out = Array.from(map.entries())
-          .map(([brand, count]) => ({ brand, count, logo: brandLogo(brand) }))
-          .sort((a, b) => a.brand.localeCompare(b.brand));
+        let directory: string[] = [];
+        try {
+          const b = await catalogAPI.getBrands(city);
+          directory = Array.isArray(b.data?.brands) ? b.data.brands : [];
+        } catch {
+          directory = [];
+        }
+
+        const out = directory.length
+          ? directory
+              .map((brand) => ({ brand: String(brand || '').trim(), count: map.get(String(brand || '').trim()) || 0 }))
+              .filter((r) => r.brand && r.count > 0)
+              .map((r) => ({ ...r, logo: brandLogo(r.brand) }))
+          : Array.from(map.entries())
+              .map(([brand, count]) => ({ brand, count, logo: brandLogo(brand) }))
+              .sort((a, b) => a.brand.localeCompare(b.brand));
         setRows(out);
       } catch (e) {
         console.error('Brands load error:', e);
@@ -148,4 +161,3 @@ const Brands: React.FC = () => {
 };
 
 export default Brands;
-

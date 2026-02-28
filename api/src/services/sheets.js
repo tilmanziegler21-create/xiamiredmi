@@ -460,6 +460,22 @@ export async function getProducts(city) {
   return products;
 }
 
+export async function getMasterBrands() {
+  const { headers, rows } = await readSheetTable('products', 'MU');
+  const norm = (v) => String(v || '').trim().toLowerCase();
+  const idx = headers.findIndex((h) => ['brands', 'brand'].includes(norm(h)));
+  if (idx < 0) return [];
+
+  const out = new Set();
+  for (const r of rows) {
+    const cell = String(r?.[idx] || '').trim();
+    if (!cell) continue;
+    const parts = cell.split(/[,;|]/g).map((s) => s.trim()).filter(Boolean);
+    for (const p of parts) out.add(p);
+  }
+  return Array.from(out).sort((a, b) => String(a).localeCompare(String(b)));
+}
+
 export async function updateProductStock(product, newStock, newActive) {
   const spreadsheetId = getSpreadsheetId();
   const api = sheetsApi();

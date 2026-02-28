@@ -1,7 +1,7 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import db from '../services/database.js';
-import { getProducts } from '../services/sheets.js';
+import { getMasterBrands, getProducts } from '../services/sheets.js';
 
 const router = express.Router();
 
@@ -175,8 +175,7 @@ router.get('/brands', requireAuth, async (req, res) => {
   try {
     const city = String(req.query.city || '');
     if (!city) return res.status(400).json({ error: 'City parameter is required' });
-    const products = await getProducts(city);
-    const brands = Array.from(new Set(products.filter((p) => p.active).map((p) => p.brand).filter(Boolean))).sort();
+    const brands = await getMasterBrands();
     res.json({ brands });
   } catch (e) {
     console.error('Brands error:', e);

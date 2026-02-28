@@ -181,7 +181,7 @@ const Cart: React.FC = () => {
   const pricing = calculatePricing();
   const bonusBalance = Number(user?.bonusBalance || 0);
   const [useBonuses, setUseBonuses] = React.useState(false);
-  const bonusApplied = useBonuses ? Math.min(bonusBalance, pricing.total) : 0;
+  const bonusApplied = useBonuses ? Math.min(bonusBalance, pricing.total * 0.5) : 0;
   const totalWithBonus = Math.max(0, pricing.total - bonusApplied);
 
   const handleDecrement = (item: { id: string; quantity: number }) => {

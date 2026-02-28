@@ -223,6 +223,7 @@ export const courierAPI = {
   orders: (city: string) => api.get('/courier/orders', { params: { city } }),
   updateOrderStatus: (orderId: string, status: string, city: string, reason?: string) => api.post('/courier/orders/status', { orderId, status, city, reason }),
   updatePreferences: (payload: { city: string; time_from?: string; time_to?: string; meeting_place?: string }) => api.post('/courier/preferences', payload),
+  requestPayout: (payload: { city: string; date: string; amount: number; revenue: number; delivered: number }) => api.post('/courier/payout', payload),
 };
 
 export const adminAPI = {
@@ -248,7 +249,7 @@ export const favoritesAPI = {
 export const bonusesAPI = {
   balance: () => api.get('/bonuses/balance'),
   history: () => api.get('/bonuses/history'),
-  apply: (amount: number) => api.post('/bonuses/apply', { amount }),
+  apply: (amount: number, total?: number) => api.post('/bonuses/apply', { amount, total }),
 };
 
 export const referralAPI = {

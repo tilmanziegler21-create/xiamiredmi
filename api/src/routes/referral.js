@@ -12,8 +12,8 @@ function envNumber(name, fallback) {
 router.get('/info', requireAuth, (req, res) => {
   const tgId = String(req.user?.tgId || '');
   const u = db.getUser(tgId);
-  const required = envNumber('REFERRAL_REQUIRED', 2);
-  const bonusAmount = envNumber('REFERRAL_BONUS_AMOUNT', 20);
+  const required = envNumber('REFERRAL_REQUIRED', 1);
+  const bonusAmount = envNumber('REFERRAL_BONUS_AMOUNT', 10);
   res.json({
     referralCode: tgId,
     referredBy: String(u?.referred_by || ''),

@@ -28,11 +28,13 @@ router.get('/history', requireAuth, (req, res) => {
 
 router.post('/apply', requireAuth, (req, res) => {
   try {
-    const { amount } = req.body || {};
+    const { amount, total } = req.body || {};
     const want = Math.max(0, Number(amount || 0));
+    const orderTotal = Math.max(0, Number(total || 0));
     const user = db.prepare('SELECT * FROM users WHERE tg_id = ?').get(req.user.tgId);
     const balance = Number(user?.bonus_balance || 0);
-    const applied = Math.min(balance, want);
+    const maxByPolicy = orderTotal > 0 ? orderTotal * 0.5 : Number.POSITIVE_INFINITY;
+    const applied = Math.min(balance, want, maxByPolicy);
     res.json({ applied, balance });
   } catch (e) {
     console.error('Bonus apply error:', e);

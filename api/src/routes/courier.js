@@ -3,6 +3,7 @@ import { requireAuth } from '../middleware/auth.js';
 import db from '../services/database.js';
 import { getCouriers, getOrders, updateOrderRowByOrderId, updateCourierRowByCourierId } from '../services/sheets.js';
 import { isAllowedCourierOrderStatus, normalizeOrderStatus } from '../domain/orderStatus.js';
+import { sendTelegramMessage } from '../services/telegram.js';
 
 const router = express.Router();
 
@@ -32,6 +33,13 @@ async function resolveCourierIdForUser(city, tgId) {
   } catch {
     return '';
   }
+}
+
+function parseIdList(raw) {
+  return String(raw || '')
+    .split(',')
+    .map((s) => Number(String(s).trim()))
+    .filter((n) => Number.isFinite(n) && n > 0);
 }
 
 router.get('/orders', requireAuth, async (req, res) => {
@@ -82,13 +90,90 @@ router.get('/orders', requireAuth, async (req, res) => {
         };
       });
 
-    res.json({ orders });
+    const paidDates = Array.from(
+      new Set(
+        (Array.isArray(db.courierPayouts) ? db.courierPayouts : [])
+          .filter((p) => String(p?.city || '') === city && String(p?.courier_id || '') === String(filterCourierId))
+          .map((p) => String(p?.date || '').trim())
+          .filter(Boolean),
+      ),
+    );
+
+    res.json({ orders, paidDates });
   } catch (e) {
     const status = Number(e?.status) || 500;
     if (status === 503) {
       return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
     }
     res.status(500).json({ error: 'Failed to fetch courier orders' });
+  }
+});
+
+router.post('/payout', requireAuth, async (req, res) => {
+  try {
+    const city = String(req.body?.city || req.query.city || '');
+    if (!city) return res.status(400).json({ error: 'City parameter is required' });
+
+    const status = String(req.user?.status || '');
+    if (status !== 'courier' && status !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const myCourierId = status === 'admin' ? String(req.body?.courierId || '').trim() : await resolveCourierIdForUser(city, req.user.tgId);
+    if (status !== 'admin' && !myCourierId) {
+      return res.status(403).json({ error: 'Courier profile not found. Contact admin.' });
+    }
+
+    const date = String(req.body?.date || '').trim();
+    const amount = Math.max(0, Number(req.body?.amount || 0));
+    const revenue = Math.max(0, Number(req.body?.revenue || 0));
+    const delivered = Math.max(0, Number(req.body?.delivered || 0));
+    if (!date) return res.status(400).json({ error: 'date is required' });
+    if (!(amount > 0)) return res.status(400).json({ error: 'amount must be > 0' });
+
+    const key = `${city}:${myCourierId}:${date}`;
+    const existing = (Array.isArray(db.courierPayouts) ? db.courierPayouts : []).find((p) => String(p?.id || '') === key);
+    if (existing) return res.json({ ok: true, already: true });
+
+    const record = {
+      id: key,
+      city,
+      courier_id: myCourierId,
+      courier_tg_id: String(req.user?.tgId || ''),
+      date,
+      amount: Math.round(amount * 100) / 100,
+      revenue: Math.round(revenue * 100) / 100,
+      delivered,
+      created_at: new Date().toISOString(),
+    };
+
+    if (!Array.isArray(db.courierPayouts)) db.courierPayouts = [];
+    db.courierPayouts.push(record);
+    db.persistState();
+
+    const admins = parseIdList(process.env.TELEGRAM_ADMIN_IDS);
+    const text =
+      `Выплатить комиссию курьеру\n` +
+      `Город: ${city}\n` +
+      `Дата: ${date}\n` +
+      `Курьер: ${myCourierId}\n` +
+      `Оборот: ${revenue}\n` +
+      `Комиссия: ${amount}\n` +
+      `Выдано: ${delivered}`;
+    for (const id of admins) {
+      try {
+        await sendTelegramMessage(id, text);
+      } catch {
+      }
+    }
+
+    res.json({ ok: true });
+  } catch (e) {
+    const status = Number(e?.status) || 500;
+    if (status === 503) {
+      return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
+    }
+    res.status(500).json({ error: 'Failed to request payout' });
   }
 });
 

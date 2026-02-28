@@ -486,7 +486,9 @@ router.post('/payment', requireAuth, validateBody({ orderId: 'required' }), asyn
         if (want > 0) {
           const user = db.prepare('SELECT * FROM users WHERE tg_id = ?').get(req.user.tgId);
           const balance = Number(user?.bonus_balance || 0);
-          bonusUsed = Math.min(balance, want, Number(order.total_amount || 0));
+          const totalAmount = Number(order.total_amount || 0);
+          const maxByPolicy = totalAmount * 0.5;
+          bonusUsed = Math.min(balance, want, maxByPolicy);
           if (bonusUsed > 0) {
             db.prepare('UPDATE users SET bonus_balance = ? WHERE tg_id = ?').run(balance - bonusUsed, req.user.tgId);
             db.addBonusEvent({
@@ -506,7 +508,7 @@ router.post('/payment', requireAuth, validateBody({ orderId: 'required' }), asyn
       order.payment_method = String(paymentMethod || '');
       order.bonus_applied = Math.round(Number(bonusUsed || 0) * 100) / 100;
       order.final_amount = Math.round(Number(paidAmount || 0) * 100) / 100;
-      const cashbackPercent = Number(process.env.BONUS_CASHBACK_PERCENT || 5);
+      const cashbackPercent = Number(process.env.BONUS_CASHBACK_PERCENT || 10);
       if (cashbackPercent > 0) {
         const earn = Math.round((paidAmount * cashbackPercent / 100) * 100) / 100;
         if (earn > 0) {
@@ -524,10 +526,9 @@ router.post('/payment', requireAuth, validateBody({ orderId: 'required' }), asyn
           if (ref) {
             const nextConv = Number(ref.referral_conversions || 0) + 1;
             db.setUser(referredBy, { referral_conversions: nextConv });
-            const required = Number(process.env.REFERRAL_REQUIRED || 2);
-            const bonusAmount = Number(process.env.REFERRAL_BONUS_AMOUNT || 20);
-            if (required > 0 && bonusAmount > 0 && nextConv % required === 0) {
-              db.addBonusDelta(referredBy, bonusAmount, 'referral', { order_id: orderId, referred_user: req.user.tgId });
+            const bonusAmount = Number(process.env.REFERRAL_BONUS_AMOUNT || 10);
+            if (bonusAmount > 0) {
+              db.addBonusDelta(referredBy, bonusAmount, 'referral', { order_id: orderId, referred_user: req.user.tgId, conversions: nextConv });
             }
           }
         }

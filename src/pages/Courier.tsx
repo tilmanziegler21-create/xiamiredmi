@@ -38,6 +38,7 @@ const Courier: React.FC = () => {
   const { user } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [orders, setOrders] = useState<CourierOrder[]>([]);
+  const [paidDates, setPaidDates] = useState<string[]>([]);
   const [selectedDate, setSelectedDate] = useState<'today' | 'tomorrow' | 'day_after'>('today');
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [showCompleted, setShowCompleted] = useState(false);
@@ -45,6 +46,17 @@ const Courier: React.FC = () => {
   const [prefTimeTo, setPrefTimeTo] = useState('');
   const [prefPlace, setPrefPlace] = useState('');
   const [savingPrefs, setSavingPrefs] = useState(false);
+  const timeOptions = React.useMemo(() => {
+    const out: string[] = [];
+    for (let h = 0; h < 24; h++) {
+      for (let m = 0; m < 60; m += 30) {
+        const hh = String(h).padStart(2, '0');
+        const mm = String(m).padStart(2, '0');
+        out.push(`${hh}:${mm}`);
+      }
+    }
+    return out;
+  }, []);
 
   const loadOrders = async () => {
     try {
@@ -52,10 +64,12 @@ const Courier: React.FC = () => {
       if (!city) {
         toast.push('Выберите город', 'error');
         setOrders([]);
+        setPaidDates([]);
         return;
       }
       const resp = await courierAPI.orders(city);
       setOrders(resp.data.orders || []);
+      setPaidDates(Array.isArray(resp.data?.paidDates) ? resp.data.paidDates : []);
     } catch (error) {
       console.error('Failed to load courier orders:', error);
       toast.push('Ошибка загрузки заказов', 'error');
@@ -183,10 +197,19 @@ const Courier: React.FC = () => {
 
   const filteredOrders = filterOrdersByDate(orders);
   const visibleOrders = filteredOrders.filter((o) => (showCompleted ? true : o.status !== 'delivered' && o.status !== 'cancelled'));
-  const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered');
+  const normDate = (v: any) => String(v || '').slice(0, 10);
+  const selectedDateKey = (() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    if (selectedDate === 'tomorrow') d.setDate(d.getDate() + 1);
+    if (selectedDate === 'day_after') d.setDate(d.getDate() + 2);
+    return d.toISOString().slice(0, 10);
+  })();
+  const deliveredOrders = filteredOrders.filter((o) => o.status === 'delivered' && !paidDates.includes(normDate(o.deliveryDate || selectedDateKey)));
   const cancelledOrders = filteredOrders.filter((o) => o.status === 'cancelled');
   const dayRevenue = deliveredOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0);
   const dayPayout = deliveredOrders.reduce((s, o) => s + Number(o.payoutAmount ?? (Math.round(Number(o.totalAmount || 0) * 0.2 * 100) / 100)), 0);
+  const paidForDay = paidDates.includes(selectedDateKey);
 
   const styles = {
     container: {
@@ -337,20 +360,26 @@ const Courier: React.FC = () => {
         <GlassCard padding="lg" variant="elevated">
           <div style={{ display: 'grid', gap: theme.spacing.sm }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.sm }}>
-              <input
+              <select
                 value={prefTimeFrom}
                 onChange={(e) => setPrefTimeFrom(e.target.value)}
-                placeholder="Время с (HH:MM)"
                 style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}
-                inputMode="numeric"
-              />
-              <input
+              >
+                <option value="">Время с</option>
+                {timeOptions.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
+              <select
                 value={prefTimeTo}
                 onChange={(e) => setPrefTimeTo(e.target.value)}
-                placeholder="Время до (HH:MM)"
                 style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}
-                inputMode="numeric"
-              />
+              >
+                <option value="">Время до</option>
+                {timeOptions.map((t) => (
+                  <option key={t} value={t}>{t}</option>
+                ))}
+              </select>
             </div>
             <input
               value={prefPlace}
@@ -397,12 +426,12 @@ const Courier: React.FC = () => {
 
       <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
         <GlassCard padding="md" variant="elevated">
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: theme.spacing.md, flexWrap: 'wrap' as const }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', gap: theme.spacing.md, flexWrap: 'wrap' as const, marginBottom: theme.spacing.sm }}>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-              Оборот: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayRevenue)}</span>
+              Касса: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayRevenue)}</span>
             </div>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-              К выплате (20%): <span style={{ color: '#37d67a', fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayPayout)}</span>
+              Комиссия курьера: <span style={{ color: '#37d67a', fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayPayout)}</span>
             </div>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
               Выдано: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{deliveredOrders.length}</span>
@@ -411,6 +440,30 @@ const Courier: React.FC = () => {
               Не выдано: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{cancelledOrders.length}</span>
             </div>
           </div>
+          <PrimaryButton
+            fullWidth
+            size="sm"
+            disabled={paidForDay || !(dayPayout > 0)}
+            onClick={async () => {
+              const confirmed = await new Promise<boolean>((resolve) => {
+                try {
+                  WebApp.showConfirm(`Выплатить комиссию ${formatCurrency(dayPayout)}?`, (ok) => resolve(Boolean(ok)));
+                } catch {
+                  resolve(window.confirm(`Выплатить комиссию ${formatCurrency(dayPayout)}?`));
+                }
+              });
+              if (!confirmed) return;
+              try {
+                await courierAPI.requestPayout({ city: String(city), date: selectedDateKey, amount: dayPayout, revenue: dayRevenue, delivered: deliveredOrders.length });
+                toast.push('Запрос на выплату отправлен админу', 'success');
+                await loadOrders();
+              } catch {
+                toast.push('Не удалось отправить запрос', 'error');
+              }
+            }}
+          >
+            {paidForDay ? 'Комиссия выплачена' : 'Выплатить комиссию'}
+          </PrimaryButton>
         </GlassCard>
       </div>
 
