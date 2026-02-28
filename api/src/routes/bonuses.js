@@ -1,14 +1,28 @@
 import express from 'express';
 import { requireAuth } from '../middleware/auth.js';
 import db from '../services/database.js';
+import { getCherryProfile } from '../domain/cherryClub.js';
 
 const router = express.Router();
 
 router.get('/balance', requireAuth, (req, res) => {
   try {
     const user = db.prepare('SELECT * FROM users WHERE tg_id = ?').get(req.user.tgId);
+    const cherryProfile = getCherryProfile({
+      cherries: user?.cherry_balance,
+      freeLiquids: user?.free_liquid_credits,
+      freeBoxes: user?.free_box_credits,
+    });
     res.json({
       balance: Number(user?.bonus_balance || 0),
+      cherries: cherryProfile.cherries,
+      cherryTier: cherryProfile.tier,
+      cherryNext: cherryProfile.next,
+      cherryProgress: cherryProfile.progress,
+      cherriesPerOrder: cherryProfile.perOrderCherries,
+      freeLiquids: cherryProfile.freeLiquids,
+      freeBoxes: cherryProfile.freeBoxes,
+      pendingDiscounts: Array.isArray(user?.pending_discounts) ? user.pending_discounts : [],
     });
   } catch (e) {
     console.error('Bonus balance error:', e);

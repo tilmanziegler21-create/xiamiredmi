@@ -77,7 +77,10 @@ router.post('/verify', verifyTelegramAuth, async (req, res) => {
         firstName: user.first_name,
         ageVerified: user.age_verified,
         status: user.status,
-        bonusBalance: user.bonus_balance
+        bonusBalance: user.bonus_balance,
+        cherries: Number(user.cherry_balance || 0),
+        freeLiquids: Number(user.free_liquid_credits || 0),
+        freeBoxes: Number(user.free_box_credits || 0),
       },
       token
     });
@@ -123,6 +126,9 @@ router.post('/dev', async (_req, res) => {
         ageVerified: user.age_verified,
         status: user.status,
         bonusBalance: user.bonus_balance,
+        cherries: Number(user.cherry_balance || 0),
+        freeLiquids: Number(user.free_liquid_credits || 0),
+        freeBoxes: Number(user.free_box_credits || 0),
       },
       token,
     });
@@ -158,6 +164,9 @@ router.get('/me', requireAuthAllowUnverified, async (req, res) => {
         ageVerified: user.age_verified,
         status: user.status,
         bonusBalance: user.bonus_balance,
+        cherries: Number(user.cherry_balance || 0),
+        freeLiquids: Number(user.free_liquid_credits || 0),
+        freeBoxes: Number(user.free_box_credits || 0),
       },
     });
   } catch (error) {

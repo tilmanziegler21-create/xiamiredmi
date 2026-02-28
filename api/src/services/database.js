@@ -279,6 +279,11 @@ class InMemoryDB {
           age_verified: Boolean(Number(ageVerified) ? 1 : 0),
           status: String(status || 'regular'),
           bonus_balance: 0,
+          cherry_balance: 0,
+          free_liquid_credits: 0,
+          free_box_credits: 0,
+          pending_discounts: [],
+          cherry_milestones_claimed: [],
           referred_by: '',
           referral_claimed_at: '',
           referral_conversions: 0,
@@ -311,6 +316,11 @@ class InMemoryDB {
         age_verified: typeof ageVerified === 'undefined' ? Boolean(prev?.age_verified) : Boolean(ageVerified),
         status: String(status || prev?.status || 'regular'),
         bonus_balance: Number(prev?.bonus_balance || 0),
+        cherry_balance: Number(prev?.cherry_balance || 0),
+        free_liquid_credits: Number(prev?.free_liquid_credits || 0),
+        free_box_credits: Number(prev?.free_box_credits || 0),
+        pending_discounts: Array.isArray(prev?.pending_discounts) ? prev.pending_discounts : [],
+        cherry_milestones_claimed: Array.isArray(prev?.cherry_milestones_claimed) ? prev.cherry_milestones_claimed : [],
         referred_by: String(prev?.referred_by || ''),
         referral_claimed_at: String(prev?.referral_claimed_at || ''),
         referral_conversions: Number(prev?.referral_conversions || 0),
@@ -556,6 +566,23 @@ class InMemoryDB {
       user_id: String(tgId),
       type: String(type || 'adjustment'),
       amount: Number(delta || 0),
+      meta: meta || {},
+      created_at: new Date().toISOString(),
+    });
+    this.persistState();
+    return true;
+  }
+
+  addCherryDelta(tgId, delta, type, meta) {
+    const u = this.users.get(String(tgId));
+    if (!u) return false;
+    const next = Number(u.cherry_balance || 0) + Number(delta || 0);
+    u.cherry_balance = Math.max(0, Math.round(next));
+    this.users.set(String(tgId), u);
+    this.addBonusEvent({
+      user_id: String(tgId),
+      type: String(type || 'cherry'),
+      amount: Math.round(Number(delta || 0)),
       meta: meta || {},
       created_at: new Date().toISOString(),
     });

@@ -4,6 +4,7 @@ import { validateBody } from '../middleware/validate.js';
 import db from '../services/database.js';
 import { getProducts, updateProductStock, appendOrderRow, updateOrderRowByOrderId, getOrders, getCouriers } from '../services/sheets.js';
 import { normalizeOrderStatus } from '../domain/orderStatus.js';
+import { cherryMilestoneRewards, getCherryTier } from '../domain/cherryClub.js';
 import { sendTelegramMessage } from '../services/telegram.js';
 
 const router = express.Router();
@@ -34,6 +35,105 @@ function getDbOrderItemCount(orderId) {
     if (String(oi.order_id) === String(orderId)) n++;
   }
   return n;
+}
+
+function normInt(v) {
+  const n = Math.round(Number(v || 0));
+  return Number.isFinite(n) ? n : 0;
+}
+
+function ensureArray(v) {
+  return Array.isArray(v) ? v : [];
+}
+
+function awardCherryProgress(tgId, orderId) {
+  const u = db.getUser(tgId);
+  if (!u) return;
+
+  const before = normInt(u.cherry_balance);
+  const tier = getCherryTier(before);
+  const earned = 1 + normInt(tier?.extraCherriesPerOrder);
+  let after = before + earned;
+
+  const claimedSet = new Set(ensureArray(u.cherry_milestones_claimed).map((x) => normInt(x)).filter((x) => x > 0));
+  let freeLiquids = normInt(u.free_liquid_credits);
+  let freeBoxes = normInt(u.free_box_credits);
+  const pending = ensureArray(u.pending_discounts).slice();
+
+  db.addBonusEvent({
+    user_id: String(tgId),
+    type: 'cherry_earn',
+    amount: earned,
+    meta: { order_id: String(orderId || '') },
+    created_at: new Date().toISOString(),
+  });
+
+  const rewards = cherryMilestoneRewards();
+  let n = before + 1;
+  while (n <= after) {
+    if (!claimedSet.has(n)) {
+      const hits = rewards.filter((r) => normInt(r?.at) === n);
+      if (hits.length) {
+        claimedSet.add(n);
+        for (const r of hits) {
+          const extraCherries = normInt(r?.extraCherries);
+          const addLiquids = normInt(r?.freeLiquid != null ? r.freeLiquid : r?.type === 'free_liquid' ? r?.value : 0);
+          const addBoxes = normInt(r?.freeBox);
+          if (r?.type === 'next_discount_fixed' && Number(r?.value) > 0) {
+            pending.push({ type: 'fixed', value: Number(r.value), at: n, status: 'pending' });
+          }
+          if (r?.type === 'next_discount_percent' && Number(r?.value) > 0) {
+            pending.push({ type: 'percent', value: Number(r.value), at: n, status: 'pending' });
+          }
+          if (extraCherries > 0) {
+            after += extraCherries;
+            db.addBonusEvent({
+              user_id: String(tgId),
+              type: 'cherry_bonus',
+              amount: extraCherries,
+              meta: { order_id: String(orderId || ''), at: n },
+              created_at: new Date().toISOString(),
+            });
+          }
+          if (addLiquids > 0) {
+            freeLiquids += addLiquids;
+          }
+          if (addBoxes > 0) {
+            freeBoxes += addBoxes;
+          }
+          if (addLiquids > 0 || addBoxes > 0) {
+            db.addBonusEvent({
+              user_id: String(tgId),
+              type: 'cherry_reward',
+              amount: 0,
+              meta: { order_id: String(orderId || ''), at: n, freeLiquids: addLiquids, freeBoxes: addBoxes },
+              created_at: new Date().toISOString(),
+            });
+          }
+        }
+      }
+      if (n > 100 && n % 10 === 0 && !claimedSet.has(n)) {
+        claimedSet.add(n);
+        freeLiquids += 1;
+        db.addBonusEvent({
+          user_id: String(tgId),
+          type: 'cherry_reward',
+          amount: 0,
+          meta: { order_id: String(orderId || ''), at: n, freeLiquids: 1, rule: 'legend_10' },
+          created_at: new Date().toISOString(),
+        });
+      }
+    }
+    n += 1;
+  }
+
+  db.setUser(tgId, {
+    cherry_balance: after,
+    free_liquid_credits: freeLiquids,
+    free_box_credits: freeBoxes,
+    pending_discounts: pending,
+    cherry_milestones_claimed: Array.from(claimedSet).sort((a, b) => a - b),
+  });
 }
 
 function mapDbOrderToHistory(order) {
@@ -508,6 +608,14 @@ router.post('/payment', requireAuth, validateBody({ orderId: 'required' }), asyn
       order.payment_method = String(paymentMethod || '');
       order.bonus_applied = Math.round(Number(bonusUsed || 0) * 100) / 100;
       order.final_amount = Math.round(Number(paidAmount || 0) * 100) / 100;
+      if (!order.cherries_credited) {
+        try {
+          awardCherryProgress(req.user.tgId, orderId);
+          order.cherries_credited = true;
+        } catch (e) {
+          console.error('Cherry award failed:', e);
+        }
+      }
       const cashbackPercent = Number(process.env.BONUS_CASHBACK_PERCENT || 10);
       if (cashbackPercent > 0) {
         const earn = Math.round((paidAmount * cashbackPercent / 100) * 100) / 100;

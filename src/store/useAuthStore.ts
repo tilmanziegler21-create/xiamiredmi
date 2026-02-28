@@ -9,6 +9,9 @@ interface User {
   ageVerified: boolean;
   status: string;
   bonusBalance: number;
+  cherries?: number;
+  freeLiquids?: number;
+  freeBoxes?: number;
 }
 
 interface AuthState {

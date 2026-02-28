@@ -15,13 +15,9 @@ interface BonusTransaction {
   date: string;
 }
 
-interface UserStatus {
-  level: 'regular' | 'vip' | 'elite';
-  name: string;
-  benefits: string[];
-  minBonus: number;
-  cashback: number;
-}
+type CherryTier = { key: string; title: string; min: number; permanentDiscountPercent: number; extraCherriesPerOrder: number };
+type CherryNext = { key: string; title: string; min: number } | null;
+type CherryProgress = { current: number; target: number; percent: number };
 
 const Bonuses: React.FC = () => {
   const navigate = useNavigate();
@@ -32,31 +28,13 @@ const Bonuses: React.FC = () => {
   const [referralCode, setReferralCode] = useState('');
   const [referralLink, setReferralLink] = useState('');
   const [referralBonusAmount, setReferralBonusAmount] = useState(20);
+  const [cherryTier, setCherryTier] = useState<CherryTier | null>(null);
+  const [cherryNext, setCherryNext] = useState<CherryNext>(null);
+  const [cherryProgress, setCherryProgress] = useState<CherryProgress | null>(null);
+  const [cherriesPerOrder, setCherriesPerOrder] = useState(1);
+  const [freeLiquids, setFreeLiquids] = useState(0);
+  const [freeBoxes, setFreeBoxes] = useState(0);
   const historyRef = React.useRef<HTMLDivElement>(null);
-
-  const userStatuses: UserStatus[] = [
-    {
-      level: 'regular',
-      name: 'Обычный',
-      benefits: ['Базовый кэшбэк 1%', 'Доступ к акциям', 'Техподдержка 24/7'],
-      minBonus: 0,
-      cashback: 1
-    },
-    {
-      level: 'vip',
-      name: 'VIP',
-      benefits: ['Повышенный кэшбэк 3%', 'Приоритетная поддержка', 'Эксклюзивные акции', 'Персональный менеджер'],
-      minBonus: 1000,
-      cashback: 3
-    },
-    {
-      level: 'elite',
-      name: 'ELITE',
-      benefits: ['Максимальный кэшбэк 5%', 'VIP-поддержка', 'Ранний доступ к новинкам', 'Эксклюзивные подарки', 'Бесплатная доставка'],
-      minBonus: 5000,
-      cashback: 5
-    }
-  ];
 
   useEffect(() => {
     loadBonusData();
@@ -67,7 +45,20 @@ const Bonuses: React.FC = () => {
       setLoading(true);
       const [bal, hist, ref] = await Promise.all([bonusesAPI.balance(), bonusesAPI.history(), referralAPI.info()]);
       const balance = Number(bal.data?.balance || 0);
-      if (user && token) setUser({ ...user, bonusBalance: balance }, token);
+      const cherries = Number(bal.data?.cherries ?? user?.cherries ?? 0);
+      const tier = (bal.data?.cherryTier || null) as CherryTier | null;
+      const next = (bal.data?.cherryNext || null) as CherryNext;
+      const prog = (bal.data?.cherryProgress || null) as CherryProgress | null;
+      const perOrder = Math.max(1, Number(bal.data?.cherriesPerOrder || 1));
+      const liquids = Math.max(0, Number(bal.data?.freeLiquids || 0));
+      const boxes = Math.max(0, Number(bal.data?.freeBoxes || 0));
+      setCherryTier(tier);
+      setCherryNext(next);
+      setCherryProgress(prog);
+      setCherriesPerOrder(perOrder);
+      setFreeLiquids(liquids);
+      setFreeBoxes(boxes);
+      if (user && token) setUser({ ...user, bonusBalance: balance, cherries, freeLiquids: liquids, freeBoxes: boxes }, token);
 
       const events = Array.isArray(hist.data?.history) ? hist.data.history : [];
       const mapped: BonusTransaction[] = events.map((e: any, i: number) => {
@@ -139,20 +130,6 @@ const Bonuses: React.FC = () => {
       window.open(shareUrl, '_blank', 'noopener,noreferrer');
     } catch {
     }
-  };
-
-  const getCurrentStatus = (): UserStatus => {
-    const bonusBalance = user?.bonusBalance || 0;
-    if (bonusBalance >= 5000) return userStatuses[2]; // elite
-    if (bonusBalance >= 1000) return userStatuses[1]; // vip
-    return userStatuses[0]; // regular
-  };
-
-  const getNextStatus = (): UserStatus | null => {
-    const bonusBalance = user?.bonusBalance || 0;
-    if (bonusBalance >= 5000) return null;
-    if (bonusBalance >= 1000) return userStatuses[2]; // elite
-    return userStatuses[1]; // vip
   };
 
   const styles = {
@@ -251,10 +228,23 @@ const Bonuses: React.FC = () => {
     },
   };
 
-  const currentStatus = getCurrentStatus();
-  const nextStatus = getNextStatus();
-  const bonusBalance = user?.bonusBalance || 0;
-  const progressToNext = nextStatus ? (bonusBalance / nextStatus.minBonus) * 100 : 100;
+  const cherries = Number(user?.cherries || 0);
+  const tierTitle = String(cherryTier?.title || 'START');
+  const tierDiscount = Number(cherryTier?.permanentDiscountPercent || 0);
+  const tierExtra = Number(cherryTier?.extraCherriesPerOrder || 0);
+  const nextMin = Number(cherryNext?.min || 10);
+  const nextTitle = String(cherryNext?.title || 'SILVER');
+  const remainingCherries = Math.max(0, nextMin - cherries);
+  const remainingOrders = Math.ceil(remainingCherries / Math.max(1, cherriesPerOrder));
+  const progressToNext = cherryNext ? Number(cherryProgress?.percent || 0) : 100;
+  const teaser =
+    cherryNext?.key === 'silver'
+      ? { title: 'GOLD', extra: 1 }
+      : cherryNext?.key === 'gold'
+      ? { title: 'PLATINUM', extra: 2 }
+      : cherryNext?.key === 'platinum'
+      ? { title: 'LEGEND', extra: 3 }
+      : null;
 
   if (loading) {
     return (
@@ -276,15 +266,15 @@ const Bonuses: React.FC = () => {
       {/* Balance Card */}
       <div style={styles.balanceCard}>
         <div style={styles.balanceAmount}>
-          {bonusBalance.toLocaleString()} 🍒
+          {cherries.toLocaleString()} 🍒
         </div>
-        <div style={styles.balanceLabel}>Доступно бонусов</div>
+        <div style={styles.balanceLabel}>Твои вишенки</div>
         <div style={{ display: 'flex', gap: theme.spacing.sm, marginTop: theme.spacing.lg }}>
           <PrimaryButton
             size="sm"
             onClick={() => navigate('/catalog')}
           >
-            Потратить
+            В каталог
           </PrimaryButton>
           <SecondaryButton
             size="sm"
@@ -303,10 +293,10 @@ const Bonuses: React.FC = () => {
           </div>
           <div>
             <div style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold }}>
-              {currentStatus.name}
+              {tierTitle}
             </div>
             <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-              Кэшбэк {currentStatus.cashback}%
+              Постоянная скидка {tierDiscount}%
             </div>
           </div>
         </div>
@@ -315,22 +305,33 @@ const Bonuses: React.FC = () => {
           <div style={{ fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.sm }}>
             Ваши привилегии:
           </div>
-          {currentStatus.benefits.map((benefit, index) => (
-            <div key={index} style={styles.benefitItem}>
-              <Star size={14} color="#ffc107" />
-              {benefit}
-            </div>
-          ))}
+          <div style={styles.benefitItem}>
+            <Star size={14} color="#ffc107" />
+            +{1 + tierExtra} 🍒 за заказ
+          </div>
+          <div style={styles.benefitItem}>
+            <Star size={14} color="#ffc107" />
+            Бесплатных жидкостей: {freeLiquids}
+          </div>
+          <div style={styles.benefitItem}>
+            <Star size={14} color="#ffc107" />
+            Бесплатных боксов: {freeBoxes}
+          </div>
         </div>
 
-        {nextStatus && (
+        {cherryNext && (
           <div>
             <div style={{ fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.sm }}>
-              До {nextStatus.name}: {(nextStatus.minBonus - bonusBalance).toLocaleString()} 🍒
+              🍒 {cherries} / {nextMin} до {nextTitle} • осталось {remainingOrders} заказа
             </div>
             <div style={styles.progressBar}>
               <div style={{...styles.progressFill, width: `${Math.min(progressToNext, 100)}%`}} />
             </div>
+            {teaser ? (
+              <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary, marginTop: theme.spacing.sm }}>
+                🔥 До {teaser.title} ты получишь +{teaser.extra} 🍒 за каждый заказ
+              </div>
+            ) : null}
           </div>
         )}
       </div>

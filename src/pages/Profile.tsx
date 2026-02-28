@@ -37,6 +37,10 @@ const Profile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'orders' | 'bonuses' | 'favorites'>('orders');
   const [bonusBalance, setBonusBalance] = useState(0);
   const [bonusHistory, setBonusHistory] = useState<any[]>([]);
+  const [cherries, setCherries] = useState(0);
+  const [cherryNextTitle, setCherryNextTitle] = useState('SILVER');
+  const [cherryNextMin, setCherryNextMin] = useState(10);
+  const [cherriesPerOrder, setCherriesPerOrder] = useState(1);
   const [favorites, setFavorites] = useState<FavoriteItem[]>([]);
   const { city } = useCityStore();
 
@@ -67,10 +71,15 @@ const Profile: React.FC = () => {
     try {
       const [b, h] = await Promise.all([bonusesAPI.balance(), bonusesAPI.history()]);
       setBonusBalance(Number(b.data.balance || 0));
+      setCherries(Number(b.data.cherries || 0));
+      setCherryNextTitle(String(b.data?.cherryNext?.title || 'SILVER'));
+      setCherryNextMin(Number(b.data?.cherryNext?.min || 10));
+      setCherriesPerOrder(Math.max(1, Number(b.data?.cherriesPerOrder || 1)));
       setBonusHistory(h.data.history || []);
     } catch (e) {
       console.error('Failed to load bonuses:', e);
       setBonusBalance(0);
+      setCherries(0);
       setBonusHistory([]);
     }
   };
@@ -142,6 +151,8 @@ const Profile: React.FC = () => {
   };
 
   const userLevel = getUserLevelInfo();
+  const remainingCherries = Math.max(0, Number(cherryNextMin || 0) - Number(cherries || 0));
+  const remainingOrders = Math.ceil(remainingCherries / Math.max(1, Number(cherriesPerOrder || 1)));
 
   const styles = {
     page: {
@@ -287,10 +298,16 @@ const Profile: React.FC = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
               <Star size={18} color="rgba(255,214,10,0.95)" />
               <div style={{ fontWeight: theme.typography.fontWeight.bold, letterSpacing: '0.06em', textTransform: 'uppercase' as const }}>
-                Бонусный баланс
+                Вишенки
               </div>
             </div>
-            <div style={styles.balanceValue}>{bonusBalance.toLocaleString()}</div>
+            <div style={styles.balanceValue}>{Number(cherries || 0).toLocaleString()} 🍒</div>
+          </div>
+          <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm }}>
+            🍒 {Number(cherries || 0)} / {Number(cherryNextMin || 10)} до {String(cherryNextTitle || 'SILVER')}
+          </div>
+          <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+            Осталось {remainingOrders} заказа
           </div>
 
           <div style={{ ...styles.tierBox, background: userLevel.bgColor }}>
