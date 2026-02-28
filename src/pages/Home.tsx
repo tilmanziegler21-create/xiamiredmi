@@ -79,6 +79,13 @@ const Home: React.FC = () => {
   const qtyDiscountMin = Number(qtyDiscount?.minQty || 3);
   const qtyDiscountPrice = Number(qtyDiscount?.unitPrice || 40);
 
+  const quickTiles = useMemo(() => ([
+    { title: 'Каталог', subtitle: 'Все товары', to: '/catalog', image: '/assets/elfcherry/tiles/tile-catalog.jpg', icon: Grid },
+    { title: 'Акции', subtitle: 'Скидки и промо', to: '/promotions', image: '/assets/elfcherry/tiles/tile-promo.jpg', icon: Gift },
+    { title: 'Корзина', subtitle: 'Быстрый заказ', to: '/cart', image: '/assets/elfcherry/tiles/tile-cart.jpg', icon: ShoppingCart },
+    { title: 'Бонусы', subtitle: 'Баланс и история', to: '/bonuses', image: '/assets/elfcherry/tiles/tile-bonuses.jpg', icon: Star },
+  ]), []);
+
   useEffect(() => {
     if (ultraLite) return;
     if (banners.length <= 1) return;
@@ -290,30 +297,73 @@ const Home: React.FC = () => {
       borderRadius: theme.radius.lg,
       display: 'flex',
       flexDirection: 'column' as const,
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: theme.spacing.sm,
-      background: 'linear-gradient(135deg, rgba(255,45,85,0.16) 0%, rgba(176,0,58,0.10) 100%)',
-      border: '1px solid rgba(255,45,85,0.24)',
+      alignItems: 'flex-start',
+      justifyContent: 'flex-end',
+      gap: 6,
+      padding: theme.spacing.md,
+      background: 'rgba(255,255,255,0.06)',
+      border: '1px solid rgba(255,255,255,0.14)',
       color: theme.colors.dark.text,
       textDecoration: 'none',
-      transition: 'all 0.2s ease',
+      transition: 'transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1)',
       cursor: 'pointer',
       touchAction: 'manipulation' as const,
+      position: 'relative' as const,
+      overflow: 'hidden',
     },
     quickActionIcon: {
-      width: 32,
-      height: 32,
+      width: 34,
+      height: 34,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
+      borderRadius: 12,
+      background: 'rgba(0,0,0,0.35)',
+      border: '1px solid rgba(255,255,255,0.14)',
     },
     quickActionText: {
       fontSize: theme.typography.fontSize.sm,
       fontWeight: theme.typography.fontWeight.medium,
-      textAlign: 'center' as const,
       textTransform: 'uppercase' as const,
       letterSpacing: '0.08em',
+    },
+    quickActionSub: {
+      fontSize: theme.typography.fontSize.xs,
+      color: 'rgba(255,255,255,0.70)',
+      letterSpacing: '0.10em',
+      textTransform: 'uppercase' as const,
+    },
+    categoryRow: {
+      padding: `0 ${theme.padding.screen}`,
+      display: 'flex',
+      gap: theme.spacing.md,
+      overflowX: 'auto' as const,
+      marginBottom: theme.spacing.xl,
+      WebkitOverflowScrolling: 'touch' as const,
+    },
+    categoryChip: {
+      flex: '0 0 auto',
+      width: 240,
+      height: 150,
+      borderRadius: theme.radius.lg,
+      overflow: 'hidden',
+      position: 'relative' as const,
+      boxShadow: theme.shadow.card,
+      border: '1px solid rgba(255,255,255,0.14)',
+      cursor: 'pointer',
+      touchAction: 'manipulation' as const,
+    },
+    categoryChipTitle: {
+      position: 'absolute' as const,
+      left: theme.spacing.md,
+      right: theme.spacing.md,
+      bottom: theme.spacing.md,
+      fontSize: theme.typography.fontSize.lg,
+      fontWeight: theme.typography.fontWeight.bold,
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.10em',
+      textShadow: '0 10px 30px rgba(0,0,0,0.55)',
+      zIndex: 2,
     },
     searchSection: {
       padding: `0 ${theme.padding.screen}`,
@@ -483,48 +533,36 @@ const Home: React.FC = () => {
 
       <SectionDivider title="Быстрые действия" />
 
-      {/* Quick Action Buttons */}
       <div style={styles.quickActionsGrid}>
-        <div
-          style={styles.quickActionButton}
-          onClick={() => navigate('/catalog')}
-          role="button"
-        >
-          <div style={styles.quickActionIcon}>
-            <Grid size={24} color={theme.colors.dark.primary} />
-          </div>
-          <div style={styles.quickActionText}>Каталог</div>
-        </div>
-        <div
-          style={styles.quickActionButton}
-          onClick={() => navigate('/promotions')}
-          role="button"
-        >
-          <div style={styles.quickActionIcon}>
-            <Gift size={24} color={theme.colors.dark.primary} />
-          </div>
-          <div style={styles.quickActionText}>Акции</div>
-        </div>
-        <div
-          style={styles.quickActionButton}
-          onClick={() => navigate('/cart')}
-          role="button"
-        >
-          <div style={styles.quickActionIcon}>
-            <ShoppingCart size={24} color={theme.colors.dark.primary} />
-          </div>
-          <div style={styles.quickActionText}>Корзина</div>
-        </div>
-        <div
-          style={styles.quickActionButton}
-          onClick={() => navigate('/bonuses')}
-          role="button"
-        >
-          <div style={styles.quickActionIcon}>
-            <Star size={24} color={theme.colors.dark.primary} />
-          </div>
-          <div style={styles.quickActionText}>Бонусы</div>
-        </div>
+        {quickTiles.map((t) => {
+          const Icon = t.icon;
+          return (
+            <div
+              key={t.title}
+              style={styles.quickActionButton}
+              onClick={() => navigate(t.to)}
+              role="button"
+            >
+              {!ultraLite ? (
+                <img
+                  src={t.image}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.85 }}
+                />
+              ) : null}
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.76) 100%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'relative', zIndex: 2, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={styles.quickActionIcon}>
+                  <Icon size={20} color="rgba(255,255,255,0.92)" />
+                </div>
+                <div style={styles.quickActionText}>{t.title}</div>
+                <div style={styles.quickActionSub}>{t.subtitle}</div>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Search Section */}
@@ -554,13 +592,38 @@ const Home: React.FC = () => {
         </span>
       </div>
 
-      <div style={styles.categoryGrid}>
+      <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
+        <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)' }}>
+          Категории
+        </div>
+        <div
+          role="button"
+          onClick={() => navigate('/categories')}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            color: 'rgba(255,255,255,0.80)',
+            fontSize: theme.typography.fontSize.xs,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            padding: '10px 12px',
+            borderRadius: 999,
+            background: 'rgba(255,255,255,0.06)',
+            border: '1px solid rgba(255,255,255,0.14)',
+          }}
+        >
+          Все <ChevronRight size={16} />
+        </div>
+      </div>
+
+      <div style={styles.categoryRow}>
         {categories.length === 0 ? (
           [...Array(4)].map((_, i) => (
             <div
               key={i}
               style={{
-                ...styles.categoryCard,
+                ...styles.categoryChip,
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.10)',
                 animation: 'pulse 1.5s ease-in-out infinite',
@@ -572,7 +635,7 @@ const Home: React.FC = () => {
             <div
               key={category.name}
               style={{
-                ...styles.categoryCard,
+                ...styles.categoryChip,
                 background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)',
               }}
               onClick={() => navigate(`/catalog?category=${encodeURIComponent(category.slug)}`)}
@@ -593,7 +656,7 @@ const Home: React.FC = () => {
                   <ChipBadge variant="new" size="sm">{category.badgeText}</ChipBadge>
                 </div>
               ) : null}
-              <div style={styles.categoryTitle}>{category.name}</div>
+              <div style={styles.categoryChipTitle}>{category.name}</div>
             </div>
           ))
         )}
