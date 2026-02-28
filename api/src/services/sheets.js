@@ -624,10 +624,35 @@ export async function getCouriers(city) {
   const nameIdx = headerIndexAny(headers, ['name']);
   const tgIdx = headerIndexAny(headers, ['tg_id', 'telegram_id']);
   const activeIdx = headerIndexAny(headers, ['active', 'is_active']);
-  const fromIdx = headerIndexAny(headers, ['time_from']);
-  const toIdx = headerIndexAny(headers, ['time_to']);
-  const meetingIdx = headerIndexAny(headers, ['meeting_place', 'meeting place', 'место встречи', 'точка встречи']);
-  const placeIdx = meetingIdx >= 0 ? meetingIdx : headerIndexAny(headers, ['place', 'location', 'pickup_point', 'pickup point', 'точка', 'место', 'локация']);
+  const fromIdx = headerIndexAny(headers, ['time_from', 'time from', 'from', 'время с', 'времяc', 'с']);
+  const toIdx = headerIndexAny(headers, ['time_to', 'time to', 'to', 'время до', 'времядо', 'до']);
+  const meetingIdx = headerIndexAny(headers, [
+    'meeting_place',
+    'meeting place',
+    'meetingpoint',
+    'meeting point',
+    'meet point',
+    'pickup_meeting',
+    'место встречи',
+    'точка встречи',
+    'пункт встречи',
+    'punkt spotkania',
+    'treffpunkt',
+  ]);
+  const placeIdx = meetingIdx >= 0 ? meetingIdx : headerIndexAny(headers, [
+    'place',
+    'location',
+    'pickup_point',
+    'pickup point',
+    'pickup',
+    'точка',
+    'точка самовывоза',
+    'пункт выдачи',
+    'пункт',
+    'место',
+    'локация',
+    'adres odbioru',
+  ]);
   const addrIdx = meetingIdx >= 0 || placeIdx >= 0 ? -1 : headerIndexAny(headers, ['address', 'адрес']);
   const out = [];
   for (const r of rows) {
@@ -744,8 +769,33 @@ export async function updateCourierRowByCourierId(city, courierId, patch) {
     pushUpdate(findIdx(['time_to', 'time to', 'время до', 'до']), timeTo);
   }
   if (meetingPlace != null && String(meetingPlace).trim()) {
-    const meetingIdx = findIdx(['meeting_place', 'meeting place', 'место встречи', 'точка встречи']);
-    const placeIdx = meetingIdx >= 0 ? meetingIdx : findIdx(['place', 'location', 'pickup_point', 'pickup point', 'точка', 'место', 'локация']);
+    const meetingIdx = findIdx([
+      'meeting_place',
+      'meeting place',
+      'meetingpoint',
+      'meeting point',
+      'meet point',
+      'pickup_meeting',
+      'место встречи',
+      'точка встречи',
+      'пункт встречи',
+      'punkt spotkania',
+      'treffpunkt',
+    ]);
+    const placeIdx = meetingIdx >= 0 ? meetingIdx : findIdx([
+      'place',
+      'location',
+      'pickup_point',
+      'pickup point',
+      'pickup',
+      'точка',
+      'точка самовывоза',
+      'пункт выдачи',
+      'пункт',
+      'место',
+      'локация',
+      'adres odbioru',
+    ]);
     const addrIdx = meetingIdx >= 0 || placeIdx >= 0 ? -1 : findIdx(['address', 'адрес']);
     if (placeIdx >= 0) pushUpdate(placeIdx, meetingPlace);
     else if (addrIdx >= 0) pushUpdate(addrIdx, meetingPlace);
