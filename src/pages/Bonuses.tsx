@@ -18,6 +18,7 @@ interface BonusTransaction {
 type CherryTier = { key: string; title: string; min: number; permanentDiscountPercent: number; extraCherriesPerOrder: number };
 type CherryNext = { key: string; title: string; min: number } | null;
 type CherryProgress = { current: number; target: number; percent: number };
+type PendingDiscount = { type: 'fixed' | 'percent'; value: number; at: number; status?: string };
 
 const Bonuses: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +38,7 @@ const Bonuses: React.FC = () => {
   const [cherriesPerOrder, setCherriesPerOrder] = useState(1);
   const [freeLiquids, setFreeLiquids] = useState(0);
   const [freeBoxes, setFreeBoxes] = useState(0);
+  const [pendingDiscounts, setPendingDiscounts] = useState<PendingDiscount[]>([]);
   const [showHow, setShowHow] = useState(false);
   const historyRef = React.useRef<HTMLDivElement>(null);
   const howRef = React.useRef<HTMLDivElement>(null);
@@ -70,6 +72,7 @@ const Bonuses: React.FC = () => {
       setCherriesPerOrder(perOrder);
       setFreeLiquids(liquids);
       setFreeBoxes(boxes);
+      setPendingDiscounts(Array.isArray(bal.data?.pendingDiscounts) ? bal.data.pendingDiscounts : []);
       if (user && token) setUser({ ...user, bonusBalance: balance, cherries, freeLiquids: liquids, freeBoxes: boxes }, token);
 
       const events = Array.isArray(hist.data?.history) ? hist.data.history : [];
@@ -272,6 +275,18 @@ const Bonuses: React.FC = () => {
       : cherryNext?.key === 'platinum'
       ? { title: 'LEGEND', perOrder: 4 }
       : null;
+  const nextDiscount = (() => {
+    const list = Array.isArray(pendingDiscounts) ? pendingDiscounts : [];
+    const pending = list
+      .filter((x) => x && String(x.status || 'pending') === 'pending')
+      .filter((x) => (String(x.type) === 'percent' || String(x.type) === 'fixed') && Number(x.value || 0) > 0)
+      .slice()
+      .sort((a, b) => Number(a.at || 0) - Number(b.at || 0));
+    const d = pending[0];
+    if (!d) return '';
+    if (String(d.type) === 'fixed') return `${Number(d.value || 0)}€`;
+    return `${Number(d.value || 0)}%`;
+  })();
 
   if (loading) {
     return (
@@ -297,6 +312,7 @@ const Bonuses: React.FC = () => {
           <div style={styles.heroSub}>Твои бонусы:</div>
           <div style={styles.heroCount}>{cherries.toLocaleString()} 🍒</div>
           <div style={styles.heroSub}>За каждый заказ +{cherriesPerOrder} 🍒</div>
+          <div style={styles.heroSub}>Подарки: {freeLiquids} жидк. • {freeBoxes} боксов</div>
           <div style={styles.pillRow}>
             <PrimaryButton size="sm" onClick={() => navigate('/catalog')}>Потратить</PrimaryButton>
             <SecondaryButton
@@ -333,6 +349,11 @@ const Bonuses: React.FC = () => {
             <div>{remainingOrders} заказа</div>
           </div>
         ) : null}
+        <div style={{ marginTop: theme.spacing.sm, fontSize: theme.typography.fontSize.sm, color: theme.colors.dark.textSecondary, display: 'grid', gap: 6 }}>
+          <div>Постоянная скидка: {tierDiscount}%</div>
+          <div>За заказ: +{1 + tierExtra} 🍒</div>
+          <div>Следующая скидка: {nextDiscount || 'нет'}</div>
+        </div>
         {teaser ? (
           <div style={{ marginTop: theme.spacing.sm, fontSize: theme.typography.fontSize.sm, color: theme.colors.dark.textSecondary }}>
             🔥 До {teaser.title} ты получишь +{teaser.perOrder} 🍒 за каждый заказ
@@ -414,7 +435,7 @@ const Bonuses: React.FC = () => {
 
       {showHow ? (
         <div style={{ padding: `0 ${theme.padding.screen}`, marginTop: theme.spacing.xl }} ref={howRef}>
-          <h3 style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, marginBottom: theme.spacing.md, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>Как заработать</h3>
+          <h3 style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, marginBottom: theme.spacing.md, textTransform: 'uppercase' as const, letterSpacing: '0.06em' }}>Как это работает</h3>
           <div style={{ display: 'grid', gap: theme.spacing.md }}>
             <GlassCard padding="md" variant="elevated">
               <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
@@ -424,8 +445,21 @@ const Bonuses: React.FC = () => {
                     За каждый заказ +{cherriesPerOrder} 🍒
                   </div>
                   <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-                    Чем выше статус — тем больше 🍒 за заказ
+                    Чем выше статус — тем больше 🍒 за заказ и больше наград
                   </div>
+                </div>
+              </div>
+            </GlassCard>
+            <GlassCard padding="md" variant="elevated">
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
+                  Накопил 🍒 → получил награду
+                </div>
+                <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary, marginTop: 6, lineHeight: 1.3 }}>
+                  На уровнях 1–10 ты получаешь скидку на следующий заказ или подарок. Скидка применяется автоматически при оформлении следующего заказа.
+                </div>
+                <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary, marginTop: 6, lineHeight: 1.3 }}>
+                  Пример: 1 🍒 → 2€ скидки • 5 🍒 → 20% • 7 🍒 → бесплатная жидкость.
                 </div>
               </div>
             </GlassCard>
@@ -449,10 +483,10 @@ const Bonuses: React.FC = () => {
                 <Star size={20} color="#ffc107" />
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
-                    Плюшки автоматически
+                    Статусы
                   </div>
                   <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-                    На уровнях ты получаешь скидки и подарки
+                    SILVER / GOLD / PLATINUM / LEGEND дают постоянную скидку и повышают 🍒 за заказ
                   </div>
                 </div>
               </div>

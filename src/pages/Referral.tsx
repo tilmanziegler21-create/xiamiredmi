@@ -9,6 +9,7 @@ const Referral: React.FC = () => {
   const { user } = useAuthStore();
   const toast = useToastStore();
   const [loading, setLoading] = React.useState(true);
+  const [showHow, setShowHow] = React.useState(false);
   const [info, setInfo] = React.useState<{
     referralCode: string;
     stage: 'partner' | 'ambassador';
@@ -177,11 +178,51 @@ const Referral: React.FC = () => {
           <SecondaryButton fullWidth onClick={share} style={{ borderRadius: 12, border: '1px solid rgba(255,255,255,0.15)' }}>
             Поделиться
           </SecondaryButton>
-          <PrimaryButton fullWidth onClick={share} style={{ borderRadius: 12 }}>
-            Пригласить
+          <PrimaryButton fullWidth onClick={() => setShowHow((v) => !v)} style={{ borderRadius: 12 }}>
+            {showHow ? 'Скрыть' : 'Как работает'}
           </PrimaryButton>
         </div>
       </GlassCard>
+
+      {showHow ? (
+        <div style={{ marginTop: theme.spacing.lg, display: 'grid', gap: theme.spacing.md }}>
+          <GlassCard padding="md" variant="elevated">
+            <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, letterSpacing: '0.12em', textTransform: 'uppercase' as const, fontSize: 18, marginBottom: 8 }}>
+              Объяснение
+            </div>
+            <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, lineHeight: 1.35 }}>
+              Скидываешь свою ссылку → друг покупает → ты получаешь % с его оплаченного заказа. Всё автоматически.
+            </div>
+          </GlassCard>
+
+          <GlassCard padding="md" variant="elevated">
+            <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, letterSpacing: '0.12em', textTransform: 'uppercase' as const, fontSize: 18, marginBottom: 8 }}>
+              PARTNER (0–9)
+            </div>
+            <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, lineHeight: 1.35 }}>
+              30% ревшэйр. Баланс доступен для покупок в магазине. После 10 приглашённых открывается вывод денег.
+            </div>
+          </GlassCard>
+
+          <GlassCard padding="md" variant="elevated">
+            <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, letterSpacing: '0.12em', textTransform: 'uppercase' as const, fontSize: 18, marginBottom: 8 }}>
+              AMBASSADOR (10+)
+            </div>
+            <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, lineHeight: 1.35 }}>
+              Открывается вывод. Процент становится динамическим:
+            </div>
+            <div style={{ marginTop: 10, display: 'grid', gap: 6, color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+              <div>10 → 5%</div>
+              <div>20 → 10%</div>
+              <div>30 → 15%</div>
+              <div>50 → 20%</div>
+            </div>
+            <div style={{ marginTop: 10, color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+              Выплаты 1 раз в месяц, минимальный вывод — {balances.minWithdraw}€.
+            </div>
+          </GlassCard>
+        </div>
+      ) : null}
     </div>
   );
 };
