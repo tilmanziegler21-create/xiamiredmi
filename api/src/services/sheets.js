@@ -101,16 +101,32 @@ async function sheetTitleMap(spreadsheetId) {
   return map;
 }
 
+function normalizeHeaderKey(s) {
+  return String(s || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9а-яё]+/gi, '');
+}
+
 function headerIndex(headers, name) {
   const target = String(name || '').trim().toLowerCase();
-  return headers.findIndex((h) => String(h || '').trim().toLowerCase() === target);
+  const key = normalizeHeaderKey(target);
+  const exact = headers.findIndex((h) => String(h || '').trim().toLowerCase() === target);
+  if (exact >= 0) return exact;
+  if (!key) return -1;
+  return headers.findIndex((h) => normalizeHeaderKey(h) === key);
 }
 
 function headerIndexAny(headers, names) {
   for (const n of names) {
     const target = String(n || '').trim().toLowerCase();
+    const key = normalizeHeaderKey(target);
     const i = headers.findIndex((h) => String(h || '').trim().toLowerCase() === target);
     if (i >= 0) return i;
+    if (key) {
+      const j = headers.findIndex((h) => normalizeHeaderKey(h) === key);
+      if (j >= 0) return j;
+    }
   }
   return -1;
 }

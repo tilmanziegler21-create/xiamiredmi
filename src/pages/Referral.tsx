@@ -85,12 +85,13 @@ const Referral: React.FC = () => {
         <div style={{ marginBottom: theme.spacing.md, letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
           Реферальная ссылка
         </div>
-        <div style={{ display: 'flex', gap: theme.spacing.sm, alignItems: 'center', marginBottom: theme.spacing.md }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: theme.spacing.sm, alignItems: 'center', marginBottom: theme.spacing.md }}>
           <input
             value={link}
             readOnly
             style={{
               flex: 1,
+              minWidth: 0,
               borderRadius: 12,
               border: '1px solid rgba(255,255,255,0.14)',
               background: 'rgba(255,255,255,0.06)',
@@ -100,7 +101,7 @@ const Referral: React.FC = () => {
               letterSpacing: '0.04em',
             }}
           />
-          <PrimaryButton onClick={copy} style={{ borderRadius: 12, padding: '12px 14px' }}>
+          <PrimaryButton onClick={copy} style={{ borderRadius: 12, padding: '12px 14px', whiteSpace: 'nowrap' }}>
             Скопировать
           </PrimaryButton>
         </div>

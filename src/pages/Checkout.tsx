@@ -145,11 +145,11 @@ const Checkout: React.FC = () => {
   }, [courierId, couriers]);
 
   React.useEffect(() => {
-    if (deliveryMethod !== 'courier') return;
+    if (deliveryMethod !== 'pickup') return;
     if (!courierMeetingPlace) return;
-    if (address.trim()) return;
-    setAddress(courierMeetingPlace);
-  }, [deliveryMethod, courierMeetingPlace, address]);
+    if (pickupPoint.trim() === courierMeetingPlace) return;
+    setPickupPoint(courierMeetingPlace);
+  }, [deliveryMethod, courierMeetingPlace, pickupPoint]);
 
   React.useEffect(() => {
     if (deliveryTime) return;
@@ -164,6 +164,8 @@ const Checkout: React.FC = () => {
 
     const errors: string[] = [];
     if (deliveryMethod === 'pickup') {
+      if (!courierId) errors.push('Выбери курьера');
+      if (!deliveryTime) errors.push('Выбери время');
       if (!pickupPoint.trim()) errors.push('Выбери точку самовывоза');
     } else {
       if (!address.trim()) errors.push('Укажи адрес доставки');
@@ -216,9 +218,9 @@ const Checkout: React.FC = () => {
         deliveryMethod,
         city,
         promoCode: String(promoCode || '').trim(),
-        courier_id: deliveryMethod === 'courier' ? courierId : '',
-        delivery_date: deliveryMethod === 'courier' ? deliveryDate : '',
-        delivery_time: deliveryMethod === 'courier' ? deliveryTime : '',
+        courier_id: courierId,
+        delivery_date: deliveryDate,
+        delivery_time: deliveryTime,
         courierData: {
           address: deliveryMethod === 'pickup' ? pickupPoint : address,
           comment: String(comment || '').slice(0, 500),
@@ -396,54 +398,53 @@ const Checkout: React.FC = () => {
           {deliveryMethod === 'pickup' ? (
             <>
               <div style={styles.label}>Точка самовывоза</div>
-              <select value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)} style={styles.input}>
-                {(config?.pickupPoints || []).map((p) => (
-                  <option key={p.id} value={p.address}>
-                    {p.title}
-                  </option>
-                ))}
-              </select>
+              {courierMeetingPlace ? (
+                <input value={pickupPoint} readOnly style={{ ...styles.input, opacity: 0.85 }} />
+              ) : (
+                <select value={pickupPoint} onChange={(e) => setPickupPoint(e.target.value)} style={styles.input}>
+                  {(config?.pickupPoints || []).map((p) => (
+                    <option key={p.id} value={p.address}>
+                      {p.title}
+                    </option>
+                  ))}
+                </select>
+              )}
             </>
           ) : (
             <>
-              <div style={styles.label}>{courierMeetingPlace ? 'Место встречи' : 'Адрес доставки *'}</div>
+              <div style={styles.label}>Адрес доставки *</div>
               <input
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
-                placeholder={courierMeetingPlace ? 'Место встречи задано курьером' : 'Введите адрес'}
-                style={{ ...styles.input, opacity: courierMeetingPlace ? 0.85 : 1 }}
-                disabled={Boolean(courierMeetingPlace)}
+                placeholder="Введите адрес"
+                style={styles.input}
               />
             </>
           )}
 
-          {deliveryMethod === 'courier' ? (
-            <>
-              <div style={{ height: theme.spacing.md }} />
+          <div style={{ height: theme.spacing.md }} />
 
-              <div style={styles.label}>Курьер</div>
-              <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.input}>
-                <option value="">Выберите курьера</option>
-                {couriers.map((c) => (
-                  <option key={c.courier_id} value={c.courier_id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+          <div style={styles.label}>Курьер</div>
+          <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.input}>
+            <option value="">Выберите курьера</option>
+            {couriers.map((c) => (
+              <option key={c.courier_id} value={c.courier_id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
 
-              <div style={{ height: theme.spacing.md }} />
+          <div style={{ height: theme.spacing.md }} />
 
-              <div style={styles.label}>Время</div>
-              <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.input} disabled={!courierId}>
-                <option value="">Выберите</option>
-                {timeOptions.map((t) => (
-                  <option key={t} value={t}>
-                    {t}
-                  </option>
-                ))}
-              </select>
-            </>
-          ) : null}
+          <div style={styles.label}>Время</div>
+          <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.input} disabled={!courierId}>
+            <option value="">Выберите</option>
+            {timeOptions.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
         </GlassCard>
       </div>
 

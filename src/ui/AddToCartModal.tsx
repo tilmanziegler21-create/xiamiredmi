@@ -32,8 +32,8 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
   React.useEffect(() => {
     if (!open) return;
     setQty(1);
-    setVariant(variants[0]);
-  }, [open, variants]);
+    setVariant(product?.variants?.[0]);
+  }, [open, product?.id]);
 
   if (!open || !product) return null;
 

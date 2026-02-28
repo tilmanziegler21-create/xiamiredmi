@@ -36,7 +36,7 @@ const Cart: React.FC = () => {
   const [promoCode, setPromoCode] = React.useState('');
   const [fulfillment, setFulfillment] = React.useState<Fulfillment>('pickup');
   const [pickup, setPickup] = React.useState('');
-  const [couriers, setCouriers] = React.useState<Array<{ courier_id: string; name: string; tg_id: string; time_from?: string; time_to?: string }>>([]);
+  const [couriers, setCouriers] = React.useState<Array<{ courier_id: string; name: string; tg_id: string; time_from?: string; time_to?: string; meeting_place?: string }>>([]);
   const [courierId, setCourierId] = React.useState('');
   const [deliveryTime, setDeliveryTime] = React.useState('');
 
@@ -78,6 +78,18 @@ const Cart: React.FC = () => {
     }
     return out;
   }, [courierId, couriers]);
+
+  const courierMeetingPlace = React.useMemo(() => {
+    const c = couriers.find((x) => x.courier_id === courierId);
+    return String((c as any)?.meeting_place || '').trim();
+  }, [courierId, couriers]);
+
+  React.useEffect(() => {
+    if (fulfillment !== 'pickup') return;
+    if (!courierMeetingPlace) return;
+    if (pickup === courierMeetingPlace) return;
+    setPickup(courierMeetingPlace);
+  }, [fulfillment, courierMeetingPlace, pickup]);
 
   React.useEffect(() => {
     if (!deliveryTime && timeOptions.length) setDeliveryTime(timeOptions[0]);
@@ -147,13 +159,14 @@ const Cart: React.FC = () => {
   const canCheckout = Boolean(
     cart?.items?.length &&
       city &&
-      (fulfillment === 'pickup' ? Boolean(pickup) : Boolean(courierId && deliveryTime))
+      Boolean(courierId && deliveryTime) &&
+      (fulfillment === 'pickup' ? Boolean(pickup) : true)
   );
 
   const goCheckout = () => {
     if (!cart?.items?.length) return;
     if (!canCheckout) {
-      toast.push(fulfillment === 'pickup' ? 'Выберите точку самовывоза' : 'Выберите курьера и время', 'error');
+      toast.push(fulfillment === 'pickup' ? 'Выберите курьера, время и точку самовывоза' : 'Выберите курьера и время', 'error');
       return;
     }
     trackCheckout(cart.items, totalWithBonus);
@@ -520,14 +533,37 @@ const Cart: React.FC = () => {
         <div style={styles.pickupCard}>
           <div style={styles.pickupInner}>
             <div style={styles.pickupTitle}>Самовывоз</div>
-            <div style={{ color: theme.colors.dark.textSecondary, marginBottom: theme.spacing.sm }}>Выберите точку самовывоза</div>
-            <select value={pickup} onChange={(e) => setPickup(e.target.value)} style={styles.pickupSelect}>
-              {pickupPoints.map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+            <div style={{ color: theme.colors.dark.textSecondary, marginBottom: theme.spacing.sm }}>Выберите курьера и время</div>
+            <div style={{ display: 'grid', gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
+              <select value={courierId} onChange={(e) => setCourierId(e.target.value)} style={styles.courierSelect}>
+                <option value="">Выберите курьера</option>
+                {couriers.map((c) => (
+                  <option key={c.courier_id} value={c.courier_id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <select value={deliveryTime} onChange={(e) => setDeliveryTime(e.target.value)} style={styles.courierSelect} disabled={!courierId}>
+                <option value="">Выберите время</option>
+                {timeOptions.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div style={{ color: theme.colors.dark.textSecondary, marginBottom: theme.spacing.sm }}>Точка самовывоза</div>
+            {courierMeetingPlace ? (
+              <input value={pickup} readOnly style={styles.pickupSelect} />
+            ) : (
+              <select value={pickup} onChange={(e) => setPickup(e.target.value)} style={styles.pickupSelect}>
+                {pickupPoints.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
         </div>
       ) : null}
