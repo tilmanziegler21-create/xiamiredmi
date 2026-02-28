@@ -131,7 +131,7 @@ const Checkout: React.FC = () => {
     const tm = toMin(to);
     if (fm == null || tm == null || tm <= fm) return [];
     const out: string[] = [];
-    for (let m = fm; m <= tm - 30; m += 30) {
+    for (let m = fm; m <= tm - 10; m += 10) {
       const hh = String(Math.floor(m / 60)).padStart(2, '0');
       const mm = String(m % 60).padStart(2, '0');
       out.push(`${hh}:${mm}`);
