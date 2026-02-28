@@ -30,6 +30,8 @@ export const TopBar: React.FC<TopBarProps> = ({
 }) => {
   const navigate = useNavigate();
   const [isNarrow, setIsNarrow] = React.useState(false);
+  const [cartBump, setCartBump] = React.useState(false);
+  const cartCountRef = React.useRef(0);
 
   React.useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -44,6 +46,24 @@ export const TopBar: React.FC<TopBarProps> = ({
       return () => mq.removeListener(apply);
     }
   }, []);
+
+  React.useEffect(() => {
+    const onAdd = () => {
+      setCartBump(true);
+      window.setTimeout(() => setCartBump(false), 300);
+    };
+    try {
+      window.addEventListener('cart:add', onAdd as any);
+      return () => window.removeEventListener('cart:add', onAdd as any);
+    } catch {
+      return;
+    }
+  }, []);
+
+  const badgeJustAppeared = cartCountRef.current === 0 && cartCount > 0;
+  React.useEffect(() => {
+    cartCountRef.current = cartCount;
+  }, [cartCount]);
 
   const handleLogoClick = () => {
     navigate('/home');
@@ -122,19 +142,21 @@ export const TopBar: React.FC<TopBarProps> = ({
     },
     cartBadge: {
       position: 'absolute' as const,
-      top: -6,
-      right: -6,
-      width: 18,
-      height: 18,
-      borderRadius: 999,
-      background: theme.colors.dark.primary,
-      color: theme.colors.dark.text,
-      fontSize: 11,
-      fontWeight: theme.typography.fontWeight.bold,
+      top: -4,
+      right: -4,
+      width: 16,
+      height: 16,
+      borderRadius: '50%',
+      background: '#c0193a',
+      color: '#fff',
+      fontSize: 9,
+      fontWeight: 800,
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       boxShadow: '0 6px 16px rgba(0,0,0,0.35)',
+      transformOrigin: 'center',
+      animation: badgeJustAppeared ? 'badgePop 220ms ease-out' : undefined,
     },
     rightSection: {
       display: 'flex',
@@ -194,12 +216,14 @@ export const TopBar: React.FC<TopBarProps> = ({
 
       <div style={styles.rightSection}>
         <div style={styles.cartButton}>
-          <IconButton
-            icon={<ShoppingCart size={18} />}
-            onClick={onCartClick}
-            variant="glass"
-            size="sm"
-          />
+          <div style={{ transform: cartBump ? 'scale(1.3)' : 'scale(1)', transition: 'transform 300ms ease', transformOrigin: 'center' }}>
+            <IconButton
+              icon={<ShoppingCart size={18} />}
+              onClick={onCartClick}
+              variant="glass"
+              size="sm"
+            />
+          </div>
           {cartCount > 0 ? <div style={styles.cartBadge}>{Math.min(99, cartCount)}</div> : null}
         </div>
         <IconButton

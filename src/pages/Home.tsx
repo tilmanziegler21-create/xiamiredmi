@@ -4,11 +4,12 @@ import WebApp from '@twa-dev/sdk';
 import { theme, GlassCard, ChipBadge, ProductCard, CarouselDots, SectionDivider, AddToCartModal, CherryMascot } from '../ui';
 import { useCartStore } from '../store/useCartStore';
 import { cartAPI, catalogAPI } from '../services/api';
-import { Search } from 'lucide-react';
+import { RefreshCw, Search } from 'lucide-react';
 import { useToastStore } from '../store/useToastStore';
 import { useCityStore } from '../store/useCityStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
 import { useConfigStore } from '../store/useConfigStore';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 
 interface Product {
   id: string;
@@ -108,6 +109,10 @@ const Home: React.FC = () => {
       navigate(`/product/${encodeURIComponent(target)}`);
       return;
     }
+    if (type === 'route' && target) {
+      navigate(target);
+      return;
+    }
     if (type === 'url' && target) {
       try {
         if (WebApp.openTelegramLink && target.startsWith('https://t.me/')) {
@@ -125,6 +130,11 @@ const Home: React.FC = () => {
     loadProducts();
     if (city) favorites.load(city);
   }, [city]);
+
+  const { pull, refreshing: ptrRefreshing, armed: ptrArmed } = usePullToRefresh(async () => {
+    await loadProducts();
+    if (city) await favorites.load(city);
+  }, true);
 
   const loadProducts = async () => {
     try {
@@ -292,22 +302,21 @@ const Home: React.FC = () => {
       cursor: 'pointer',
       touchAction: 'manipulation' as const,
     },
-    categoryTitle: {
+    categoryTitle: (title: string) => ({
       position: 'absolute' as const,
       left: 12,
       bottom: 12,
       maxWidth: '55%',
       fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
-      fontSize: 22,
+      fontSize: String(title || '').length > 9 ? 17 : 22,
       color: '#fff',
       textShadow: '0 2px 8px rgba(0,0,0,0.9)',
       letterSpacing: '0.08em',
       textTransform: 'uppercase' as const,
       lineHeight: 0.95,
-      whiteSpace: 'normal' as const,
-      wordBreak: 'break-word' as const,
+      whiteSpace: 'nowrap' as const,
       zIndex: 2,
-    },
+    }),
     categoryBadge: {
       position: 'absolute' as const,
       top: 10,
@@ -340,16 +349,23 @@ const Home: React.FC = () => {
       marginBottom: theme.spacing.xl,
     },
     skeleton: {
-      background: 'rgba(255,255,255,0.08)',
       borderRadius: theme.radius.lg,
       height: 280,
-      animation: 'pulse 1.5s ease-in-out infinite',
       border: '1px solid rgba(255,255,255,0.10)',
     },
   };
 
   return (
     <div style={styles.container}>
+      {pull > 0 || ptrRefreshing ? (
+        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 50, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ height: Math.max(22, pull), display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 999, background: 'rgba(0,0,0,0.28)', border: '1px solid rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <RefreshCw size={16} color="rgba(255,255,255,0.70)" style={{ transform: ptrRefreshing ? 'rotate(360deg)' : ptrArmed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 180ms ease' }} />
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div style={styles.searchSection}>
         <div
           style={styles.searchButton}
@@ -511,7 +527,7 @@ const Home: React.FC = () => {
                 {category.badgeText ? (
                   <div style={styles.categoryBadge}>{category.badgeText}</div>
                 ) : null}
-                <div style={styles.categoryTitle}>{category.name}</div>
+                <div style={styles.categoryTitle(category.name)}>{category.name}</div>
               </div>
             );
           })
@@ -554,7 +570,7 @@ const Home: React.FC = () => {
       {loading ? (
         <div style={styles.productGrid}>
           {[...Array(6)].map((_, i) => (
-            <div key={i} style={styles.skeleton} />
+            <div key={i} style={styles.skeleton} className="skeleton-shimmer" />
           ))}
         </div>
       ) : (

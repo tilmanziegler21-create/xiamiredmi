@@ -1,9 +1,8 @@
 import React from 'react';
 import WebApp from '@twa-dev/sdk';
 import { useNavigate } from 'react-router-dom';
-import { Package } from 'lucide-react';
 import { orderAPI } from '../services/api';
-import { GlassCard, SectionDivider, theme } from '../ui';
+import { CherryMascot, GlassCard, PrimaryButton, SectionDivider, theme } from '../ui';
 import { useToastStore } from '../store/useToastStore';
 import { formatCurrency } from '../lib/currency';
 import { useCityStore } from '../store/useCityStore';
@@ -189,14 +188,14 @@ const Orders: React.FC = () => {
           ))
         ) : (
           <GlassCard padding="lg" variant="elevated">
-            <div style={{ textAlign: 'center', padding: theme.spacing.xl, opacity: 0.75 }}>
-              <Package size={48} style={{ marginBottom: theme.spacing.md }} />
-              <div style={{ fontWeight: theme.typography.fontWeight.bold, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: 6 }}>
-                Здесь пока ничего нет
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.md, padding: theme.spacing.xl }}>
+              <CherryMascot variant="pink" size={140} />
+              <div style={{ fontWeight: 800, letterSpacing: '0.10em', textTransform: 'uppercase' as const, fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
+                Здесь пока пусто
               </div>
-              <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-                Оформите первый заказ в каталоге
-              </div>
+              <PrimaryButton fullWidth onClick={() => navigate('/catalog')} style={{ borderRadius: 12 }}>
+                В каталог
+              </PrimaryButton>
             </div>
           </GlassCard>
         )}

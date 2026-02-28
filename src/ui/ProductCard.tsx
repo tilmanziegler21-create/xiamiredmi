@@ -1,9 +1,11 @@
 import React from 'react';
 import { theme } from './theme';
 import { ChipBadge } from './ChipBadge';
-import { ShoppingCart, Heart } from 'lucide-react';
+import WebApp from '@twa-dev/sdk';
+import { Bell, ShoppingCart, Heart } from 'lucide-react';
 import { blurStyle } from './blur';
 import { CherryMascot } from './CherryMascot';
+import { useToastStore } from '../store/useToastStore';
 
 interface ProductCardProps {
   id: string;
@@ -52,6 +54,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   showTasteProfile = false,
   showTrustIndicators = false,
 }) => {
+  const toast = useToastStore();
   const assetUrl = (p: string) => {
     const base = String(import.meta.env.BASE_URL || '/');
     const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
@@ -205,6 +208,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       WebkitLineClamp: 2,
       WebkitBoxOrient: 'vertical' as const,
       overflow: 'hidden',
+      zIndex: 5,
     },
     pricePill: {
       position: 'absolute' as const,
@@ -348,15 +352,31 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           >
             <Heart size={13} color="rgba(255,255,255,0.55)" fill={isFavorite ? 'rgba(255,255,255,0.55)' : 'none'} />
           </button>
-          <button
-            style={{ ...styles.actionSquare, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToCart?.(id);
-            }}
-          >
-            <ShoppingCart size={13} color="rgba(255,255,255,0.55)" />
-          </button>
+          {stock === 0 ? (
+            <button
+              style={{ ...styles.actionSquare, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                try {
+                  WebApp?.HapticFeedback?.notificationOccurred?.('success');
+                } catch {
+                }
+                toast.push('Уведомим когда появится', 'success');
+              }}
+            >
+              <Bell size={13} color="rgba(255,255,255,0.55)" />
+            </button>
+          ) : (
+            <button
+              style={{ ...styles.actionSquare, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart?.(id);
+              }}
+            >
+              <ShoppingCart size={13} color="rgba(255,255,255,0.55)" />
+            </button>
+          )}
         </div>
         <div style={styles.titleWrap}>
           <h3 style={styles.title}>{name}</h3>

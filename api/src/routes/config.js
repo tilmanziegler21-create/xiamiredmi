@@ -95,12 +95,12 @@ router.get('/', (_req, res) => {
         linkTarget: 'Новинки',
       },
       {
-        title: 'ЖИДКОСТИ',
-        subtitle: 'Подборка вкусов • 24/7',
-        gradient: 'linear-gradient(135deg, rgba(255,45,85,0.78) 0%, rgba(15,12,26,0.82) 100%)',
-        imageUrl: '/assets/elfcherry/categories/category-liquids.jpg',
-        linkType: 'category',
-        linkTarget: 'Жидкости',
+        title: 'БОНУСЫ x4 ЗА ЗАКАЗ',
+        subtitle: 'Кэшбек за каждый заказ',
+        gradient: 'linear-gradient(135deg, rgba(192,25,58,0.78) 0%, rgba(15,12,26,0.88) 100%)',
+        imageUrl: '/assets/elfcherry/banners/banner-2.jpg',
+        linkType: 'route',
+        linkTarget: '/bonuses',
       },
       {
         title: 'ХИТЫ НЕДЕЛИ',

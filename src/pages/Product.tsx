@@ -5,7 +5,7 @@ import { Heart } from 'lucide-react';
 import { cartAPI, favoritesAPI, productAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { AddToCartModal, GlassCard, IconButton, ProductCard, SectionDivider, theme } from '../ui';
+import { AddToCartModal, CherryMascot, GlassCard, IconButton, ProductCard, SectionDivider, theme } from '../ui';
 import { useToastStore } from '../store/useToastStore';
 import { formatCurrency } from '../lib/currency';
 import { useCityStore } from '../store/useCityStore';
@@ -205,64 +205,83 @@ const Product: React.FC = () => {
   const posterToken = product.brand || product.name;
   const posterImage = getBrandImage(posterToken, product.image);
   const posterGradient = getBrandGradient(posterToken);
+  const volumeMatch = String(product.description || '').match(/(\d+\s?(?:мл|ml))/i);
+  const nicotineMatch = String(product.description || '').match(/(\d+\s?(?:мг|mg))/i);
+  const volume = volumeMatch ? volumeMatch[1] : '';
+  const nicotine = nicotineMatch ? nicotineMatch[1] : '';
+  const statusText = product.qtyAvailable === 0 ? 'нет в наличии' : product.qtyAvailable <= 5 ? `осталось ${product.qtyAvailable}` : 'в наличии';
 
   const styles = {
-    pageTitle: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      padding: `0 ${theme.padding.screen}`,
-      marginBottom: theme.spacing.md,
-    },
     poster: {
       position: 'relative' as const,
-      height: 220,
-      borderRadius: theme.radius.lg,
+      height: 300,
+      borderRadius: 16,
       border: '1px solid rgba(255,255,255,0.14)',
       background: posterGradient,
       boxShadow: theme.shadow.card,
       overflow: 'hidden',
       margin: `0 ${theme.padding.screen}`,
     },
-    posterImg: {
-      position: 'absolute' as const,
-      inset: 0,
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover' as const,
-      pointerEvents: 'none' as const,
-    },
     posterScrim: {
       position: 'absolute' as const,
       inset: 0,
-      background: 'linear-gradient(135deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.65) 100%)',
+      background: 'linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.06) 55%, rgba(0,0,0,0.84) 100%)',
       pointerEvents: 'none' as const,
     },
-    card: {
-      margin: theme.spacing.md,
+    posterMascot: {
+      position: 'absolute' as const,
+      left: '50%',
+      bottom: 18,
+      transform: 'translateX(-50%)',
+      opacity: 0.85,
+      pointerEvents: 'none' as const,
+      zIndex: 1,
     },
-    headerRow: {
-      display: 'flex',
-      justifyContent: 'space-between',
-      gap: theme.spacing.md,
-      alignItems: 'flex-start',
-      marginBottom: theme.spacing.md,
+    posterBottle: {
+      position: 'absolute' as const,
+      left: '50%',
+      bottom: 10,
+      transform: 'translateX(-50%)',
+      height: '80%',
+      width: '100%',
+      objectFit: 'contain' as const,
+      pointerEvents: 'none' as const,
+      zIndex: 2,
+      filter: 'drop-shadow(0 20px 34px rgba(0,0,0,0.55))',
+    },
+    card: {
+      margin: `${theme.spacing.md} ${theme.padding.screen}`,
     },
     title: {
-      fontSize: theme.typography.fontSize.lg,
-      fontWeight: theme.typography.fontWeight.bold,
+      fontSize: 28,
+      fontWeight: 800,
       textTransform: 'uppercase' as const,
-      letterSpacing: '0.04em',
-      lineHeight: 1.15,
+      letterSpacing: '0.12em',
+      lineHeight: 1.05,
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
     },
     pricePill: {
       background: 'rgba(255,255,255,0.92)',
       color: '#000',
-      borderRadius: 999,
-      padding: '6px 12px',
+      borderRadius: 12,
+      padding: '10px 14px',
       fontWeight: theme.typography.fontWeight.bold,
       boxShadow: '0 14px 30px rgba(0,0,0,0.35)',
       whiteSpace: 'nowrap' as const,
+      fontSize: 18,
+    },
+    status: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      borderRadius: 8,
+      padding: '6px 10px',
+      border: product.qtyAvailable === 0 ? '1px solid rgba(192,25,58,0.4)' : '1px solid rgba(255,255,255,0.12)',
+      background: product.qtyAvailable === 0 ? 'rgba(15,8,10,0.8)' : 'rgba(0,0,0,0.34)',
+      color: product.qtyAvailable === 0 ? '#c0193a' : 'rgba(255,255,255,0.86)',
+      fontSize: 10,
+      fontWeight: 800,
+      letterSpacing: '0.12em',
+      textTransform: 'uppercase' as const,
     },
     description: {
       fontSize: theme.typography.fontSize.sm,
@@ -270,97 +289,44 @@ const Product: React.FC = () => {
       lineHeight: '1.5',
       marginBottom: theme.spacing.md,
     },
-    tasteProfileSection: {
+    metaGrid: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr',
+      gap: theme.spacing.md,
       marginBottom: theme.spacing.md,
     },
-    trustSection: {
-      marginBottom: theme.spacing.md,
+    metaCard: {
+      borderRadius: 12,
+      border: '1px solid rgba(255,255,255,0.10)',
+      background: 'rgba(0,0,0,0.18)',
+      padding: theme.spacing.md,
     },
-    flavorRow: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: theme.spacing.sm,
-      borderRadius: 999,
-      border: '1px solid rgba(255,255,255,0.14)',
-      background: 'rgba(255,255,255,0.06)',
-      padding: '8px 12px',
-      marginBottom: theme.spacing.md,
-    },
-    flavorPill: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: theme.spacing.sm,
-      color: theme.colors.dark.text,
-      fontSize: theme.typography.fontSize.sm,
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap' as const,
-    },
-    selectedPill: {
-      borderRadius: 999,
-      padding: '6px 12px',
-      background: 'rgba(0,255,136,0.18)',
-      border: '1px solid rgba(0,255,136,0.25)',
-      fontSize: theme.typography.fontSize.sm,
-      fontWeight: theme.typography.fontWeight.semibold,
-    },
-    goldButton: {
-      width: '100%',
-      borderRadius: theme.radius.md,
-      border: 'none',
-      background: 'linear-gradient(180deg, rgba(255,214,10,0.90) 0%, rgba(245,158,11,0.92) 100%)',
-      color: '#1b1405',
-      fontWeight: theme.typography.fontWeight.bold,
-      letterSpacing: '0.10em',
+    metaLabel: {
+      fontSize: 11,
+      letterSpacing: '0.12em',
       textTransform: 'uppercase' as const,
-      padding: '14px 16px',
-      cursor: 'pointer',
-      boxShadow: '0 18px 40px rgba(0,0,0,0.35)',
-      marginBottom: theme.spacing.sm,
+      color: 'rgba(255,255,255,0.65)',
+      marginBottom: 6,
     },
-    disabledCta: {
-      width: '100%',
-      borderRadius: theme.radius.md,
-      border: '1px solid rgba(255,255,255,0.12)',
-      background: 'rgba(255,255,255,0.10)',
-      color: 'rgba(255,255,255,0.55)',
-      fontWeight: theme.typography.fontWeight.semibold,
-      padding: '14px 16px',
-      cursor: 'not-allowed',
-      textTransform: 'none' as const,
+    metaValue: {
+      fontSize: theme.typography.fontSize.base,
+      letterSpacing: '0.06em',
+      textTransform: 'uppercase' as const,
+      color: 'rgba(255,255,255,0.92)',
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
     },
-    flavorsWrap: {
-      display: 'flex',
-      flexWrap: 'wrap' as const,
+    ctaRow: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 52px',
       gap: theme.spacing.sm,
-      marginBottom: theme.spacing.md,
-    },
-    chip: (active: boolean) => ({
-      borderRadius: 999,
-      border: '1px solid rgba(255,255,255,0.14)',
-      background: active ? 'rgba(0,255,136,0.18)' : 'rgba(255,255,255,0.06)',
-      color: theme.colors.dark.text,
-      padding: '8px 12px',
-      cursor: 'pointer',
-      fontSize: theme.typography.fontSize.sm,
-      maxWidth: '100%',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap' as const,
-    }),
-    reviewsSection: {
       marginTop: theme.spacing.md,
-      paddingTop: theme.spacing.md,
-      borderTop: '1px solid rgba(255,255,255,0.1)',
     },
-    reviewItem: {
-      marginBottom: theme.spacing.sm,
-      padding: theme.spacing.sm,
-      background: 'rgba(255,255,255,0.03)',
-      borderRadius: theme.radius.sm,
-      fontSize: theme.typography.fontSize.sm,
-      color: theme.colors.dark.textSecondary,
+    favSquare: {
+      borderRadius: 12,
+      border: '1px solid rgba(255,255,255,0.12)',
+      background: 'rgba(255,255,255,0.06)',
+      width: 52,
+      height: 52,
     },
     similarProductsGrid: {
       padding: `0 ${theme.padding.screen}`,
@@ -372,46 +338,77 @@ const Product: React.FC = () => {
 
   return (
     <div style={{ paddingBottom: theme.spacing.xl }}>
-      <div style={styles.pageTitle}>
-        <div style={{ width: 40 }} />
-        <div style={{ opacity: 0.7, fontSize: theme.typography.fontSize.sm, letterSpacing: '0.14em', textTransform: 'uppercase' }}>Товар</div>
-        <IconButton icon={<Heart size={20} fill={product.favorite ? 'white' : 'none'} />} onClick={toggleFavorite} variant="glass" size="md" />
-      </div>
-
-      <SectionDivider title={product.name} />
-
       <div style={styles.poster}>
-        {posterImage ? <img src={posterImage} alt="" style={styles.posterImg} /> : null}
+        <div style={styles.posterMascot}>
+          <CherryMascot variant="pink" size={180} />
+        </div>
+        {posterImage ? <img src={posterImage} alt="" style={styles.posterBottle} /> : null}
         <div style={styles.posterScrim} />
       </div>
 
       <GlassCard padding="lg" variant="elevated" style={styles.card}>
-        <div style={styles.headerRow}>
-          <div style={{ flex: 1 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: theme.spacing.md, marginBottom: theme.spacing.md }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
             <div style={styles.title}>{product.name}</div>
-            <div style={{ color: theme.colors.dark.textSecondary, marginTop: theme.spacing.xs, fontSize: theme.typography.fontSize.sm }}>
-              {product.brand}
+            <div style={{ marginTop: theme.spacing.sm, display: 'flex', gap: theme.spacing.sm, alignItems: 'center', flexWrap: 'wrap' as const }}>
+              <div style={styles.status}>{statusText}</div>
+              <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+                {product.brand}
+              </div>
             </div>
           </div>
           <div style={styles.pricePill}>{formatCurrency(product.price)}</div>
         </div>
 
-        {/* Description */}
-        <div style={styles.description}>
-          {product.description}
+        <div style={styles.metaGrid}>
+          <div style={styles.metaCard}>
+            <div style={styles.metaLabel}>Объём</div>
+            <div style={styles.metaValue}>{volume || '—'}</div>
+          </div>
+          <div style={styles.metaCard}>
+            <div style={styles.metaLabel}>Никотин</div>
+            <div style={styles.metaValue}>{nicotine || '—'}</div>
+          </div>
+          <div style={styles.metaCard}>
+            <div style={styles.metaLabel}>Производитель</div>
+            <div style={styles.metaValue}>{product.brand || '—'}</div>
+          </div>
+          <div style={styles.metaCard}>
+            <div style={styles.metaLabel}>Категория</div>
+            <div style={styles.metaValue}>{product.category || '—'}</div>
+          </div>
         </div>
 
-        <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.md }}>
-          Будьте первым, кто оставит отзыв
+        <div style={styles.description}>{product.description}</div>
+
+        <div style={styles.ctaRow}>
+          <button
+            onClick={() => setAddOpen(true)}
+            style={{
+              width: '100%',
+              borderRadius: 12,
+              border: 'none',
+              background: 'var(--cherry)',
+              color: '#fff',
+              fontWeight: 800,
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              padding: '16px 16px',
+              cursor: product.qtyAvailable === 0 ? 'not-allowed' : 'pointer',
+              opacity: product.qtyAvailable === 0 ? 0.55 : 1,
+            }}
+            disabled={product.qtyAvailable === 0}
+          >
+            В корзину
+          </button>
+          <IconButton
+            icon={<Heart size={18} fill={product.favorite ? 'rgba(255,255,255,0.70)' : 'none'} color="rgba(255,255,255,0.70)" />}
+            onClick={toggleFavorite}
+            variant="glass"
+            size="md"
+            style={styles.favSquare}
+          />
         </div>
-
-        <button style={styles.goldButton} onClick={() => setAddOpen(true)}>
-          Добавить в корзину
-        </button>
-
-        <button style={styles.disabledCta} disabled>
-          В наличии: {product.qtyAvailable}
-        </button>
 
       </GlassCard>
 

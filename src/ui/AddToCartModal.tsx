@@ -3,8 +3,10 @@ import { X } from 'lucide-react';
 import { theme } from './theme';
 import { PrimaryButton } from './PrimaryButton';
 import { SecondaryButton } from './SecondaryButton';
+import WebApp from '@twa-dev/sdk';
 import { formatCurrency } from '../lib/currency';
 import { blurStyle } from './blur';
+import { CherryMascot } from './CherryMascot';
 
 export type AddToCartModalProduct = {
   id: string;
@@ -42,6 +44,14 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
     setBusy(true);
     try {
       await onConfirm({ quantity: qty, variant });
+      try {
+        WebApp?.HapticFeedback?.impactOccurred?.('medium');
+      } catch {
+      }
+      try {
+        window.dispatchEvent(new CustomEvent('cart:add'));
+      } catch {
+      }
       onClose();
     } finally {
       setBusy(false);
@@ -69,7 +79,7 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
           width: '100%',
           borderRadius: theme.radius.lg,
           border: '1px solid rgba(255,255,255,0.14)',
-          background: 'rgba(12, 10, 26, 0.82)',
+          background: 'radial-gradient(circle at 30% 20%, rgba(192,25,58,0.15) 0%, #0d0608 72%)',
           ...blurStyle(theme.blur.glass),
           boxShadow: theme.shadow.card,
           overflow: 'hidden',
@@ -91,10 +101,20 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
               height: 140,
               borderRadius: theme.radius.lg,
               border: '1px solid rgba(255,255,255,0.12)',
-              background: `linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 100%), url(${product.image || ''}) center/cover`,
+              background: product.image
+                ? `linear-gradient(135deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.72) 100%), url(${product.image || ''}) center/cover`
+                : 'linear-gradient(135deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.72) 100%)',
               marginBottom: theme.spacing.md,
+              position: 'relative',
+              overflow: 'hidden',
             }}
-          />
+          >
+            {!product.image ? (
+              <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CherryMascot variant="pink" size={120} />
+              </div>
+            ) : null}
+          </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: theme.spacing.md, alignItems: 'flex-start', marginBottom: theme.spacing.md }}>
             <div style={{ flex: 1, fontWeight: theme.typography.fontWeight.bold, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{product.name}</div>
@@ -149,10 +169,10 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
               <button
                 onClick={() => setQty((q) => Math.max(1, q - 1))}
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 999,
-                  background: theme.gradients.accent,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 10,
+                  background: 'var(--cherry)',
                   color: '#fff',
                   border: 'none',
                   cursor: 'pointer',
@@ -165,10 +185,10 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
               <button
                 onClick={() => setQty((q) => q + 1)}
                 style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 999,
-                  background: theme.gradients.accent,
+                  width: 44,
+                  height: 44,
+                  borderRadius: 10,
+                  background: 'var(--cherry)',
                   color: '#fff',
                   border: 'none',
                   cursor: 'pointer',
@@ -181,10 +201,10 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
           </div>
 
           <div style={{ display: 'grid', gap: theme.spacing.sm, gridTemplateColumns: '1fr 1fr' }}>
-            <SecondaryButton fullWidth onClick={onClose} disabled={busy}>
+            <SecondaryButton fullWidth onClick={onClose} disabled={busy} style={{ border: '1px solid rgba(255,255,255,0.15)', borderRadius: 12 }}>
               Отмена
             </SecondaryButton>
-            <PrimaryButton fullWidth onClick={confirm} disabled={!canConfirm || busy}>
+            <PrimaryButton fullWidth onClick={confirm} disabled={!canConfirm || busy} style={{ borderRadius: 12 }}>
               {busy ? 'Добавление…' : 'Добавить'}
             </PrimaryButton>
           </div>

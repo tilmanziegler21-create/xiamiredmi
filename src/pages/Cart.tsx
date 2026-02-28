@@ -5,12 +5,13 @@ import { Minus, Plus, Trash2, Truck, Store } from 'lucide-react';
 import { cartAPI, couriersAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
 import { useAnalytics } from '../hooks/useAnalytics';
-import { GlassCard, PrimaryButton, SecondaryButton, SectionDivider, theme } from '../ui';
+import { CherryMascot, GlassCard, PrimaryButton, SecondaryButton, SectionDivider, theme } from '../ui';
 import { useToastStore } from '../store/useToastStore';
 import { formatCurrency } from '../lib/currency';
 import { useCityStore } from '../store/useCityStore';
 import { useConfigStore } from '../store/useConfigStore';
 import { blurStyle } from '../ui/blur';
+import { useAuthStore } from '../store/useAuthStore';
 
 type Fulfillment = 'delivery' | 'pickup';
 
@@ -21,6 +22,7 @@ const Cart: React.FC = () => {
   const { trackRemoveFromCart, trackCheckout } = useAnalytics();
   const [loading, setLoading] = React.useState(true);
   const { city } = useCityStore();
+  const { user } = useAuthStore();
   const { config } = useConfigStore();
   const ultraLite = (() => {
     try {
@@ -154,9 +156,9 @@ const Cart: React.FC = () => {
       toast.push(fulfillment === 'pickup' ? 'Выберите точку самовывоза' : 'Выберите курьера и время', 'error');
       return;
     }
-    trackCheckout(cart.items, cart.total);
+    trackCheckout(cart.items, totalWithBonus);
     const today = new Date().toISOString().slice(0, 10);
-    navigate('/checkout', { state: { fulfillment, pickup, promoCode, courierId, deliveryTime, deliveryDate: today } });
+    navigate('/checkout', { state: { fulfillment, pickup, promoCode, courierId, deliveryTime, deliveryDate: today, useBonuses, bonusApplied } });
   };
 
   // Calculate pricing with quantity discounts
@@ -177,6 +179,10 @@ const Cart: React.FC = () => {
   };
 
   const pricing = calculatePricing();
+  const bonusBalance = Number(user?.bonusBalance || 0);
+  const [useBonuses, setUseBonuses] = React.useState(false);
+  const bonusApplied = useBonuses ? Math.min(bonusBalance, pricing.total) : 0;
+  const totalWithBonus = Math.max(0, pricing.total - bonusApplied);
 
   const handleDecrement = (item: { id: string; quantity: number }) => {
     if (item.quantity <= 1) {
@@ -403,10 +409,15 @@ const Cart: React.FC = () => {
     return (
       <div style={{ padding: theme.padding.screen }}>
         <GlassCard padding="lg" variant="elevated">
-          <div style={{ textAlign: 'center', color: theme.colors.dark.textSecondary, marginBottom: theme.spacing.md }}>Корзина пуста</div>
-          <PrimaryButton fullWidth onClick={() => navigate('/catalog')}>
-            Перейти в каталог
-          </PrimaryButton>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.md, padding: theme.spacing.xl }}>
+            <CherryMascot variant="pink" size={140} />
+            <div style={{ fontWeight: 800, letterSpacing: '0.10em', textTransform: 'uppercase', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
+              Здесь пока пусто
+            </div>
+            <PrimaryButton fullWidth onClick={() => navigate('/catalog')} style={{ borderRadius: 12 }}>
+              В каталог
+            </PrimaryButton>
+          </div>
         </GlassCard>
       </div>
     );
@@ -553,6 +564,30 @@ const Cart: React.FC = () => {
             <span style={{ fontSize: theme.typography.fontSize.sm, color: theme.colors.dark.textSecondary }}>Товары:</span>
             <span style={{ fontSize: theme.typography.fontSize.sm }}>{formatCurrency(pricing.subtotal)}</span>
           </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm }}>
+            <span style={{ fontSize: theme.typography.fontSize.sm, color: theme.colors.dark.textSecondary }}>МОИ БОНУСЫ:</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: theme.typography.fontSize.sm }}>{formatCurrency(bonusBalance)}</span>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: bonusBalance > 0 ? 'pointer' : 'not-allowed', opacity: bonusBalance > 0 ? 1 : 0.5 }}>
+                <input
+                  type="checkbox"
+                  checked={useBonuses}
+                  disabled={bonusBalance <= 0}
+                  onChange={(e) => setUseBonuses(Boolean(e.target.checked))}
+                  style={{ width: 16, height: 16 }}
+                />
+                <span style={{ fontSize: 11, letterSpacing: '0.12em', textTransform: 'uppercase' }}>Применить</span>
+              </label>
+            </div>
+          </div>
+
+          {bonusApplied > 0 ? (
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm }}>
+              <span style={{ fontSize: theme.typography.fontSize.sm, color: theme.colors.dark.textSecondary }}>Скидка:</span>
+              <span style={{ fontSize: theme.typography.fontSize.sm, color: 'rgba(255,255,255,0.86)' }}>-{formatCurrency(bonusApplied)}</span>
+            </div>
+          ) : null}
           
           <div style={{ 
             display: 'flex', 
@@ -564,7 +599,7 @@ const Cart: React.FC = () => {
           }}>
             <span style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold }}>Итого:</span>
             <span style={{ fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, color: theme.colors.dark.primary }}>
-              {formatCurrency(pricing.total)}
+              {formatCurrency(totalWithBonus)}
             </span>
           </div>
         </GlassCard>

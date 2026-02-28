@@ -1,9 +1,10 @@
 import React from 'react';
 import WebApp from '@twa-dev/sdk';
 import { Heart } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { cartAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
-import { AddToCartModal, GlassCard, ProductCard, SectionDivider, theme } from '../ui';
+import { AddToCartModal, CherryMascot, GlassCard, PrimaryButton, ProductCard, SectionDivider, theme } from '../ui';
 import { useToastStore } from '../store/useToastStore';
 import { useCityStore } from '../store/useCityStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
@@ -18,6 +19,7 @@ type FavItem = {
 };
 
 const Favorites: React.FC = () => {
+  const navigate = useNavigate();
   const toast = useToastStore();
   const { setCart } = useCartStore();
   const { city } = useCityStore();
@@ -123,14 +125,14 @@ const Favorites: React.FC = () => {
         ) : (
           <div style={{ gridColumn: '1 / -1' }}>
             <GlassCard padding="lg" variant="elevated">
-              <div style={{ textAlign: 'center', padding: theme.spacing.xl, opacity: 0.75 }}>
-                <Heart size={48} style={{ marginBottom: theme.spacing.md }} />
-                <div style={{ fontWeight: theme.typography.fontWeight.bold, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: 6 }}>
-                  Здесь пока ничего нет
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: theme.spacing.md, padding: theme.spacing.xl }}>
+                <CherryMascot variant="pink" size={140} />
+                <div style={{ fontWeight: 800, letterSpacing: '0.10em', textTransform: 'uppercase' as const, fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
+                  Здесь пока пусто
                 </div>
-                <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-                  Добавляйте товары в избранное, чтобы не потерять
-                </div>
+                <PrimaryButton fullWidth onClick={() => navigate('/catalog')} style={{ borderRadius: 12 }}>
+                  В каталог
+                </PrimaryButton>
               </div>
             </GlassCard>
           </div>

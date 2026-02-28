@@ -5,7 +5,7 @@ import { GlassCard } from './GlassCard';
 import { formatCurrency } from '../lib/currency';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { blurStyle } from './blur';
-import { ChevronRight, Gift, Grid, Heart, MapPin, Package, ShoppingCart, Star, Headphones } from 'lucide-react';
+import { ChevronRight, Gift, Grid, Heart, MapPin, Package, ShoppingCart, Star, Headphones, Truck, Shield, Users } from 'lucide-react';
 
 interface DrawerMenuProps {
   isOpen: boolean;
@@ -24,6 +24,7 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
   cartItemsCount = 0,
   city = null,
   onCityClick,
+  userStatus = null,
 }) => {
   const navigate = useNavigate();
   const { trackEvent } = useAnalytics();
@@ -50,12 +51,19 @@ export const DrawerMenu: React.FC<DrawerMenuProps> = ({
         { id: 'cart', title: 'Корзина', icon: <ShoppingCart size={18} />, right: cartItemsCount > 0 ? String(cartItemsCount) : '', onClick: () => go('cart', '/cart') },
         { id: 'favorites', title: 'Избранное', icon: <Heart size={18} />, right: '', onClick: () => go('favorites', '/favorites') },
         { id: 'orders', title: 'История', icon: <Package size={18} />, right: '', onClick: () => go('orders', '/orders') },
+        { id: 'referral', title: 'Рефералка', icon: <Users size={18} />, right: '', onClick: () => go('referral', '/referral') },
       ],
     },
     {
       title: 'ПРОЧЕЕ',
       items: [
         { id: 'support', title: 'Поддержка', icon: <Headphones size={18} />, right: '', onClick: () => go('support', '/support') },
+        ...(String(userStatus || '') === 'courier' || String(userStatus || '') === 'admin'
+          ? [{ id: 'courier', title: 'Курьер', icon: <Truck size={18} />, right: '', onClick: () => go('courier', '/courier') }]
+          : []),
+        ...(String(userStatus || '') === 'admin'
+          ? [{ id: 'admin', title: 'Админ', icon: <Shield size={18} />, right: '', onClick: () => go('admin', '/admin') }]
+          : []),
         { id: 'city', title: 'Город', icon: <MapPin size={18} />, right: city || 'не выбран', onClick: () => { onCityClick?.(); onClose(); } },
       ],
     },

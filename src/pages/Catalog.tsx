@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { RefreshCw, Search, SlidersHorizontal, X } from 'lucide-react';
 import WebApp from '@twa-dev/sdk';
 import { catalogAPI, cartAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
@@ -9,6 +9,7 @@ import { AddToCartModal, ProductCard, GlassCard, SecondaryButton, PrimaryButton,
 import { useToastStore } from '../store/useToastStore';
 import { useCityStore } from '../store/useCityStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
+import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { blurStyle } from '../ui/blur';
 
 interface Product {
@@ -126,7 +127,7 @@ const Catalog: React.FC = () => {
     return out;
   };
 
-  useEffect(() => {
+  const loadCatalog = React.useCallback(async () => {
     if (!city) {
       setLoading(false);
       setAllProducts([]);
@@ -136,32 +137,36 @@ const Catalog: React.FC = () => {
       return;
     }
     favorites.load(city);
-    (async () => {
+    try {
+      setLoading(true);
+      const response = await catalogAPI.getProducts({ city });
+      const list: Product[] = response.data.products || [];
+      setAllProducts(list);
+      setProducts(list);
+      setCategories(Array.from(new Set(list.map((p) => String(p.category || '')).filter(Boolean))).sort());
+      setBrands(Array.from(new Set(list.map((p) => String(p.brand || '')).filter(Boolean))).sort());
+    } catch (error) {
+      console.error('Failed to load catalog:', error);
       try {
-        setLoading(true);
-        const response = await catalogAPI.getProducts({ city });
-        const list: Product[] = response.data.products || [];
-        setAllProducts(list);
-        setProducts(applyFilters(list));
-        setCategories(Array.from(new Set(list.map((p) => String(p.category || '')).filter(Boolean))).sort());
-        setBrands(Array.from(new Set(list.map((p) => String(p.brand || '')).filter(Boolean))).sort());
-      } catch (error) {
-        console.error('Failed to load catalog:', error);
-        try {
-          const status = (error as any)?.response?.status;
-          const msg = String((error as any)?.response?.data?.error || '');
-          WebApp.showAlert(`Ошибка загрузки каталога${status ? ` (${status})` : ''}${msg ? `: ${msg}` : ''}`);
-        } catch {
-          toast.push('Ошибка загрузки каталога', 'error');
-        }
-        setAllProducts([]);
-        setProducts([]);
-        setCategories([]);
-        setBrands([]);
-      } finally {
-        setLoading(false);
+        const status = (error as any)?.response?.status;
+        const msg = String((error as any)?.response?.data?.error || '');
+        WebApp.showAlert(`Ошибка загрузки каталога${status ? ` (${status})` : ''}${msg ? `: ${msg}` : ''}`);
+      } catch {
+        toast.push('Ошибка загрузки каталога', 'error');
       }
-    })();
+      setAllProducts([]);
+      setProducts([]);
+      setCategories([]);
+      setBrands([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [city]);
+
+  const { pull, refreshing: ptrRefreshing, armed: ptrArmed } = usePullToRefresh(loadCatalog, true);
+
+  useEffect(() => {
+    loadCatalog();
   }, [city]);
 
   useEffect(() => {
@@ -344,6 +349,15 @@ const Catalog: React.FC = () => {
 
   return (
     <div style={styles.container}>
+      {pull > 0 || ptrRefreshing ? (
+        <div style={{ position: 'fixed', top: 64, left: 0, right: 0, zIndex: 50, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+          <div style={{ height: Math.max(22, pull), display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 999, background: 'rgba(0,0,0,0.28)', border: '1px solid rgba(255,255,255,0.10)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <RefreshCw size={16} color="rgba(255,255,255,0.70)" style={{ transform: ptrRefreshing ? 'rotate(360deg)' : ptrArmed ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 180ms ease' }} />
+            </div>
+          </div>
+        </div>
+      ) : null}
       <SectionDivider title="Все товары" />
 
       <div style={styles.searchRow}>
@@ -377,12 +391,11 @@ const Catalog: React.FC = () => {
           {[...Array(6)].map((_, i) => (
             <div
               key={i}
+              className="skeleton-shimmer"
               style={{
                 height: 280,
                 borderRadius: theme.radius.lg,
                 border: '1px solid rgba(255,255,255,0.10)',
-                background: 'rgba(255,255,255,0.08)',
-                animation: 'pulse 1.5s ease-in-out infinite',
               }}
             />
           ))}

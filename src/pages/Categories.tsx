@@ -7,12 +7,7 @@ const Categories: React.FC = () => {
   const navigate = useNavigate();
   const { config } = useConfigStore();
   const tiles = config?.categoryTiles || [];
-  const titleFontSize = (title: string) => {
-    const len = String(title || '').trim().length;
-    if (len <= 8) return 26;
-    if (len <= 10) return 22;
-    return 18;
-  };
+  const titleFontSize = (title: string) => (String(title || '').trim().length > 9 ? 17 : 22);
   const atmos: Record<string, { bg: string; mascot: any }> = {
     'Жидкости': { bg: 'radial-gradient(120% 90% at 20% 18%, rgba(52,211,153,0.35) 0%, rgba(0,0,0,0) 58%), radial-gradient(110% 90% at 78% 26%, rgba(16,185,129,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)', mascot: 'green' },
     'Одноразки': { bg: 'radial-gradient(120% 90% at 18% 18%, rgba(251,191,36,0.34) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(245,158,11,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)', mascot: 'gold' },
@@ -109,6 +104,7 @@ const Categories: React.FC = () => {
                 fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
                 zIndex: 2,
                 maxWidth: '60%',
+                whiteSpace: 'nowrap',
               }}
             >
               {t.title}
