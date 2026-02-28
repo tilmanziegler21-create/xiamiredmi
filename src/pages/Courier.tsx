@@ -43,8 +43,7 @@ const Courier: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<'today' | 'tomorrow' | 'day_after'>('today');
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [showCompleted, setShowCompleted] = useState(true);
-  const [cashoutFrom, setCashoutFrom] = useState('');
-  const [cashoutTo, setCashoutTo] = useState('');
+  const [cashoutResetAt, setCashoutResetAt] = useState('');
   const [cashoutBusy, setCashoutBusy] = useState(false);
   const [prefTimeFrom, setPrefTimeFrom] = useState('');
   const [prefTimeTo, setPrefTimeTo] = useState('');
@@ -69,11 +68,13 @@ const Courier: React.FC = () => {
         toast.push('Выберите город', 'error');
         setOrders([]);
         setPaidDates([]);
+        setCashoutResetAt('');
         return;
       }
       const resp = await courierAPI.orders(city);
       setOrders(resp.data.orders || []);
       setPaidDates(Array.isArray(resp.data?.paidDates) ? resp.data.paidDates : []);
+      setCashoutResetAt(String(resp.data?.cashoutResetAt || '').trim());
     } catch (error) {
       console.error('Failed to load courier orders:', error);
       toast.push('Ошибка загрузки заказов', 'error');
@@ -216,6 +217,38 @@ const Courier: React.FC = () => {
   const dayPayout = deliveredOrders.reduce((s, o) => s + Number(o.payoutAmount ?? (Math.round(Number(o.totalAmount || 0) * 0.2 * 100) / 100)), 0);
   const paidForDay = paidDates.includes(selectedDateKey);
   const dayCard = deliveredOrders.reduce((s, o) => s + (String(o.paymentMethod || '').trim().toLowerCase() === 'card' ? Number(o.totalAmount || 0) : 0), 0);
+
+  const cashoutWindowOrders = React.useMemo(() => {
+    const resetAt = String(cashoutResetAt || '').trim();
+    const resetTs = resetAt ? Date.parse(resetAt) : NaN;
+    const toTs = (o: CourierOrder) => {
+      const d = normDate(o.deliveryDate);
+      const t = String(o.deliveryTime || '').trim();
+      const iso = d ? `${d}T${t && /^\d{2}:\d{2}$/.test(t) ? `${t}:00` : '00:00:00'}Z` : '';
+      const ts = iso ? Date.parse(iso) : Date.parse(String(o.createdAt || ''));
+      return Number.isFinite(ts) ? ts : NaN;
+    };
+    const list = orders
+      .filter((o) => o.status === 'delivered')
+      .map((o) => ({ o, ts: toTs(o) }))
+      .filter((x) => Number.isFinite(x.ts));
+    const filtered = Number.isFinite(resetTs) ? list.filter((x) => x.ts >= resetTs) : list;
+    filtered.sort((a, b) => a.ts - b.ts);
+    return filtered.map((x) => x.o);
+  }, [orders, cashoutResetAt]);
+
+  const cashoutTotal = cashoutWindowOrders.reduce((s, o) => s + Number(o.totalAmount || 0), 0);
+  const cashoutCard = cashoutWindowOrders.reduce(
+    (s, o) => s + (String(o.paymentMethod || '').trim().toLowerCase() === 'card' ? Number(o.totalAmount || 0) : 0),
+    0
+  );
+  const cashoutCommission = cashoutWindowOrders.reduce(
+    (s, o) => s + Number(o.payoutAmount ?? (Math.round(Number(o.totalAmount || 0) * 0.2 * 100) / 100)),
+    0
+  );
+  const cashoutHanded = Math.max(0, Math.round((cashoutTotal - cashoutCommission) * 100) / 100);
+  const cashoutFromDate = cashoutWindowOrders.length ? normDate(cashoutWindowOrders[0].deliveryDate) : '';
+  const cashoutToDate = cashoutWindowOrders.length ? normDate(cashoutWindowOrders[cashoutWindowOrders.length - 1].deliveryDate) : '';
 
   const styles = {
     container: {
@@ -434,103 +467,91 @@ const Courier: React.FC = () => {
         <GlassCard padding="md" variant="elevated">
           <div style={{ display: 'flex', justifyContent: 'space-between', gap: theme.spacing.md, flexWrap: 'wrap' as const, marginBottom: theme.spacing.sm }}>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-              Касса: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayRevenue)}</span>
+              Касса: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(cashoutTotal)}</span>
             </div>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-              На карте: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayCard)}</span>
+              На карте: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(cashoutCard)}</span>
             </div>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-              Комиссия курьера: <span style={{ color: '#37d67a', fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(dayPayout)}</span>
+              Комиссия курьера: <span style={{ color: '#37d67a', fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(cashoutCommission)}</span>
             </div>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-              Выдано: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{deliveredOrders.length}</span>
+              Сдал кассу: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{formatCurrency(cashoutHanded)}</span>
             </div>
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-              Не выдано: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{cancelledOrders.length}</span>
+              Выдано: <span style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.bold }}>{cashoutWindowOrders.length}</span>
             </div>
           </div>
-          <PrimaryButton
-            fullWidth
-            size="sm"
-            disabled={paidForDay || !(dayPayout > 0)}
-            onClick={async () => {
-              const confirmed = await new Promise<boolean>((resolve) => {
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.sm }}>
+            <SecondaryButton
+              fullWidth
+              size="sm"
+              disabled={cashoutBusy}
+              onClick={async () => {
+                if (!city) return;
+                const confirmed = await new Promise<boolean>((resolve) => {
+                  try {
+                    WebApp.showConfirm('Обнулить кассу? После этого сдача будет считаться только по новым заказам.', (ok) => resolve(Boolean(ok)));
+                  } catch {
+                    resolve(window.confirm('Обнулить кассу? После этого сдача будет считаться только по новым заказам.'));
+                  }
+                });
+                if (!confirmed) return;
                 try {
-                  WebApp.showConfirm(`Выплатить комиссию ${formatCurrency(dayPayout)}?`, (ok) => resolve(Boolean(ok)));
+                  setCashoutBusy(true);
+                  const resp = await courierAPI.resetCashout({ city: String(city) });
+                  setCashoutResetAt(String(resp.data?.cashoutResetAt || '').trim());
+                  toast.push('Касса обнулена', 'success');
                 } catch {
-                  resolve(window.confirm(`Выплатить комиссию ${formatCurrency(dayPayout)}?`));
+                  toast.push('Не удалось обнулить кассу', 'error');
+                } finally {
+                  setCashoutBusy(false);
                 }
-              });
-              if (!confirmed) return;
-              try {
-                await courierAPI.requestPayout({ city: String(city), date: selectedDateKey, amount: dayPayout, revenue: dayRevenue, delivered: deliveredOrders.length });
-                toast.push('Запрос на выплату отправлен админу', 'success');
-                await loadOrders();
-              } catch {
-                toast.push('Не удалось отправить запрос', 'error');
-              }
-            }}
-          >
-            {paidForDay ? 'Комиссия выплачена' : 'Выплатить комиссию'}
-          </PrimaryButton>
-        </GlassCard>
-      </div>
-
-      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
-        <GlassCard padding="md" variant="elevated">
-          <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.sm }}>
-            Сдача кассы (период)
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.sm, marginBottom: theme.spacing.sm }}>
-            <input
-              type="date"
-              value={cashoutFrom}
-              onChange={(e) => setCashoutFrom(e.target.value)}
-              style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}
-            />
-            <input
-              type="date"
-              value={cashoutTo}
-              onChange={(e) => setCashoutTo(e.target.value)}
-              style={{ width: '100%', borderRadius: theme.radius.md, border: '1px solid rgba(255,255,255,0.14)', background: 'rgba(255,255,255,0.06)', color: theme.colors.dark.text, padding: '10px 12px' }}
-            />
-          </div>
-          <PrimaryButton
-            fullWidth
-            size="sm"
-            disabled={cashoutBusy || !cashoutFrom || !cashoutTo}
-            onClick={async () => {
-              if (!city) return;
-              const from = String(cashoutFrom || '').slice(0, 10);
-              const to = String(cashoutTo || '').slice(0, 10);
-              if (!from || !to) return;
-              const inRange = (d: string) => d && d >= from && d <= to;
-              const deliveredInRange = orders.filter((o) => o.status === 'delivered' && inRange(normDate(o.deliveryDate)));
-              const total = deliveredInRange.reduce((s, o) => s + Number(o.totalAmount || 0), 0);
-              const card = deliveredInRange.reduce((s, o) => s + (String(o.paymentMethod || '').trim().toLowerCase() === 'card' ? Number(o.totalAmount || 0) : 0), 0);
-              const commission = deliveredInRange.reduce((s, o) => s + Number(o.payoutAmount ?? (Math.round(Number(o.totalAmount || 0) * 0.2 * 100) / 100)), 0);
-              const handed = Math.max(0, Math.round((total - commission) * 100) / 100);
-              const confirmed = await new Promise<boolean>((resolve) => {
+              }}
+            >
+              Обнулить кассу
+            </SecondaryButton>
+            <PrimaryButton
+              fullWidth
+              size="sm"
+              disabled={cashoutBusy || !(cashoutCommission > 0) || !cashoutFromDate || !cashoutToDate}
+              onClick={async () => {
+                if (!city) return;
+                if (!cashoutWindowOrders.length) {
+                  toast.push('Нет выданных заказов для сдачи кассы', 'info');
+                  return;
+                }
+                const confirmed = await new Promise<boolean>((resolve) => {
+                  try {
+                    WebApp.showConfirm('Сдать кассу и комиссию за период?', (ok) => resolve(Boolean(ok)));
+                  } catch {
+                    resolve(window.confirm('Сдать кассу и комиссию за период?'));
+                  }
+                });
+                if (!confirmed) return;
                 try {
-                  WebApp.showConfirm(`Сдать кассу за период?`, (ok) => resolve(Boolean(ok)));
+                  setCashoutBusy(true);
+                  await courierAPI.requestCashout({
+                    city: String(city),
+                    dateFrom: cashoutFromDate,
+                    dateTo: cashoutToDate,
+                    total: cashoutTotal,
+                    card: cashoutCard,
+                    commission: cashoutCommission,
+                    handed: cashoutHanded,
+                  });
+                  toast.push('Сдача кассы отправлена админу', 'success');
+                  await loadOrders();
                 } catch {
-                  resolve(window.confirm('Сдать кассу за период?'));
+                  toast.push('Не удалось отправить сдачу кассы', 'error');
+                } finally {
+                  setCashoutBusy(false);
                 }
-              });
-              if (!confirmed) return;
-              try {
-                setCashoutBusy(true);
-                await courierAPI.requestCashout({ city: String(city), dateFrom: from, dateTo: to, total, card, commission, handed });
-                toast.push('Отчёт сдачи кассы отправлен админу', 'success');
-              } catch {
-                toast.push('Не удалось отправить отчёт', 'error');
-              } finally {
-                setCashoutBusy(false);
-              }
-            }}
-          >
-            {cashoutBusy ? 'Отправка…' : 'Сдать кассу'}
-          </PrimaryButton>
+              }}
+            >
+              {cashoutBusy ? 'Отправка…' : 'Сдать кассу'}
+            </PrimaryButton>
+          </div>
         </GlassCard>
       </div>
 

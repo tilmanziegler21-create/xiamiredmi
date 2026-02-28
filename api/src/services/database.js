@@ -18,6 +18,7 @@ class InMemoryDB {
     this.promos = new Map();
     this.courierPayouts = [];
     this.courierCashouts = [];
+    this.courierCashoutResets = [];
     this._persistTimer = null;
     this._persistInFlight = false;
     this._persistPending = false;
@@ -95,6 +96,9 @@ class InMemoryDB {
 
       const courierCashouts = Array.isArray(parsed.courierCashouts) ? parsed.courierCashouts : [];
       this.courierCashouts = courierCashouts;
+
+      const courierCashoutResets = Array.isArray(parsed.courierCashoutResets) ? parsed.courierCashoutResets : [];
+      this.courierCashoutResets = courierCashoutResets;
     } catch {
       // ignore
     }
@@ -129,6 +133,7 @@ class InMemoryDB {
       promos: Array.from(this.promos.values()),
       courierPayouts: this.courierPayouts,
       courierCashouts: this.courierCashouts,
+      courierCashoutResets: this.courierCashoutResets,
     };
   }
 

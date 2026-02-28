@@ -106,13 +106,45 @@ router.get('/orders', requireAuth, async (req, res) => {
       ),
     );
 
-    res.json({ orders, paidDates });
+    const resetRec = (Array.isArray(db.courierCashoutResets) ? db.courierCashoutResets : []).find(
+      (r) => String(r?.city || '') === city && String(r?.courier_id || '') === String(filterCourierId)
+    );
+    res.json({ orders, paidDates, cashoutResetAt: String(resetRec?.reset_at || '') });
   } catch (e) {
     const status = Number(e?.status) || 500;
     if (status === 503) {
       return res.status(503).json({ error: 'Sheets not configured', code: e.code, missing: e.missing || [] });
     }
     res.status(500).json({ error: 'Failed to fetch courier orders' });
+  }
+});
+
+router.post('/cashout/reset', requireAuth, async (req, res) => {
+  try {
+    const city = String(req.body?.city || req.query.city || '');
+    if (!city) return res.status(400).json({ error: 'City parameter is required' });
+
+    const status = String(req.user?.status || '');
+    if (status !== 'courier' && status !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden' });
+    }
+
+    const myCourierId = status === 'admin' ? String(req.body?.courierId || '').trim() : await resolveCourierIdForUser(city, req.user.tgId);
+    if (status !== 'admin' && !myCourierId) {
+      return res.status(403).json({ error: 'Courier profile not found. Contact admin.' });
+    }
+
+    const now = new Date().toISOString();
+    if (!Array.isArray(db.courierCashoutResets)) db.courierCashoutResets = [];
+    const idx = db.courierCashoutResets.findIndex((r) => String(r?.city || '') === city && String(r?.courier_id || '') === String(myCourierId));
+    const rec = { city, courier_id: myCourierId, reset_at: now, updated_at: now };
+    if (idx >= 0) db.courierCashoutResets[idx] = rec;
+    else db.courierCashoutResets.push(rec);
+    db.persistState();
+
+    res.json({ ok: true, cashoutResetAt: now });
+  } catch {
+    res.status(500).json({ error: 'Failed to reset cashout' });
   }
 });
 
@@ -226,6 +258,12 @@ router.post('/cashout', requireAuth, async (req, res) => {
     };
     if (!Array.isArray(db.courierCashouts)) db.courierCashouts = [];
     db.courierCashouts.push(record);
+    if (!Array.isArray(db.courierCashoutResets)) db.courierCashoutResets = [];
+    const now = new Date().toISOString();
+    const idx = db.courierCashoutResets.findIndex((r) => String(r?.city || '') === city && String(r?.courier_id || '') === String(myCourierId));
+    const rec = { city, courier_id: myCourierId, reset_at: now, updated_at: now };
+    if (idx >= 0) db.courierCashoutResets[idx] = rec;
+    else db.courierCashoutResets.push(rec);
     db.persistState();
 
     const admins = parseIdList(process.env.TELEGRAM_ADMIN_IDS);
