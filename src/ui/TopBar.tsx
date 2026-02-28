@@ -1,9 +1,10 @@
 import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { theme } from './theme';
 import { IconButton } from './IconButton';
-import { Menu, User, ShoppingCart, ArrowLeft, Settings, ShoppingBag } from 'lucide-react';
+import { Coins, Menu, User, ShoppingCart, ArrowLeft, Settings } from 'lucide-react';
 import { blurStyle } from './blur';
+import { CherryMascot } from './CherryMascot';
 
 interface TopBarProps {
   onMenuClick: () => void;
@@ -33,8 +34,6 @@ export const TopBar: React.FC<TopBarProps> = ({
   onProfileClick,
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [duckBroken, setDuckBroken] = React.useState(false);
   const [isNarrow, setIsNarrow] = React.useState(false);
 
   React.useEffect(() => {
@@ -100,13 +99,20 @@ export const TopBar: React.FC<TopBarProps> = ({
       minWidth: 0,
       maxWidth: isNarrow ? 140 : 220,
     },
+    logoRow: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 10,
+    },
     brand: {
-      fontSize: theme.typography.fontSize.lg,
+      fontSize: theme.typography.fontSize.xl,
       fontWeight: theme.typography.fontWeight.bold,
-      letterSpacing: '0.02em',
+      letterSpacing: '0.10em',
       whiteSpace: 'nowrap' as const,
       overflow: 'hidden' as const,
       textOverflow: 'ellipsis' as const,
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
     },
     brandSub: {
       fontSize: theme.typography.fontSize.xs,
@@ -140,6 +146,28 @@ export const TopBar: React.FC<TopBarProps> = ({
       gap: theme.spacing.sm,
       minWidth: 0,
     },
+    bonusPill: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      padding: '9px 12px',
+      borderRadius: 999,
+      background: 'rgba(255,255,255,0.08)',
+      border: '1px solid rgba(255,255,255,0.16)',
+      color: theme.colors.dark.text,
+      boxShadow: '0 14px 28px rgba(0,0,0,0.35), 0 0 22px rgba(255,45,85,0.16)',
+      cursor: 'pointer',
+      userSelect: 'none' as const,
+      touchAction: 'manipulation' as const,
+    },
+    bonusText: {
+      fontSize: theme.typography.fontSize.xs,
+      letterSpacing: '0.14em',
+      textTransform: 'uppercase' as const,
+      color: 'rgba(255,255,255,0.86)',
+      lineHeight: 1,
+      whiteSpace: 'nowrap' as const,
+    },
     avatar: {
       width: '40px',
       height: '40px',
@@ -151,23 +179,6 @@ export const TopBar: React.FC<TopBarProps> = ({
       justifyContent: 'center',
       color: theme.colors.dark.text,
       position: 'relative' as const,
-    },
-    duckAvatar: {
-      width: 32,
-      height: 32,
-      borderRadius: 999,
-      border: theme.border.glass,
-      overflow: 'hidden',
-      background: 'rgba(255,255,255,0.06)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      flex: '0 0 auto',
-    },
-    duckImg: {
-      width: '100%',
-      height: '100%',
-      objectFit: 'cover' as const,
     },
     cartButton: {
       position: 'relative' as const,
@@ -192,20 +203,6 @@ export const TopBar: React.FC<TopBarProps> = ({
             size="md"
           />
         )}
-        {!isNarrow ? (
-          <div style={styles.duckAvatar}>
-            {!duckBroken ? (
-              <img
-                src="/assets/elfcherry/ui/duck-avatar.png"
-                alt=""
-                style={styles.duckImg}
-                onError={() => setDuckBroken(true)}
-              />
-            ) : (
-              <ShoppingBag size={18} />
-            )}
-          </div>
-        ) : null}
       </div>
 
       <div style={styles.centerSection}>
@@ -222,13 +219,33 @@ export const TopBar: React.FC<TopBarProps> = ({
               }
             }}
           >
-            <div style={styles.brand}>ELFCHERRY</div>
-            <div style={styles.brandSub}>mini app 24/7</div>
+            <div style={styles.logoRow}>
+              <CherryMascot variant="classic" size={isNarrow ? 34 : 40} />
+              <div style={{ minWidth: 0 }}>
+                <div style={styles.brand}>ELFCHERRY</div>
+                <div style={styles.brandSub}>mini app 24/7</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       <div style={styles.rightSection}>
+        <div
+          style={styles.bonusPill}
+          role="button"
+          onClick={() => navigate('/bonuses')}
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              navigate('/bonuses');
+            }
+          }}
+        >
+          <Coins size={16} color="rgba(255,255,255,0.92)" />
+          <div style={styles.bonusText}>{`x${bonusMultiplier}`}</div>
+        </div>
         <div style={styles.cartButton}>
           <IconButton
             icon={<ShoppingCart size={18} />}

@@ -2,9 +2,10 @@ import React from 'react';
 import { theme } from './theme';
 import { IconButton } from './IconButton';
 import { ChipBadge } from './ChipBadge';
-import { ShoppingCart, Heart } from 'lucide-react';
+import { Coins, ShoppingCart, Heart } from 'lucide-react';
 import { formatCurrency } from '../lib/currency';
 import { blurStyle } from './blur';
+import { CherryMascot } from './CherryMascot';
 
 interface ProductCardProps {
   id: string;
@@ -120,13 +121,34 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const resolvedImage = getBrandImage(token, image);
   const resolvedGradient = getBrandGradient(token);
 
+  const hash01 = (s: string) => {
+    let h = 2166136261;
+    const str = String(s || '');
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return (h >>> 0) / 0xffffffff;
+  };
+
+  const h = hash01(`${id}:${token}`);
+  const variant = h < 0.25 ? 'green' : h < 0.5 ? 'gold' : h < 0.75 ? 'cosmic' : 'pink';
+  const atmos =
+    variant === 'green'
+      ? 'radial-gradient(120% 90% at 20% 18%, rgba(52,211,153,0.35) 0%, rgba(0,0,0,0) 58%), radial-gradient(100% 80% at 80% 22%, rgba(16,185,129,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.85) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)'
+      : variant === 'gold'
+      ? 'radial-gradient(120% 90% at 18% 18%, rgba(251,191,36,0.34) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(245,158,11,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.85) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)'
+      : variant === 'cosmic'
+      ? 'radial-gradient(120% 90% at 18% 18%, rgba(96,165,250,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(139,92,246,0.26) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.85) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)'
+      : 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(244,63,94,0.24) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.85) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)';
+
   const styles = {
     card: {
       position: 'relative' as const,
-      height: '220px',
+      height: '250px',
       borderRadius: theme.radius.lg,
       overflow: 'hidden',
-      background: resolvedGradient,
+      background: `${atmos}, ${resolvedGradient}`,
       boxShadow: theme.shadow.card,
     },
     bgImage: {
@@ -137,11 +159,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       objectFit: 'cover' as const,
       zIndex: 0,
       pointerEvents: 'none' as const,
+      opacity: 0.55,
+      filter: 'saturate(1.05) contrast(1.05)',
     },
     scrim: {
       position: 'absolute' as const,
       inset: 0,
-      background: 'linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0) 60%)',
+      background: 'linear-gradient(180deg, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.0) 38%, rgba(0,0,0,0.78) 100%)',
       zIndex: 1,
       pointerEvents: 'none' as const,
     },
@@ -151,50 +175,51 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       zIndex: 2,
       display: 'flex',
       flexDirection: 'column' as const,
-      justifyContent: 'flex-end',
+      justifyContent: 'space-between',
       padding: theme.spacing.md,
     },
-    header: {
+    topRow: {
       display: 'flex',
-      justifyContent: 'space-between',
       alignItems: 'flex-start',
-      marginBottom: theme.spacing.sm,
+      justifyContent: 'space-between',
+      gap: theme.spacing.sm,
+      minWidth: 0,
     },
     title: {
       color: theme.colors.dark.text,
-      fontSize: theme.typography.fontSize.sm,
+      fontSize: theme.typography.fontSize.base,
       fontWeight: theme.typography.fontWeight.bold,
       textTransform: 'uppercase' as const,
       lineHeight: '1.15',
       letterSpacing: '0.06em',
-      overflow: 'hidden' as const,
-      textOverflow: 'ellipsis' as const,
-      whiteSpace: 'nowrap' as const,
+      textShadow: '0 16px 30px rgba(0,0,0,0.55)',
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical' as const,
+      overflow: 'hidden',
     },
     pricePill: {
-      background: '#ffffff',
+      background: 'rgba(255,255,255,0.94)',
       color: '#0b0b0b',
-      padding: '4px 12px',
+      padding: '8px 12px',
       borderRadius: 999,
-      fontSize: theme.typography.fontSize.sm,
+      fontSize: theme.typography.fontSize.base,
       fontWeight: theme.typography.fontWeight.bold,
       display: 'flex',
       alignItems: 'center',
-      gap: '4px',
-    },
-    actions: {
-      display: 'flex',
-      gap: theme.spacing.sm,
+      gap: 8,
+      boxShadow: '0 18px 30px rgba(0,0,0,0.38)',
+      flex: '0 0 auto',
     },
     newBadge: {
       position: 'absolute' as const,
       top: theme.spacing.md,
-      right: theme.spacing.md,
+      left: theme.spacing.md,
     },
     stockBadge: {
       position: 'absolute' as const,
       top: theme.spacing.md,
-      left: theme.spacing.md,
+      right: theme.spacing.md,
       padding: '4px 10px',
       borderRadius: 999,
       fontSize: theme.typography.fontSize.xs,
@@ -217,21 +242,32 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     overlayActions: {
       position: 'absolute' as const,
       right: theme.spacing.md,
-      top: theme.spacing.md,
+      top: 64,
       display: 'flex',
       flexDirection: 'column' as const,
       gap: theme.spacing.sm,
     },
-    roundAction: {
-      background: 'rgba(255,255,255,0.15)',
-      border: '1px solid rgba(255,255,255,0.10)',
+    actionSquare: {
+      width: 42,
+      height: 42,
+      borderRadius: 14,
+      background: 'rgba(255,255,255,0.10)',
+      border: '1px solid rgba(255,255,255,0.18)',
       ...blurStyle(theme.blur.glass),
+      boxShadow: '0 16px 26px rgba(0,0,0,0.35)',
     },
-    bottomRow: {
+    mascotWrap: {
+      position: 'absolute' as const,
+      right: -10,
+      bottom: -18,
+      width: 160,
+      height: 160,
+      pointerEvents: 'none' as const,
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      gap: theme.spacing.sm,
+      alignItems: 'flex-end',
+      justifyContent: 'flex-end',
+      transform: `rotate(${Math.round((h - 0.5) * 6)}deg)`,
+      opacity: stock === 0 ? 0.55 : 1,
     },
   };
 
@@ -248,7 +284,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 2, borderRadius: 'inherit', pointerEvents: 'none' }} />
       ) : null}
       <div style={styles.content}>
-        {/* Stock Status Badge */}
         {stock !== undefined && (
           <div 
             style={{
@@ -262,7 +297,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           </div>
         )}
 
-        {/* New Badge */}
         {isNew && (
           <div style={styles.newBadge}>
             <ChipBadge variant="new" size="sm">NEW</ChipBadge>
@@ -278,7 +312,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }}
             variant="glass"
             size="sm"
-            style={styles.roundAction}
+            style={styles.actionSquare}
           />
           <IconButton
             icon={<ShoppingCart size={18} />}
@@ -288,15 +322,22 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }}
             variant="glass"
             size="sm"
-            style={styles.roundAction}
+            style={styles.actionSquare}
           />
         </div>
 
-        <div style={styles.bottomRow}>
+        <div style={styles.mascotWrap}>
+          <CherryMascot variant={variant as any} size={148} />
+        </div>
+
+        <div style={styles.topRow}>
+          <div style={{ minWidth: 0, flex: 1 }}>
+            <h3 style={styles.title}>{name}</h3>
+          </div>
           <div style={styles.pricePill}>
+            <Coins size={16} />
             <span>{formatCurrency(price)}</span>
           </div>
-          <h3 style={styles.title}>{name}</h3>
         </div>
       </div>
     </div>

@@ -18,3 +18,4 @@ export { CityPickerModal } from './CityPickerModal';
 export { TasteProfile } from './TasteProfile';
 export { TrustIndicators } from './TrustIndicators';
 export { MenuTileCard } from './MenuTileCard';
+export { CherryMascot } from './CherryMascot';

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
-import { theme, GlassCard, PrimaryButton, SecondaryButton, ChipBadge, ProductCard, CarouselDots, SectionDivider, AddToCartModal } from '../ui';
+import { theme, GlassCard, PrimaryButton, SecondaryButton, ChipBadge, ProductCard, CarouselDots, SectionDivider, AddToCartModal, CherryMascot } from '../ui';
 import { useCartStore } from '../store/useCartStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { cartAPI, catalogAPI } from '../services/api';
@@ -74,6 +74,27 @@ const Home: React.FC = () => {
     const merged = Array.from(new Set([...base, ...fromConfig]));
     return merged.slice(0, 10);
   }, [config?.categoryTiles]);
+
+  const categoryAtmos = useMemo(() => {
+    return {
+      'Жидкости': {
+        bg: 'radial-gradient(120% 90% at 20% 18%, rgba(52,211,153,0.35) 0%, rgba(0,0,0,0) 58%), radial-gradient(110% 90% at 78% 26%, rgba(16,185,129,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+        mascot: 'green' as const,
+      },
+      'Одноразки': {
+        bg: 'radial-gradient(120% 90% at 18% 18%, rgba(251,191,36,0.34) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(245,158,11,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+        mascot: 'gold' as const,
+      },
+      'Поды': {
+        bg: 'radial-gradient(120% 90% at 18% 18%, rgba(96,165,250,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(139,92,246,0.26) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+        mascot: 'cosmic' as const,
+      },
+      'Картриджи': {
+        bg: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(244,63,94,0.24) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+        mascot: 'pink' as const,
+      },
+    };
+  }, []);
 
   const qtyDiscount = config?.quantityDiscount;
   const qtyDiscountMin = Number(qtyDiscount?.minQty || 3);
@@ -358,12 +379,13 @@ const Home: React.FC = () => {
       left: theme.spacing.md,
       right: theme.spacing.md,
       bottom: theme.spacing.md,
-      fontSize: theme.typography.fontSize.lg,
+      fontSize: 30,
       fontWeight: theme.typography.fontWeight.bold,
       textTransform: 'uppercase' as const,
-      letterSpacing: '0.10em',
+      letterSpacing: '0.14em',
       textShadow: '0 10px 30px rgba(0,0,0,0.55)',
       zIndex: 2,
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
     },
     searchSection: {
       padding: `0 ${theme.padding.screen}`,
@@ -632,11 +654,16 @@ const Home: React.FC = () => {
           ))
         ) : (
           categories.map((category) => (
+            (() => {
+              const a = (categoryAtmos as any)[String(category.slug || category.name)] || (categoryAtmos as any)[String(category.name)];
+              const bg = a?.bg || 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)';
+              const mascot = a?.mascot || 'classic';
+              return (
             <div
               key={category.name}
               style={{
                 ...styles.categoryChip,
-                background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)',
+                background: bg,
               }}
               onClick={() => navigate(`/catalog?category=${encodeURIComponent(category.slug)}`)}
               role="button"
@@ -647,10 +674,13 @@ const Home: React.FC = () => {
                   alt=""
                   loading="lazy"
                   decoding="async"
-                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                  style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.26, filter: 'saturate(1.1) contrast(1.05)' }}
                 />
               ) : null}
-              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.16) 0%, rgba(0,0,0,0.82) 100%)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', right: -34, bottom: -30, width: 210, height: 210, pointerEvents: 'none', zIndex: 1 }}>
+                <CherryMascot variant={mascot} size={190} />
+              </div>
               {category.badgeText ? (
                 <div style={{ position: 'absolute', top: theme.spacing.md, right: theme.spacing.md }}>
                   <ChipBadge variant="new" size="sm">{category.badgeText}</ChipBadge>
@@ -658,6 +688,8 @@ const Home: React.FC = () => {
               ) : null}
               <div style={styles.categoryChipTitle}>{category.name}</div>
             </div>
+              );
+            })()
           ))
         )}
       </div>

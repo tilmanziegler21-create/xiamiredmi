@@ -1,7 +1,7 @@
 import React from 'react';
 import { theme } from './theme';
-import { PrimaryButton } from './PrimaryButton';
 import { MenuTile } from '../config/menuTiles';
+import { CherryMascot } from './CherryMascot';
 
 interface MenuTileCardProps {
   tile: MenuTile;
@@ -14,17 +14,38 @@ export const MenuTileCard: React.FC<MenuTileCardProps> = ({
   onClick, 
   badgeText 
 }) => {
+  const skinById: Record<string, any> = {
+    catalog: 'green',
+    promotions: 'gold',
+    bonuses: 'pink',
+    cart: 'classic',
+    favorites: 'pink',
+    orders: 'cosmic',
+    referral: 'gold',
+    support: 'classic',
+    admin: 'cosmic',
+    courier: 'green',
+  };
+  const bgById: Record<string, string> = {
+    catalog: 'radial-gradient(120% 90% at 20% 18%, rgba(52,211,153,0.35) 0%, rgba(0,0,0,0) 58%), radial-gradient(110% 90% at 78% 26%, rgba(16,185,129,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+    promotions: 'radial-gradient(120% 90% at 18% 18%, rgba(251,191,36,0.34) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(245,158,11,0.22) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+    bonuses: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(244,63,94,0.24) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+    orders: 'radial-gradient(120% 90% at 18% 18%, rgba(96,165,250,0.28) 0%, rgba(0,0,0,0) 58%), radial-gradient(120% 90% at 78% 28%, rgba(139,92,246,0.26) 0%, rgba(0,0,0,0) 62%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+  };
+  const skin = skinById[String(tile.id || '')] || 'classic';
+  const atmos = bgById[String(tile.id || '')] || 'linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)';
+
   const styles = {
     card: {
       position: 'relative' as const,
-      height: '104px', // 96-110px as specified
-      borderRadius: '20px', // 18-22px as specified
+      height: '112px',
+      borderRadius: '22px',
       overflow: 'hidden',
       boxShadow: theme.shadow.card,
-      border: '1px solid rgba(255,255,255,0.08)', // glass border
+      border: '1px solid rgba(255,255,255,0.10)',
       cursor: 'pointer',
       transition: 'all 0.2s ease',
-      background: 'transparent',
+      background: atmos,
     },
     imageContainer: {
       position: 'absolute' as const,
@@ -42,7 +63,16 @@ export const MenuTileCard: React.FC<MenuTileCardProps> = ({
       position: 'absolute' as const,
       inset: 0,
       zIndex: 2,
-      background: 'linear-gradient(135deg, rgba(0,0,0,0.16) 0%, rgba(0,0,0,0.55) 100%)',
+      background: 'linear-gradient(135deg, rgba(0,0,0,0.14) 0%, rgba(0,0,0,0.72) 100%)',
+    },
+    mascot: {
+      position: 'absolute' as const,
+      right: -26,
+      bottom: -30,
+      width: 170,
+      height: 170,
+      zIndex: 2,
+      pointerEvents: 'none' as const,
     },
     content: {
       position: 'relative' as const,
@@ -59,21 +89,23 @@ export const MenuTileCard: React.FC<MenuTileCardProps> = ({
       alignItems: 'flex-start',
     },
     title: {
-      fontSize: theme.typography.fontSize.base,
+      fontSize: 24,
       fontWeight: theme.typography.fontWeight.bold,
       textTransform: 'uppercase' as const,
-      letterSpacing: '0.08em',
+      letterSpacing: '0.14em',
       color: theme.colors.dark.text,
       textShadow: '0 10px 26px rgba(0,0,0,0.55)',
-      lineHeight: '1.2',
+      lineHeight: '1.0',
       maxWidth: '70%',
+      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
     },
     subtitle: {
       fontSize: theme.typography.fontSize.xs,
       color: theme.colors.dark.textSecondary,
       textShadow: '0 8px 18px rgba(0,0,0,0.55)',
-      letterSpacing: '0.04em',
+      letterSpacing: '0.10em',
       marginTop: '2px',
+      textTransform: 'uppercase' as const,
     },
     footer: {
       display: 'flex',
@@ -124,19 +156,19 @@ export const MenuTileCard: React.FC<MenuTileCardProps> = ({
         }
       }}
     >
-      {/* Background Image */}
       <div style={styles.imageContainer}>
         <img 
           src={tile.image} 
           alt={tile.title}
-          style={styles.image}
+          style={{ ...styles.image, opacity: 0.22, filter: 'saturate(1.1) contrast(1.05)' }}
         />
       </div>
 
-      {/* Overlay */}
       <div style={styles.overlay} />
+      <div style={styles.mascot}>
+        <CherryMascot variant={skin} size={160} />
+      </div>
 
-      {/* Content */}
       <div style={styles.content}>
         <div style={styles.header}>
           <div>
@@ -160,7 +192,6 @@ export const MenuTileCard: React.FC<MenuTileCardProps> = ({
         </div>
       </div>
 
-      {/* Badge */}
       {badgeText && (
         <div style={styles.badge}>{badgeText}</div>
       )}
