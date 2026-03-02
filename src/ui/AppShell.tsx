@@ -12,6 +12,7 @@ import { CityPickerModal } from './CityPickerModal';
 import { useToastStore } from '../store/useToastStore';
 import { cartAPI, referralAPI } from '../services/api';
 import { theme } from './theme';
+import WebApp from '@twa-dev/sdk';
 
 type Props = {
   children: React.ReactNode;
@@ -78,14 +79,30 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
       try {
         if (!user?.tgId) return;
         const params = new URLSearchParams(location.search || '');
-        const ref = String(params.get('ref') || '').trim();
+        let ref = String(params.get('ref') || '').trim();
+        if (!ref) {
+          try {
+            const startParam = String((WebApp as any)?.initDataUnsafe?.start_param || '').trim();
+            if (startParam.startsWith('ref_')) {
+              ref = startParam.slice('ref_'.length);
+              try {
+                ref = decodeURIComponent(ref);
+              } catch {
+              }
+              ref = String(ref || '').trim();
+            }
+          } catch {
+          }
+        }
         if (!ref) return;
         const key = `ref_claimed:${user.tgId}:${ref}`;
         if (localStorage.getItem(key)) return;
         await referralAPI.claim(ref);
         localStorage.setItem(key, '1');
-        params.delete('ref');
-        navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true });
+        if (params.get('ref')) {
+          params.delete('ref');
+          navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true });
+        }
       } catch {
       }
     })();

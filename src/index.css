@@ -164,8 +164,9 @@ body {
   width: 100%;
   height: 100%;
   overflow-y: auto;
-  overscroll-behavior-y: contain;
+  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
+  background: var(--app-bg);
 }
 
 html.tg-webview .bg-app {
@@ -181,9 +182,10 @@ html.tg-webview body {
   --blur-glass: 0px;
   --shadow-card: none;
   --shadow-glow: none;
-  overscroll-behavior-y: auto;
+  overscroll-behavior-y: none;
   -webkit-overflow-scrolling: touch;
   overflow-y: auto;
+  background: var(--app-bg);
 }
 
 html.tg-webview * {

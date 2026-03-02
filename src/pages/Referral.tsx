@@ -10,6 +10,7 @@ const Referral: React.FC = () => {
   const toast = useToastStore();
   const [loading, setLoading] = React.useState(true);
   const [showHow, setShowHow] = React.useState(false);
+  const [invitedList, setInvitedList] = React.useState<Array<{ tgId: string; username: string; firstName: string; claimedAt: string; bought: boolean; firstPurchaseAt: string }>>([]);
   const [info, setInfo] = React.useState<{
     referralCode: string;
     stage: 'partner' | 'ambassador';
@@ -24,10 +25,12 @@ const Referral: React.FC = () => {
     (async () => {
       try {
         setLoading(true);
-        const resp = await referralAPI.info();
+        const [resp, inv] = await Promise.all([referralAPI.info(), referralAPI.invited()]);
         setInfo(resp.data || null);
+        setInvitedList(Array.isArray(inv.data?.invited) ? inv.data.invited : []);
       } catch {
         setInfo(null);
+        setInvitedList([]);
       } finally {
         setLoading(false);
       }
@@ -223,6 +226,43 @@ const Referral: React.FC = () => {
           </GlassCard>
         </div>
       ) : null}
+
+      <div style={{ marginTop: theme.spacing.xl }}>
+        <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, letterSpacing: '0.12em', textTransform: 'uppercase' as const, fontSize: 22, marginBottom: theme.spacing.md }}>
+          Твои приглашённые
+        </div>
+        {loading ? (
+          <div style={{ color: theme.colors.dark.textSecondary }}>Загрузка…</div>
+        ) : invitedList.length ? (
+          <div style={{ display: 'grid', gap: theme.spacing.sm }}>
+            {invitedList.map((u) => {
+              const title = String(u.firstName || u.username || u.tgId);
+              const statusText = u.bought ? 'Купил' : 'Не купил';
+              const statusColor = u.bought ? 'rgba(55,214,122,0.95)' : 'rgba(255,255,255,0.65)';
+              const meta = u.bought && u.firstPurchaseAt ? `первый заказ: ${new Date(u.firstPurchaseAt).toLocaleDateString()}` : (u.claimedAt ? `перешёл: ${new Date(u.claimedAt).toLocaleDateString()}` : '');
+              return (
+                <div key={u.tgId} style={{ borderRadius: 14, border: '1px solid rgba(255,255,255,0.10)', background: 'rgba(255,255,255,0.05)', padding: theme.spacing.md, display: 'flex', justifyContent: 'space-between', gap: theme.spacing.md, alignItems: 'center' }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {title}
+                    </div>
+                    {meta ? (
+                      <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary, marginTop: 4 }}>
+                        {meta}
+                      </div>
+                    ) : null}
+                  </div>
+                  <div style={{ whiteSpace: 'nowrap', fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.bold, color: statusColor }}>
+                    {statusText}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div style={{ color: theme.colors.dark.textSecondary }}>Пока нет приглашённых</div>
+        )}
+      </div>
     </div>
   );
 };

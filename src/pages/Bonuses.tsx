@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { theme, GlassCard, SectionDivider, PrimaryButton, SecondaryButton } from '../ui';
 import { useAuthStore } from '../store/useAuthStore';
 import { useToastStore } from '../store/useToastStore';
-import { Gift, Users, Crown, Star } from 'lucide-react';
-import { bonusesAPI, referralAPI } from '../services/api';
+import { Gift, Crown, Star } from 'lucide-react';
+import { bonusesAPI } from '../services/api';
 
 interface BonusTransaction {
   id: string;
@@ -26,12 +26,6 @@ const Bonuses: React.FC = () => {
   const { user, token, setUser } = useAuthStore();
   const [transactions, setTransactions] = useState<BonusTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [referralCode, setReferralCode] = useState('');
-  const [referralLink, setReferralLink] = useState('');
-  const [referralStage, setReferralStage] = useState<'partner' | 'ambassador'>('partner');
-  const [referralPercent, setReferralPercent] = useState(0);
-  const [referralInvited, setReferralInvited] = useState(0);
-  const [referralRemaining, setReferralRemaining] = useState(0);
   const [cherryTier, setCherryTier] = useState<CherryTier | null>(null);
   const [cherryNext, setCherryNext] = useState<CherryNext>(null);
   const [cherryProgress, setCherryProgress] = useState<CherryProgress | null>(null);
@@ -57,7 +51,7 @@ const Bonuses: React.FC = () => {
   const loadBonusData = async () => {
     try {
       setLoading(true);
-      const [bal, hist, ref] = await Promise.all([bonusesAPI.balance(), bonusesAPI.history(), referralAPI.info()]);
+      const [bal, hist] = await Promise.all([bonusesAPI.balance(), bonusesAPI.history()]);
       const balance = Number(bal.data?.balance || 0);
       const cherries = Number(bal.data?.cherries ?? user?.cherries ?? 0);
       const tier = (bal.data?.cherryTier || null) as CherryTier | null;
@@ -89,64 +83,10 @@ const Bonuses: React.FC = () => {
         };
       });
       setTransactions(mapped);
-
-      const code = String(ref.data?.referralCode || user?.tgId || '');
-      setReferralCode(code);
-      setReferralStage(String(ref.data?.stage || 'partner') === 'ambassador' ? 'ambassador' : 'partner');
-      setReferralPercent(Math.max(0, Number(ref.data?.percent || 0)));
-      setReferralInvited(Math.max(0, Number(ref.data?.invited || 0)));
-      setReferralRemaining(Math.max(0, Number(ref.data?.remainingToUnlock || 0)));
-      const botUsername = String(import.meta.env.VITE_BOT_USERNAME || '').trim();
-      setReferralLink(
-        botUsername
-          ? `https://t.me/${botUsername}?startapp=ref_${encodeURIComponent(code)}`
-          : '',
-      );
     } catch (error) {
       toast.push('Ошибка загрузки данных', 'error');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const copyReferralCode = async () => {
-    try {
-      await navigator.clipboard.writeText(referralCode);
-      toast.push('Реферальный код скопирован', 'success');
-    } catch {
-      toast.push('Ошибка копирования', 'error');
-    }
-  };
-
-  const copyReferralLink = async () => {
-    try {
-      if (!referralLink) {
-        toast.push('Ссылка недоступна', 'info');
-        return;
-      }
-      await navigator.clipboard.writeText(referralLink);
-      toast.push('Реферальная ссылка скопирована', 'success');
-    } catch {
-      toast.push('Ошибка копирования', 'error');
-    }
-  };
-
-  const shareReferral = () => {
-    if (!referralLink) {
-      toast.push('Укажите VITE_BOT_USERNAME, чтобы появилась ссылка', 'info');
-      return;
-    }
-    const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent('Присоединяйся!')}`;
-    try {
-      if ((WebApp as any)?.openTelegramLink) {
-        (WebApp as any).openTelegramLink(shareUrl);
-        return;
-      }
-    } catch {
-    }
-    try {
-      window.open(shareUrl, '_blank', 'noopener,noreferrer');
-    } catch {
     }
   };
 
@@ -412,7 +352,7 @@ const Bonuses: React.FC = () => {
         <PrimaryButton
           fullWidth
           onClick={() => {
-            shareReferral();
+            navigate('/referral');
           }}
         >
           Пригласить друга 🍒
@@ -460,21 +400,6 @@ const Bonuses: React.FC = () => {
                 </div>
                 <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary, marginTop: 6, lineHeight: 1.3 }}>
                   Пример: 1 🍒 → 2€ скидки • 5 🍒 → 20% • 7 🍒 → бесплатная жидкость.
-                </div>
-              </div>
-            </GlassCard>
-            <GlassCard padding="md" variant="elevated">
-              <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
-                <Users size={20} color="#4caf50" />
-                <div style={{ minWidth: 0 }}>
-                  <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
-                    Приглашай друзей
-                  </div>
-                  <div style={{ fontSize: theme.typography.fontSize.xs, color: theme.colors.dark.textSecondary }}>
-                    {referralStage === 'partner'
-                      ? `30% ревшэйр, вывод после ${Math.max(0, referralRemaining)} приглашённых`
-                      : `${referralPercent}% ревшэйр • приглашено ${referralInvited}`}
-                  </div>
                 </div>
               </div>
             </GlassCard>

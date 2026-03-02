@@ -257,6 +257,7 @@ export const bonusesAPI = {
 export const referralAPI = {
   info: () => api.get('/referral/info'),
   claim: (ref: string) => api.post('/referral/claim', { ref }),
+  invited: () => api.get('/referral/invited'),
 };
 
 export const fortuneAPI = {
