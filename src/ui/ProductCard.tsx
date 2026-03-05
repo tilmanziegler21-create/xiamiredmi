@@ -107,7 +107,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
     const k = brandKey(brand);
 
-    if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.png');
+    if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg');
     if (k.compact.includes('elfic')) return assetUrl('/images/brands/elfic_liquid.png');
     if (k.compact.includes('elflic')) return assetUrl('/images/brands/elfic_liquid.png');
     if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
