@@ -107,9 +107,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
     const k = brandKey(brand);
 
-    if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg');
+    if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
     if (k.compact.includes('elfic')) return assetUrl('/images/brands/elfic_liquid.png');
-    if (k.compact.includes('elflic')) return assetUrl('/images/brands/elflic/elflic_liquid.jpg');
+    if (k.compact.includes('elflic')) return assetUrl('/images/brands/elflic/elflic_liquid.jpg?v=20260306');
     if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
     if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
     if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
@@ -296,10 +296,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     },
     bottle: {
       position: 'absolute' as const,
-      left: '50%',
-      bottom: 36,
-      transform: 'translateX(-50%)',
-      height: '60%',
+      inset: 0,
+      padding: '12px 10px 68px',
+      height: '100%',
       width: '100%',
       objectFit: 'contain' as const,
       pointerEvents: 'none' as const,
