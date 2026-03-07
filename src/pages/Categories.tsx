@@ -47,6 +47,41 @@ const Categories: React.FC = () => {
         Категории
       </div>
 
+      <GlassCard
+        padding="md"
+        variant="elevated"
+        style={{
+          height: 80,
+          borderRadius: theme.radius.lg,
+          overflow: 'hidden',
+          cursor: 'pointer',
+          position: 'relative',
+          marginBottom: theme.spacing.md,
+          background: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)',
+        }}
+        onClick={() => navigate('/catalog?category=наборы')}
+      >
+        <div
+          style={{
+            position: 'absolute',
+            left: theme.spacing.md,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            fontSize: 28,
+            fontWeight: theme.typography.fontWeight.bold,
+            letterSpacing: '0.08em',
+            textTransform: 'uppercase',
+            fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
+            zIndex: 2,
+          }}
+        >
+          НАБОРЫ
+        </div>
+        <div style={{ position: 'absolute', right: -28, bottom: -36, zIndex: 1 }}>
+          <CherryMascot variant="pink" size={136} />
+        </div>
+      </GlassCard>
+
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.md }}>
         {!all.length ? (
           [...Array(4)].map((_, i) => (

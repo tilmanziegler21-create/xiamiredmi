@@ -13,6 +13,8 @@ export type AddToCartModalProduct = {
   name: string;
   price: number;
   image?: string;
+  brand?: string;
+  category?: string;
   variants?: string[];
 };
 
@@ -28,6 +30,31 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
   const [variant, setVariant] = React.useState<string | undefined>(undefined);
   const [busy, setBusy] = React.useState(false);
   const variants = product?.variants || [];
+  const assetUrl = (p: string) => {
+    const base = String(import.meta.env.BASE_URL || '/');
+    const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
+    const path = p.startsWith('/') ? p : `/${p}`;
+    return `${prefix}${path}`;
+  };
+  const fallbackBrandImage = () => {
+    const raw = String(product?.image || '').trim();
+    if (raw) return raw;
+    const cleaned = String(product?.brand || product?.name || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/[^a-z0-9 ]/g, '');
+    const compact = cleaned.replace(/\s+/g, '');
+    if (compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
+    if (compact.includes('elfic')) return assetUrl('/images/brands/elfic_liquid.png');
+    if (compact.includes('elflic')) return assetUrl('/images/brands/elflic/elflic_liquid_20260306.jpg');
+    if (compact.includes('elfbar') || cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
+    if (compact.includes('geekvape') || cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
+    if (compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
+    return '';
+  };
+  const previewImage = fallbackBrandImage();
 
   React.useEffect(() => {
     if (!open) return;
@@ -98,18 +125,18 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
         <div style={{ padding: `0 ${theme.spacing.lg} ${theme.spacing.lg}` }}>
           <div
             style={{
-              height: 140,
+              height: 180,
               borderRadius: theme.radius.lg,
               border: '1px solid rgba(255,255,255,0.12)',
-              background: product.image
-                ? `linear-gradient(135deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.72) 100%), url(${product.image || ''}) center/cover`
+              background: previewImage
+                ? `linear-gradient(135deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.72) 100%), url(${previewImage}) center/contain no-repeat`
                 : 'linear-gradient(135deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.72) 100%)',
               marginBottom: theme.spacing.md,
               position: 'relative',
               overflow: 'hidden',
             }}
           >
-            {!product.image ? (
+            {!previewImage ? (
               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <CherryMascot variant="pink" size={120} />
               </div>

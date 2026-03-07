@@ -252,6 +252,7 @@ export const bonusesAPI = {
   balance: () => api.get('/bonuses/balance'),
   history: () => api.get('/bonuses/history'),
   apply: (amount: number, total?: number) => api.post('/bonuses/apply', { amount, total }),
+  redeem: (level: number) => api.post('/bonuses/redeem', { level }),
 };
 
 export const referralAPI = {

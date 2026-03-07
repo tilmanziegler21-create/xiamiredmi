@@ -219,6 +219,15 @@ const Product: React.FC = () => {
   const nicotineMatch = String(product.description || '').match(/(\d+\s?(?:мг|mg))/i);
   const volume = volumeMatch ? volumeMatch[1] : '';
   const nicotine = nicotineMatch ? nicotineMatch[1] : '';
+  const tpRaw: any = product.tasteProfile as any;
+  const taste = tpRaw && typeof tpRaw === 'object'
+    ? {
+        sweetness: Math.max(0, Math.min(5, Number(tpRaw.sweetness || 0))),
+        coolness: Math.max(0, Math.min(5, Number(tpRaw.coolness || 0))),
+        fruitiness: Math.max(0, Math.min(5, Number(tpRaw.fruitiness || 0))),
+        strength: Math.max(0, Math.min(5, Number(tpRaw.strength || 0))),
+      }
+    : null;
   const statusText = product.qtyAvailable === 0 ? 'нет в наличии' : product.qtyAvailable <= 5 ? `осталось ${product.qtyAvailable}` : 'в наличии';
 
   const styles = {
@@ -343,6 +352,15 @@ const Product: React.FC = () => {
       gridTemplateColumns: '1fr 1fr',
       gap: theme.spacing.md,
     },
+    tasteRow: {
+      display: 'grid',
+      gridTemplateColumns: '110px 1fr auto',
+      alignItems: 'center',
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+      color: theme.colors.dark.textSecondary,
+      fontSize: theme.typography.fontSize.sm,
+    },
   };
 
   return (
@@ -389,6 +407,35 @@ const Product: React.FC = () => {
         </div>
 
         <div style={styles.description}>{product.description}</div>
+
+        <SectionDivider title="Вкусовой профиль" />
+        {taste ? (
+          <div style={{ marginBottom: theme.spacing.md }}>
+            {[
+              ['Сладость', taste.sweetness],
+              ['Холодок', taste.coolness],
+              ['Фруктовость', taste.fruitiness],
+              ['Крепость', taste.strength],
+            ].map(([label, value]) => (
+              <div key={String(label)} style={styles.tasteRow}>
+                <div>{label}</div>
+                <div style={{ height: 8, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.10)' }}>
+                  <div style={{ height: '100%', width: `${Math.round((Number(value) / 5) * 100)}%`, background: theme.gradients.primary }} />
+                </div>
+                <div>{Number(value).toFixed(1)}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ marginBottom: theme.spacing.md, color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+            Профиль вкуса пока не указан
+          </div>
+        )}
+
+        <SectionDivider title="Отзывы" />
+        <div style={{ marginBottom: theme.spacing.md, color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
+          Отзывов пока нет
+        </div>
 
         <div style={styles.ctaRow}>
           <button
@@ -443,7 +490,7 @@ const Product: React.FC = () => {
 
       <AddToCartModal
         open={addOpen}
-        product={{ id: product.id, name: product.name, price: product.price, image: product.image }}
+        product={{ id: product.id, name: product.name, price: product.price, image: posterImage || product.image, brand: product.brand, category: product.category }}
         onClose={() => setAddOpen(false)}
         onConfirm={async ({ quantity, variant }) => {
           await addToCart(quantity, variant);

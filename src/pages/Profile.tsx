@@ -188,6 +188,7 @@ const Profile: React.FC = () => {
     : refHasNext
     ? Math.min(100, Math.max(0, Math.round((refInvited / Math.max(1, refNextAt)) * 100)))
     : 100;
+  const cherryProgress = Math.min(100, Math.max(0, Math.round((Number(cherries || 0) / Math.max(1, Number(cherryNextMin || 10))) * 100)));
 
   const styles = {
     page: {
@@ -341,8 +342,11 @@ const Profile: React.FC = () => {
           <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginTop: theme.spacing.sm }}>
             🍒 {Number(cherries || 0)} / {Number(cherryNextMin || 10)} до {String(cherryNextTitle || 'SILVER')}
           </div>
+          <div style={{ height: 10, borderRadius: 999, overflow: 'hidden', background: 'rgba(255,255,255,0.10)', marginTop: 8, marginBottom: 8 }}>
+            <div style={{ height: '100%', width: `${cherryProgress}%`, background: theme.gradients.primary }} />
+          </div>
           <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-            Осталось {remainingOrders} заказа
+            Осталось {remainingOrders} заказов до {String(cherryNextTitle || 'SILVER')}
           </div>
           {cherryTeaser ? (
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>

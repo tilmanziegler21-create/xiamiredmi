@@ -33,6 +33,8 @@ const Bonuses: React.FC = () => {
   const [freeLiquids, setFreeLiquids] = useState(0);
   const [freeBoxes, setFreeBoxes] = useState(0);
   const [pendingDiscounts, setPendingDiscounts] = useState<PendingDiscount[]>([]);
+  const [redeemedLevels, setRedeemedLevels] = useState<number[]>([]);
+  const [redeemingLevel, setRedeemingLevel] = useState<number>(0);
   const [showHow, setShowHow] = useState(false);
   const historyRef = React.useRef<HTMLDivElement>(null);
   const howRef = React.useRef<HTMLDivElement>(null);
@@ -67,6 +69,7 @@ const Bonuses: React.FC = () => {
       setFreeLiquids(liquids);
       setFreeBoxes(boxes);
       setPendingDiscounts(Array.isArray(bal.data?.pendingDiscounts) ? bal.data.pendingDiscounts : []);
+      setRedeemedLevels(Array.isArray(bal.data?.redeemedLevels) ? bal.data.redeemedLevels.map((x: any) => Number(x || 0)).filter((x: number) => x > 0) : []);
       if (user && token) setUser({ ...user, bonusBalance: balance, cherries, freeLiquids: liquids, freeBoxes: boxes }, token);
 
       const events = Array.isArray(hist.data?.history) ? hist.data.history : [];
@@ -227,6 +230,31 @@ const Bonuses: React.FC = () => {
     if (String(d.type) === 'fixed') return `${Number(d.value || 0)}€`;
     return `${Number(d.value || 0)}%`;
   })();
+  const redeemRows = [
+    { level: 1, reward: '2€ скидки на следующий заказ' },
+    { level: 2, reward: '10% скидки на следующий заказ' },
+    { level: 3, reward: '15% скидки на следующий заказ' },
+    { level: 4, reward: '15% скидки +2 🍒' },
+    { level: 5, reward: '20% скидки на следующий заказ' },
+    { level: 6, reward: '20% скидки +2 🍒' },
+    { level: 7, reward: '+1 бесплатная жидкость' },
+    { level: 8, reward: '25% скидки на следующий заказ' },
+    { level: 9, reward: '25% скидки +2 🍒' },
+    { level: 10, reward: '25% скидки +1 жидкость +1 бокс' },
+  ];
+  const doRedeem = async (level: number) => {
+    try {
+      setRedeemingLevel(level);
+      await bonusesAPI.redeem(level);
+      toast.push('Награда активирована', 'success');
+      await loadBonusData();
+    } catch (e: any) {
+      const msg = String(e?.response?.data?.error || 'Ошибка обмена');
+      toast.push(msg, 'error');
+    } finally {
+      setRedeemingLevel(0);
+    }
+  };
 
   if (loading) {
     return (
@@ -346,6 +374,43 @@ const Bonuses: React.FC = () => {
             <div>+5 бесплатных боксов</div>
           </div>
         </div>
+      </div>
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginTop: theme.spacing.xl, marginBottom: theme.spacing.md }}>
+        <SectionDivider title="Обмен вишенок" />
+      </div>
+      <div style={{ padding: `0 ${theme.padding.screen}`, display: 'grid', gap: theme.spacing.sm }}>
+        {redeemRows.map((r) => {
+          const redeemed = redeemedLevels.includes(r.level);
+          const can = !redeemed && cherries >= r.level;
+          const busy = redeemingLevel === r.level;
+          return (
+            <GlassCard key={r.level} padding="md" variant="elevated">
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: theme.spacing.md, alignItems: 'center' }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.medium }}>
+                    {r.level} 🍒 → {r.reward}
+                  </div>
+                </div>
+                <button
+                  onClick={() => doRedeem(r.level)}
+                  disabled={!can || busy}
+                  style={{
+                    borderRadius: 999,
+                    border: '1px solid rgba(255,255,255,0.14)',
+                    background: can ? theme.gradients.primary : 'rgba(255,255,255,0.08)',
+                    color: '#fff',
+                    padding: '8px 12px',
+                    cursor: can ? 'pointer' : 'not-allowed',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {redeemed ? 'Получено' : busy ? '...' : 'Обменять'}
+                </button>
+              </div>
+            </GlassCard>
+          );
+        })}
       </div>
 
       <div style={{ padding: `0 ${theme.padding.screen}`, marginTop: theme.spacing.xl }}>

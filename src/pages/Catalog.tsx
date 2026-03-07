@@ -31,6 +31,39 @@ interface Product {
   };
 }
 
+const assetUrl = (p: string) => {
+  const base = String(import.meta.env.BASE_URL || '/');
+  const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
+  const path = p.startsWith('/') ? p : `/${p}`;
+  return `${prefix}${path}`;
+};
+
+const normalizeProvidedImage = (v: string) => {
+  const raw = String(v || '').trim();
+  if (!raw) return '';
+  const lower = raw.toLowerCase();
+  if (['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower)) return '';
+  if (lower.includes('via.placeholder.com')) return '';
+  if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:image/')) return raw;
+  if (raw.startsWith('/')) return assetUrl(raw);
+  if (raw.startsWith('images/')) return assetUrl(`/${raw}`);
+  return '';
+};
+
+const fallbackBrandImage = (brand: string, image: string) => {
+  const normalized = normalizeProvidedImage(image);
+  if (normalized) return normalized;
+  const cleaned = String(brand || '').toLowerCase().trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '');
+  const compact = cleaned.replace(/\s+/g, '');
+  if (compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
+  if (compact.includes('elfic')) return assetUrl('/images/brands/elfic_liquid.png');
+  if (compact.includes('elflic')) return assetUrl('/images/brands/elflic/elflic_liquid_20260306.jpg');
+  if (compact.includes('elfbar') || cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
+  if (compact.includes('geekvape') || cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
+  if (compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
+  return '';
+};
+
 const Catalog: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastStore();
@@ -186,7 +219,7 @@ const Catalog: React.FC = () => {
   }, [city, filters, allProducts]);
 
   const openAdd = (product: Product) => {
-    setAddProduct(product);
+    setAddProduct({ ...product, image: fallbackBrandImage(product.brand, product.image) });
     setAddOpen(true);
   };
 

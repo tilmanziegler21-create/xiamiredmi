@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
-import { Truck, Store, X } from 'lucide-react';
+import { Truck, Store } from 'lucide-react';
 import { bonusesAPI, cartAPI, couriersAPI, orderAPI } from '../services/api';
 import { useAuthStore } from '../store/useAuthStore';
 import { useCartStore } from '../store/useCartStore';
@@ -39,7 +39,7 @@ const Checkout: React.FC = () => {
   const [loading, setLoading] = React.useState(false);
   const [deliveryMethod, setDeliveryMethod] = React.useState<DeliveryMethod>(state.fulfillment === 'pickup' ? 'pickup' : 'courier');
   const [pickupPoint, setPickupPoint] = React.useState(state.pickup || '');
-  const [promoCode, setPromoCode] = React.useState(state.promoCode || '');
+  const promoCode = String(state.promoCode || '').trim();
   const [comment, setComment] = React.useState('');
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>('cash');
 
@@ -448,21 +448,6 @@ const Checkout: React.FC = () => {
         </GlassCard>
       </div>
 
-      <SectionDivider title="Промокод" />
-
-      <div style={styles.row}>
-        <GlassCard padding="lg" variant="elevated">
-          <div style={{ display: 'flex', gap: theme.spacing.sm, alignItems: 'center' }}>
-            <input value={promoCode} onChange={(e) => setPromoCode(e.target.value)} placeholder="Введите промокод" style={{ ...styles.input, borderRadius: 999 }} />
-            {promoCode ? (
-              <SecondaryButton onClick={() => setPromoCode('')} style={{ borderRadius: 999, padding: '10px 12px' }}>
-                <X size={18} />
-              </SecondaryButton>
-            ) : null}
-          </div>
-        </GlassCard>
-      </div>
-
       <SectionDivider title="Бонусы" />
 
       <div style={styles.row}>
@@ -492,11 +477,6 @@ const Checkout: React.FC = () => {
       <div style={styles.row}>
         <GlassCard padding="lg" variant="elevated">
           <textarea value={comment} onChange={(e) => setComment(e.target.value)} maxLength={500} placeholder="Комментарий к заказу" style={{ ...styles.input, minHeight: 90, resize: 'none' }} />
-          <div style={{ height: theme.spacing.md }} />
-          <div style={styles.label}>Телефон</div>
-          <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm }}>
-            Телефон не требуется
-          </div>
         </GlassCard>
       </div>
 

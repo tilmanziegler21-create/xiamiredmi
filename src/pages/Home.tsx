@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
-import { theme, GlassCard, CarouselDots, CherryMascot } from '../ui';
+import { theme, GlassCard, CherryMascot, ProductCard } from '../ui';
 import { catalogAPI } from '../services/api';
 import { RefreshCw, Search } from 'lucide-react';
 import { useToastStore } from '../store/useToastStore';
@@ -33,7 +33,9 @@ const Home: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const { city } = useCityStore();
   const { config } = useConfigStore();
-  const bannerTouch = React.useRef<{ x: number; t: number } | null>(null);
+  const bannerTouch = React.useRef<{ x: number; y: number } | null>(null);
+  const bannerSwiped = React.useRef(false);
+  const autoBannerTimer = React.useRef<number | null>(null);
 
   const ultraLite = (() => {
     try {
@@ -81,14 +83,23 @@ const Home: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (ultraLite) return;
-    if (banners.length <= 1) return;
-    const interval = setInterval(() => {
+  const restartBannerAuto = React.useCallback(() => {
+    if (autoBannerTimer.current != null) {
+      window.clearTimeout(autoBannerTimer.current);
+      autoBannerTimer.current = null;
+    }
+    if (ultraLite || banners.length <= 1) return;
+    autoBannerTimer.current = window.setTimeout(() => {
       setCurrentBanner((prev) => (banners.length ? (prev + 1) % banners.length : 0));
     }, 4000);
-    return () => clearInterval(interval);
   }, [banners.length, ultraLite]);
+
+  useEffect(() => {
+    restartBannerAuto();
+    return () => {
+      if (autoBannerTimer.current != null) window.clearTimeout(autoBannerTimer.current);
+    };
+  }, [currentBanner, restartBannerAuto]);
 
   const onBannerClick = () => {
     const b = banners[currentBanner];
@@ -188,6 +199,13 @@ const Home: React.FC = () => {
     return Array.from(map.entries()).map(([brand, count]) => ({ brand, count })).sort((a, b) => a.brand.localeCompare(b.brand));
   }, [allProducts, brandDirectory]);
 
+  const topHits = useMemo(() => {
+    return allProducts
+      .slice()
+      .sort((a, b) => Number(b.qtyAvailable || 0) - Number(a.qtyAvailable || 0))
+      .slice(0, 6);
+  }, [allProducts]);
+
   const bannerBottleUrl = useMemo(() => {
     const norm = (v: any) => String(v || '').trim().toLowerCase();
     const current = banners[currentBanner];
@@ -239,7 +257,6 @@ const Home: React.FC = () => {
       boxShadow: theme.shadow.card,
       border: '1px solid rgba(255,255,255,0.14)',
       cursor: 'pointer',
-      touchAction: 'manipulation' as const,
     },
     bannerContent: {
       position: 'absolute' as const,
@@ -416,22 +433,44 @@ const Home: React.FC = () => {
               background: banners[currentBanner].gradient,
               cursor: 'pointer',
             }}
-            onClick={onBannerClick}
-            role="button"
-            onPointerDown={(e) => {
-              if (ultraLite) return;
-              bannerTouch.current = { x: e.clientX, t: Date.now() };
+            onClick={() => {
+              if (bannerSwiped.current) {
+                bannerSwiped.current = false;
+                return;
+              }
+              onBannerClick();
             }}
-            onPointerUp={(e) => {
-              if (ultraLite) return;
+            role="button"
+            onTouchStart={(e) => {
+              if (!e.touches?.length) return;
+              bannerSwiped.current = false;
+              bannerTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            }}
+            onTouchMove={(e) => {
+              const start = bannerTouch.current;
+              if (!start) return;
+              if (!e.touches?.length) return;
+              const dx = e.touches[0].clientX - start.x;
+              const dy = e.touches[0].clientY - start.y;
+              if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
+                try {
+                  e.preventDefault();
+                } catch {
+                }
+              }
+            }}
+            onTouchEnd={(e) => {
               const start = bannerTouch.current;
               bannerTouch.current = null;
               if (!start) return;
-              const dx = e.clientX - start.x;
-              const dt = Date.now() - start.t;
-              if (Math.abs(dx) < 44 || dt > 900) return;
+              const changed = e.changedTouches?.[0];
+              if (!changed) return;
+              const dx = changed.clientX - start.x;
+              if (Math.abs(dx) < 40) return;
+              bannerSwiped.current = true;
               if (dx < 0) setCurrentBanner((p) => (banners.length ? (p + 1) % banners.length : 0));
               if (dx > 0) setCurrentBanner((p) => (banners.length ? (p - 1 + banners.length) % banners.length : 0));
+              restartBannerAuto();
             }}
           >
             {!ultraLite && banners[currentBanner].image ? (
@@ -465,8 +504,25 @@ const Home: React.FC = () => {
               <h2 style={styles.bannerTitle}>{banners[currentBanner].title}</h2>
               <p style={styles.bannerSubtitle}>{banners[currentBanner].subtitle}</p>
             </div>
-            <div style={{ position: 'absolute', bottom: 12, left: 0, right: 0, zIndex: 5 }}>
-              <CarouselDots total={banners.length} current={currentBanner} onDotClick={setCurrentBanner} />
+            <div
+              style={{ position: 'absolute', top: '50%', left: 12, transform: 'translateY(-50%)', zIndex: 6, width: 34, height: 34, borderRadius: 999, background: 'rgba(0,0,0,0.34)', border: '1px solid rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentBanner((p) => (p - 1 + banners.length) % banners.length);
+                restartBannerAuto();
+              }}
+            >
+              ←
+            </div>
+            <div
+              style={{ position: 'absolute', top: '50%', right: 12, transform: 'translateY(-50%)', zIndex: 6, width: 34, height: 34, borderRadius: 999, background: 'rgba(0,0,0,0.34)', border: '1px solid rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentBanner((p) => (p + 1) % banners.length);
+                restartBannerAuto();
+              }}
+            >
+              →
             </div>
           </div>
         ) : (
@@ -476,6 +532,29 @@ const Home: React.FC = () => {
             </GlassCard>
           </div>
         )}
+      </div>
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
+        <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
+          ХИТЫ ПРОДАЖ
+        </div>
+      </div>
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.lg, overflowX: 'auto', display: 'flex', gap: 10, scrollbarWidth: 'none' as const }}>
+        {topHits.map((p) => (
+          <div key={p.id} style={{ width: 160, minWidth: 160 }}>
+            <ProductCard
+              id={p.id}
+              name={p.name}
+              price={p.price}
+              image={p.image}
+              category={p.category}
+              brand={p.brand}
+              isNew={Boolean(p.isNew)}
+              stock={Number(p.qtyAvailable || 0)}
+              onClick={() => navigate(`/product/${encodeURIComponent(p.id)}`)}
+            />
+          </div>
+        ))}
       </div>
 
       <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
@@ -501,6 +580,22 @@ const Home: React.FC = () => {
         >
           ВСЕ
         </div>
+      </div>
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
+        <GlassCard
+          padding="md"
+          variant="elevated"
+          style={{ height: 100, borderRadius: 16, cursor: 'pointer', position: 'relative', overflow: 'hidden', background: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)' }}
+          onClick={() => navigate('/catalog?category=наборы')}
+        >
+          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, fontSize: 30, letterSpacing: '0.12em', textTransform: 'uppercase' as const, zIndex: 2 }}>
+            НАБОРЫ
+          </div>
+          <div style={{ position: 'absolute', right: -12, bottom: -14, zIndex: 1 }}>
+            <CherryMascot variant="pink" size={120} />
+          </div>
+        </GlassCard>
       </div>
 
       <div style={styles.categoryGrid}>

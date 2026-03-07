@@ -288,6 +288,16 @@ router.post('/create', requireAuth, validateBody({ city: 'required' }), async (r
         discountAmount += Math.min(discountedSubtotal, Math.max(0, Number(promoObj.value || 0)));
       }
     }
+    try {
+      const u = db.getUser(tgId);
+      const tier = getCherryTier(Number(u?.cherry_balance || 0));
+      const tierPct = Math.max(0, Number(tier?.permanentDiscountPercent || 0));
+      if (tierPct > 0) {
+        const afterPrev = Math.max(0, subtotalAmount - discountAmount);
+        discountAmount += (afterPrev * tierPct) / 100;
+      }
+    } catch {
+    }
 
     let cherryDiscountType = '';
     let cherryDiscountValue = 0;

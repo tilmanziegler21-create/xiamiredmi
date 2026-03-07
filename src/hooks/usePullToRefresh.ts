@@ -27,6 +27,12 @@ export function usePullToRefresh(onRefresh: () => Promise<void> | void, enabled:
         setPull(0);
         return;
       }
+      if ((window.scrollY || document.documentElement.scrollTop || 0) <= 0) {
+        try {
+          e.preventDefault();
+        } catch {
+        }
+      }
       const dist = Math.min(110, dy);
       setPull(dist);
       if (!armed.current && dist > 60) {
@@ -58,7 +64,7 @@ export function usePullToRefresh(onRefresh: () => Promise<void> | void, enabled:
     };
 
     window.addEventListener('touchstart', onStart, { passive: true });
-    window.addEventListener('touchmove', onMove, { passive: true });
+    window.addEventListener('touchmove', onMove, { passive: false });
     window.addEventListener('touchend', onEnd);
     window.addEventListener('touchcancel', onEnd);
     return () => {
@@ -71,4 +77,3 @@ export function usePullToRefresh(onRefresh: () => Promise<void> | void, enabled:
 
   return { pull, refreshing, armed: pull > 60 };
 }
-
