@@ -197,7 +197,7 @@ const Catalog: React.FC = () => {
     }
   }, [city]);
 
-  const { pull, refreshing: ptrRefreshing, armed: ptrArmed } = usePullToRefresh(loadCatalog, true);
+  const { pull, refreshing: ptrRefreshing, armed: ptrArmed } = usePullToRefresh(loadCatalog, false);
 
   useEffect(() => {
     loadCatalog();

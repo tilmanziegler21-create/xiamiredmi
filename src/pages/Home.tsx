@@ -137,7 +137,7 @@ const Home: React.FC = () => {
 
   const { pull, refreshing: ptrRefreshing, armed: ptrArmed } = usePullToRefresh(async () => {
     await loadProducts();
-  }, true);
+  }, false);
 
   const loadProducts = async () => {
     try {
