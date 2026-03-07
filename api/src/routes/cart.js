@@ -10,6 +10,23 @@ function generateId() {
   return Math.random().toString(36).substring(2, 15);
 }
 
+const normText = (v) => String(v || '')
+  .toLowerCase()
+  .trim()
+  .replace(/[_-]+/g, ' ')
+  .replace(/\s+/g, ' ')
+  .replace(/[^a-zа-я0-9 ]/gi, '');
+
+const isPodCategory = (category = '') => {
+  const c = normText(category);
+  return c === 'поды' || c === 'pods' || c === 'electronics' || c.includes('однораз');
+};
+
+const isLiquidCategory = (category = '') => {
+  const c = normText(category);
+  return c === 'жидкости' || c === 'liquids' || c.includes('жидк') || c.includes('liquid');
+};
+
 router.get('/', requireAuth, async (req, res) => {
   try {
     const { tgId } = req.user;
@@ -47,7 +64,7 @@ router.get('/', requireAuth, async (req, res) => {
         name: p?.name || 'Товар',
         category: p?.category || '',
         brand: p?.brand || '',
-        product_price: Number(p?.price || item.price || 0),
+        product_price: String(item.bundle_id || '').trim() ? Number(item.price || 0) : Number(p?.price || item.price || 0),
         image: p?.image || '',
       });
     }
@@ -257,12 +274,18 @@ router.post('/add-bundle', requireAuth, validateBody({ city: 'required', podProd
     if (!pod || !pod.active || Number(pod.stock || 0) <= 0) {
       return res.status(404).json({ error: 'Pod not available' });
     }
+    if (!isPodCategory(pod.category)) {
+      return res.status(400).json({ error: 'Pod category is invalid' });
+    }
     const liquidSku1 = String(liquids[0]?.productId || '').trim();
     const liquidSku2 = String(liquids[1]?.productId || '').trim();
     const l1 = bySku.get(liquidSku1);
     const l2 = bySku.get(liquidSku2);
     if (!l1 || !l1.active || Number(l1.stock || 0) <= 0) return res.status(404).json({ error: 'Liquid #1 not available' });
     if (!l2 || !l2.active || Number(l2.stock || 0) <= 0) return res.status(404).json({ error: 'Liquid #2 not available' });
+    if (!isLiquidCategory(l1.category) || !isLiquidCategory(l2.category)) {
+      return res.status(400).json({ error: 'Liquid category is invalid' });
+    }
 
     const reservedPod = db.getActiveReservationsByProduct(podId).reduce((s, r) => s + Number(r.qty || 0), 0);
     const reservedL1 = db.getActiveReservationsByProduct(liquidSku1).reduce((s, r) => s + Number(r.qty || 0), 0);

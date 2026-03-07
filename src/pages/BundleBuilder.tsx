@@ -26,6 +26,16 @@ const normText = (v: string) =>
     .replace(/\s+/g, ' ')
     .replace(/[^a-zа-я0-9 ]/gi, '');
 
+const isPodCategory = (category: string) => {
+  const c = normText(category);
+  return c === 'поды' || c === 'pods' || c === 'electronics' || c.includes('однораз');
+};
+
+const isLiquidCategory = (category: string) => {
+  const c = normText(category);
+  return c === 'жидкости' || c === 'liquids' || c.includes('жидк') || c.includes('liquid');
+};
+
 const BundleBuilder: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastStore();
@@ -53,14 +63,8 @@ const BundleBuilder: React.FC = () => {
         const response = await catalogAPI.getProducts({ city });
         const all = (response.data.products || []) as Product[];
         const inStock = all.filter((p) => Number(p.qtyAvailable || 0) > 0);
-        const nextPods = inStock.filter((p) => {
-          const c = normText(p.category);
-          return c === 'поды' || c === 'pods';
-        });
-        const nextLiquids = inStock.filter((p) => {
-          const c = normText(p.category);
-          return c === 'жидкости' || c === 'liquids';
-        });
+        const nextPods = inStock.filter((p) => isPodCategory(p.category));
+        const nextLiquids = inStock.filter((p) => isLiquidCategory(p.category));
         setPods(nextPods);
         setLiquids(nextLiquids);
       } catch (e) {

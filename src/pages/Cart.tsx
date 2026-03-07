@@ -570,14 +570,15 @@ const Cart: React.FC = () => {
           const pod = items.find((x: any) => String(x.bundle_role || '') === 'pod') || items[0];
           const liquids = items.filter((x: any) => String(x.bundle_role || '') === 'liquid');
           const total = items.reduce((s: number, x: any) => s + Number(x.price || 0) * Number(x.quantity || 0), 0);
+          const bundleDisplayTotal = Math.max(0, Number(config?.bundleConfig?.price || total));
           return (
             <div key={bundleId} style={styles.itemCard}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm }}>
                 <div style={{ fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>Набор</div>
-                <div style={styles.pricePill}>{formatCurrency(total)}</div>
+                <div style={styles.pricePill}>{formatCurrency(bundleDisplayTotal)}</div>
               </div>
               <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: 6 }}>
-                Под: {String(pod?.name || '—')}
+                Под: {String(pod?.brand || '—')} • {String(pod?.name || '—')}
               </div>
               <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: 6 }}>
                 Жидкость: {String(liquids[0]?.name || '—')} {String(liquids[0]?.variant || '')}
