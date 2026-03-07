@@ -178,6 +178,25 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const currencySymbol = (import.meta.env?.VITE_CURRENCY_SYMBOL as string) || '€';
   const amount = Math.round(Number(price || 0)).toLocaleString();
+  const normalizedCategory = norm(category);
+  const isColorCategory =
+    normalizedCategory === 'поды' ||
+    normalizedCategory === 'pods' ||
+    normalizedCategory === 'electronics' ||
+    normalizedCategory === 'одноразки' ||
+    normalizedCategory === 'disposables';
+  const cleanBrand = String(brand || '').trim();
+  const cleanName = String(name || '').trim();
+  const detailFromName = (() => {
+    if (!cleanName) return '';
+    if (!cleanBrand) return cleanName;
+    const escaped = cleanBrand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return cleanName
+      .replace(new RegExp(`^${escaped}\\s*[-–—:|•]?\\s*`, 'i'), '')
+      .trim();
+  })();
+  const detailText = detailFromName || cleanName;
+  const detailLabel = isColorCategory ? 'ЦВЕТ' : 'ВКУС';
 
   const styles = {
     card: {
@@ -251,6 +270,39 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       background: 'rgba(0,0,0,0.34)',
       color: 'rgba(255,255,255,0.86)',
       border: '1px solid rgba(255,255,255,0.12)',
+    },
+    topMeta: {
+      position: 'absolute' as const,
+      left: 10,
+      right: 56,
+      top: 34,
+      zIndex: 4,
+      pointerEvents: 'none' as const,
+    },
+    topBrand: {
+      fontSize: 12,
+      fontWeight: 800,
+      textTransform: 'uppercase' as const,
+      letterSpacing: '0.1em',
+      color: 'rgba(255,255,255,0.95)',
+      textShadow: '0 1px 4px rgba(0,0,0,0.75)',
+      display: '-webkit-box',
+      WebkitLineClamp: 1,
+      WebkitBoxOrient: 'vertical' as const,
+      overflow: 'hidden',
+    },
+    topDetail: {
+      marginTop: 2,
+      fontSize: 10,
+      fontWeight: 700,
+      letterSpacing: '0.08em',
+      color: 'rgba(255,255,255,0.7)',
+      textTransform: 'uppercase' as const,
+      textShadow: '0 1px 4px rgba(0,0,0,0.75)',
+      display: '-webkit-box',
+      WebkitLineClamp: 1,
+      WebkitBoxOrient: 'vertical' as const,
+      overflow: 'hidden',
     },
     outOfStock: {
       background: 'rgba(15,8,10,0.8)',
@@ -335,6 +387,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             }}
           >
             {stock === 0 ? 'нет в наличии' : stock <= 5 ? `осталось ${stock}` : 'в наличии'}
+          </div>
+        ) : null}
+        {cleanBrand || detailText ? (
+          <div style={styles.topMeta}>
+            {cleanBrand ? <div style={styles.topBrand}>{cleanBrand}</div> : null}
+            {detailText ? <div style={styles.topDetail}>{detailLabel}: {detailText}</div> : null}
           </div>
         ) : null}
 
