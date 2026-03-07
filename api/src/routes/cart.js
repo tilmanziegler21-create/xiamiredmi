@@ -19,7 +19,7 @@ const normText = (v) => String(v || '')
 
 const isPodCategory = (category = '') => {
   const c = normText(category);
-  return c === 'поды' || c === 'pods' || c === 'electronics' || c.includes('однораз');
+  return c === 'pods';
 };
 
 const isLiquidCategory = (category = '') => {
