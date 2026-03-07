@@ -24,6 +24,7 @@ import Promotions from './pages/Promotions';
 import Bonuses from './pages/Bonuses';
 import FortuneWheel from './pages/FortuneWheel';
 import CourierRegistration from './pages/CourierRegistration';
+import BundleBuilder from './pages/BundleBuilder';
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode }) {
@@ -321,6 +322,7 @@ function App() {
                   <Route path="/promotions" element={<AppShell><Promotions /></AppShell>} />
                   <Route path="/bonuses" element={<AppShell><Bonuses /></AppShell>} />
                   <Route path="/fortune" element={<AppShell><FortuneWheel /></AppShell>} />
+                  <Route path="/bundle" element={<AppShell showMenu={false}><BundleBuilder /></AppShell>} />
                   <Route path="/profile" element={<AppShell><Account /></AppShell>} />
                   <Route path="/courier" element={(user.status === 'courier' || user.status === 'admin') ? <AppShell><Courier /></AppShell> : <Navigate to="/home" replace />} />
                   <Route path="/admin" element={user.status === 'admin' ? <AppShell><Admin /></AppShell> : <Navigate to="/home" replace />} />

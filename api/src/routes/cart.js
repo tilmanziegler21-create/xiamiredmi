@@ -69,6 +69,8 @@ router.get('/', requireAuth, async (req, res) => {
         id: item.id,
         productId: item.product_id,
         variant: item.variant || '',
+        bundle_id: item.bundle_id || '',
+        bundle_role: item.bundle_role || '',
         name: item.name,
         category: item.category,
         brand: item.brand,
@@ -236,6 +238,114 @@ router.post('/clear', requireAuth, validateBody({ city: 'required' }), (req, res
   } catch (e) {
     console.error('Clear cart error:', e);
     res.status(500).json({ error: 'Failed to clear cart' });
+  }
+});
+
+router.post('/add-bundle', requireAuth, validateBody({ city: 'required', podProductId: 'required', liquidProducts: 'required' }), async (req, res) => {
+  try {
+    const { tgId } = req.user;
+    const { city, podProductId, liquidProducts } = req.body || {};
+    const cityStr = String(city || '').trim();
+    const podId = String(podProductId || '').trim();
+    const liquids = Array.isArray(liquidProducts) ? liquidProducts : [];
+    if (!cityStr || !podId || liquids.length !== 2) {
+      return res.status(400).json({ error: 'Invalid bundle payload' });
+    }
+    const products = await getProducts(cityStr);
+    const bySku = new Map(products.map((p) => [String(p.sku), p]));
+    const pod = bySku.get(podId);
+    if (!pod || !pod.active || Number(pod.stock || 0) <= 0) {
+      return res.status(404).json({ error: 'Pod not available' });
+    }
+    const liquidSku1 = String(liquids[0]?.productId || '').trim();
+    const liquidSku2 = String(liquids[1]?.productId || '').trim();
+    const l1 = bySku.get(liquidSku1);
+    const l2 = bySku.get(liquidSku2);
+    if (!l1 || !l1.active || Number(l1.stock || 0) <= 0) return res.status(404).json({ error: 'Liquid #1 not available' });
+    if (!l2 || !l2.active || Number(l2.stock || 0) <= 0) return res.status(404).json({ error: 'Liquid #2 not available' });
+
+    const reservedPod = db.getActiveReservationsByProduct(podId).reduce((s, r) => s + Number(r.qty || 0), 0);
+    const reservedL1 = db.getActiveReservationsByProduct(liquidSku1).reduce((s, r) => s + Number(r.qty || 0), 0);
+    const reservedL2 = db.getActiveReservationsByProduct(liquidSku2).reduce((s, r) => s + Number(r.qty || 0), 0);
+    if (Number(pod.stock || 0) - reservedPod < 1) return res.status(409).json({ error: 'Pod out of stock' });
+    if (Number(l1.stock || 0) - reservedL1 < 1) return res.status(409).json({ error: 'Liquid #1 out of stock' });
+    if (Number(l2.stock || 0) - reservedL2 < 1) return res.status(409).json({ error: 'Liquid #2 out of stock' });
+
+    let cart = db.prepare('SELECT * FROM carts WHERE user_id = ? AND city = ?').get(tgId, cityStr);
+    if (!cart) {
+      const cartId = generateId();
+      const newCart = {
+        id: cartId,
+        user_id: tgId,
+        city: cityStr,
+        items: [],
+        total: 0,
+      };
+      db.carts.set(cartId, newCart);
+      cart = newCart;
+    }
+
+    const bundleId = `bnd_${generateId()}`;
+    const bundlePrice = Number(process.env.BUNDLE_PRICE || 50);
+    const podItemId = generateId();
+    db.cartItems.set(podItemId, {
+      id: podItemId,
+      cart_id: cart.id,
+      product_id: podId,
+      variant: '',
+      quantity: 1,
+      price: Number(bundlePrice),
+      bundle_id: bundleId,
+      bundle_role: 'pod',
+    });
+    const liquid1ItemId = generateId();
+    db.cartItems.set(liquid1ItemId, {
+      id: liquid1ItemId,
+      cart_id: cart.id,
+      product_id: liquidSku1,
+      variant: String(liquids[0]?.variant || ''),
+      quantity: 1,
+      price: 0,
+      bundle_id: bundleId,
+      bundle_role: 'liquid',
+    });
+    const liquid2ItemId = generateId();
+    db.cartItems.set(liquid2ItemId, {
+      id: liquid2ItemId,
+      cart_id: cart.id,
+      product_id: liquidSku2,
+      variant: String(liquids[1]?.variant || ''),
+      quantity: 1,
+      price: 0,
+      bundle_id: bundleId,
+      bundle_role: 'liquid',
+    });
+    db.persistState();
+    res.json({ success: true, bundleId });
+  } catch (e) {
+    console.error('Add bundle error:', e);
+    res.status(500).json({ error: 'Failed to add bundle' });
+  }
+});
+
+router.post('/remove-bundle', requireAuth, validateBody({ bundleId: 'required' }), (req, res) => {
+  try {
+    const { tgId } = req.user;
+    const bundleId = String(req.body?.bundleId || '').trim();
+    if (!bundleId) return res.status(400).json({ error: 'Bundle ID is required' });
+    const userCartIds = new Set();
+    for (const c of db.carts.values()) {
+      if (String(c.user_id) === String(tgId)) userCartIds.add(String(c.id));
+    }
+    for (const [id, item] of db.cartItems.entries()) {
+      if (!userCartIds.has(String(item.cart_id))) continue;
+      if (String(item.bundle_id || '') === bundleId) db.cartItems.delete(id);
+    }
+    db.persistState();
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Remove bundle error:', e);
+    res.status(500).json({ error: 'Failed to remove bundle' });
   }
 });
 

@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
-import { theme, GlassCard, CherryMascot, ProductCard } from '../ui';
+import { theme, GlassCard, CherryMascot } from '../ui';
 import { catalogAPI } from '../services/api';
 import { RefreshCw, Search } from 'lucide-react';
 import { useToastStore } from '../store/useToastStore';
@@ -198,13 +198,6 @@ const Home: React.FC = () => {
     }
     return Array.from(map.entries()).map(([brand, count]) => ({ brand, count })).sort((a, b) => a.brand.localeCompare(b.brand));
   }, [allProducts, brandDirectory]);
-
-  const topHits = useMemo(() => {
-    return allProducts
-      .slice()
-      .sort((a, b) => Number(b.qtyAvailable || 0) - Number(a.qtyAvailable || 0))
-      .slice(0, 6);
-  }, [allProducts]);
 
   const bannerBottleUrl = useMemo(() => {
     const norm = (v: any) => String(v || '').trim().toLowerCase();
@@ -534,28 +527,46 @@ const Home: React.FC = () => {
         )}
       </div>
 
-      <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
-        <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
-          ХИТЫ ПРОДАЖ
-        </div>
-      </div>
-      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.lg, overflowX: 'auto', display: 'flex', gap: 10, scrollbarWidth: 'none' as const }}>
-        {topHits.map((p) => (
-          <div key={p.id} style={{ width: 160, minWidth: 160 }}>
-            <ProductCard
-              id={p.id}
-              name={p.name}
-              price={p.price}
-              image={p.image}
-              category={p.category}
-              brand={p.brand}
-              isNew={Boolean(p.isNew)}
-              stock={Number(p.qtyAvailable || 0)}
-              onClick={() => navigate(`/product/${encodeURIComponent(p.id)}`)}
-            />
+      {config?.bundleConfig?.enabled ? (
+        <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.lg }}>
+          <div
+            onClick={() => navigate('/bundle')}
+            role="button"
+            style={{
+              borderRadius: 16,
+              overflow: 'hidden',
+              position: 'relative',
+              background: 'linear-gradient(135deg, rgba(59,130,246,0.8) 0%, rgba(15,12,26,0.95) 100%)',
+              border: '1px solid rgba(255,255,255,0.14)',
+              padding: 16,
+              cursor: 'pointer',
+            }}
+          >
+            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+              Вместе дешевле
+            </div>
+            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 14 }}>
+              Под + 2 жидкости
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+              <div style={{ width: 72, height: 72, borderRadius: 12, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CherryMascot variant="cosmic" size={54} />
+              </div>
+              <div style={{ width: 24, height: 24, borderRadius: 12, border: '2px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 700 }}>+</div>
+              <div style={{ width: 72, height: 72, borderRadius: 12, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CherryMascot variant="green" size={54} />
+              </div>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
+              <span style={{ fontSize: 22, fontWeight: 800 }}>{config?.bundleConfig?.price || 50} €</span>
+              <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 6, background: 'rgba(34,197,94,0.18)', color: '#22c55e' }}>ВЫГОДНО</span>
+            </div>
+            <div style={{ width: '100%', padding: '10px 0', borderRadius: 12, background: 'rgba(255,255,255,0.10)', textAlign: 'center', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              Собрать набор →
+            </div>
           </div>
-        ))}
-      </div>
+        </div>
+      ) : null}
 
       <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
         <div style={{ fontSize: theme.typography.fontSize.xs, letterSpacing: '0.18em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.65)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily }}>
@@ -580,22 +591,6 @@ const Home: React.FC = () => {
         >
           ВСЕ
         </div>
-      </div>
-
-      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
-        <GlassCard
-          padding="md"
-          variant="elevated"
-          style={{ height: 100, borderRadius: 16, cursor: 'pointer', position: 'relative', overflow: 'hidden', background: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)' }}
-          onClick={() => navigate('/catalog?category=наборы')}
-        >
-          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, fontSize: 30, letterSpacing: '0.12em', textTransform: 'uppercase' as const, zIndex: 2 }}>
-            НАБОРЫ
-          </div>
-          <div style={{ position: 'absolute', right: -12, bottom: -14, zIndex: 1 }}>
-            <CherryMascot variant="pink" size={120} />
-          </div>
-        </GlassCard>
       </div>
 
       <div style={styles.categoryGrid}>
@@ -653,6 +648,22 @@ const Home: React.FC = () => {
             );
           })
         )}
+      </div>
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
+        <GlassCard
+          padding="md"
+          variant="elevated"
+          style={{ height: 100, borderRadius: 16, cursor: 'pointer', position: 'relative', overflow: 'hidden', background: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)' }}
+          onClick={() => navigate('/catalog?category=наборы')}
+        >
+          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, fontSize: 30, letterSpacing: '0.12em', textTransform: 'uppercase' as const, zIndex: 2 }}>
+            НАБОРЫ
+          </div>
+          <div style={{ position: 'absolute', right: -12, bottom: -14, zIndex: 1 }}>
+            <CherryMascot variant="pink" size={120} />
+          </div>
+        </GlassCard>
       </div>
 
       <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>

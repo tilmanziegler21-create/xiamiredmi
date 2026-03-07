@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
 import { Minus, Plus, Trash2, Truck, Store } from 'lucide-react';
-import { cartAPI, couriersAPI } from '../services/api';
+import { cartAPI, couriersAPI, orderAPI } from '../services/api';
 import { useCartStore } from '../store/useCartStore';
 import { useAnalytics } from '../hooks/useAnalytics';
 import { CherryMascot, GlassCard, PrimaryButton, SecondaryButton, SectionDivider, theme } from '../ui';
@@ -14,12 +14,13 @@ import { blurStyle } from '../ui/blur';
 import { useAuthStore } from '../store/useAuthStore';
 
 type Fulfillment = 'delivery' | 'pickup';
+type PaymentMethod = 'cash' | 'card';
 
 const Cart: React.FC = () => {
   const navigate = useNavigate();
   const toast = useToastStore();
   const { cart, setCart } = useCartStore();
-  const { trackRemoveFromCart, trackCheckout } = useAnalytics();
+  const { trackRemoveFromCart, trackCheckout, trackOrderComplete } = useAnalytics();
   const [loading, setLoading] = React.useState(true);
   const { city } = useCityStore();
   const { user } = useAuthStore();
@@ -39,6 +40,10 @@ const Cart: React.FC = () => {
   const [couriers, setCouriers] = React.useState<Array<{ courier_id: string; name: string; tg_id: string; time_from?: string; time_to?: string; meeting_place?: string }>>([]);
   const [courierId, setCourierId] = React.useState('');
   const [deliveryTime, setDeliveryTime] = React.useState('');
+  const [address, setAddress] = React.useState('');
+  const [comment, setComment] = React.useState('');
+  const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>('cash');
+  const [placing, setPlacing] = React.useState(false);
 
   React.useEffect(() => {
     if (!pickup && pickupPoints.length) setPickup(pickupPoints[0]);
@@ -156,22 +161,95 @@ const Cart: React.FC = () => {
     }
   };
 
+  const removeBundle = async (bundleId: string) => {
+    try {
+      if (!city) {
+        toast.push('Выберите город', 'error');
+        return;
+      }
+      await cartAPI.removeBundle(bundleId);
+      const resp = await cartAPI.getCart(city);
+      setCart(resp.data.cart);
+      toast.push('Набор удалён', 'success');
+    } catch (e) {
+      console.error('Failed to remove bundle:', e);
+      toast.push('Ошибка удаления набора', 'error');
+    }
+  };
+
   const canCheckout = Boolean(
     cart?.items?.length &&
       city &&
       Boolean(courierId && deliveryTime) &&
-      (fulfillment === 'pickup' ? Boolean(pickup) : true)
+      (fulfillment === 'pickup' ? Boolean(pickup) : Boolean(address.trim())) &&
+      !placing
   );
 
-  const goCheckout = () => {
-    if (!cart?.items?.length) return;
+  const placeOrder = async () => {
+    if (!cart?.items?.length || !city) return;
     if (!canCheckout) {
-      toast.push(fulfillment === 'pickup' ? 'Выберите курьера, время и точку самовывоза' : 'Выберите курьера и время', 'error');
+      toast.push(
+        fulfillment === 'pickup'
+          ? 'Выберите курьера, время и точку самовывоза'
+          : 'Укажите адрес, курьера и время',
+        'error',
+      );
       return;
     }
-    trackCheckout(cart.items, totalWithBonus);
-    const today = new Date().toISOString().slice(0, 10);
-    navigate('/checkout', { state: { fulfillment, pickup, promoCode, courierId, deliveryTime, deliveryDate: today, useBonuses, bonusApplied } });
+    setPlacing(true);
+    try {
+      trackCheckout(cart.items, totalWithBonus);
+      const today = new Date().toISOString().slice(0, 10);
+      const createResp = await orderAPI.createOrder(
+        {
+          city,
+          items: cart.items.map((item) => ({
+            productId: item.productId,
+            quantity: item.quantity,
+            variant: item.variant || '',
+          })),
+          promoCode: String(promoCode || '').trim(),
+        },
+        `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`,
+      );
+      const orderId = String(createResp?.data?.orderId || '');
+      const totalAmount = Number(createResp?.data?.totalAmount || 0);
+      if (!orderId) throw new Error('Order id missing');
+      await orderAPI.confirmOrder({
+        orderId,
+        deliveryMethod: fulfillment === 'pickup' ? 'pickup' : 'courier',
+        city,
+        promoCode: String(promoCode || '').trim(),
+        courier_id: courierId,
+        delivery_date: today,
+        delivery_time: deliveryTime,
+        courierData: {
+          address: fulfillment === 'pickup' ? pickup : address,
+          comment: String(comment || '').slice(0, 500),
+          user: {
+            tgId: user?.tgId || '',
+            username: user?.username || '',
+          },
+        },
+      });
+      await orderAPI.processPayment({
+        orderId,
+        paymentMethod,
+        city,
+        bonusApplied: bonusApplied,
+      });
+      trackOrderComplete(orderId, Math.max(0, totalAmount - bonusApplied), cart.items);
+      await cartAPI.clear(city);
+      const resp = await cartAPI.getCart(city);
+      setCart(resp.data.cart);
+      toast.push(`Заказ ${orderId} оформлен`, 'success');
+      navigate('/orders');
+    } catch (e) {
+      console.error('Failed to place order:', e);
+      toast.push('Ошибка оформления заказа', 'error');
+    } finally {
+      setPlacing(false);
+    }
   };
 
   // Calculate pricing with quantity discounts
@@ -204,6 +282,51 @@ const Cart: React.FC = () => {
     }
     setQty(item.id, item.quantity - 1);
   };
+
+  const assetUrl = (p: string) => {
+    const base = String(import.meta.env.BASE_URL || '/');
+    const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
+    const path = p.startsWith('/') ? p : `/${p}`;
+    return `${prefix}${path}`;
+  };
+  const resolveCartImage = (item: { image?: string; brand?: string; name?: string }) => {
+    const raw = String(item.image || '').trim();
+    const lower = raw.toLowerCase();
+    if (raw && !['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower) && !lower.includes('via.placeholder.com')) {
+      if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:image/')) return raw;
+      if (raw.startsWith('/')) return assetUrl(raw);
+      if (raw.startsWith('images/')) return assetUrl(`/${raw}`);
+    }
+    const cleaned = String(item.brand || item.name || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .replace(/[^a-z0-9 ]/g, '');
+    const compact = cleaned.replace(/\s+/g, '');
+    if (compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
+    if (compact.includes('elfic')) return assetUrl('/images/brands/elfic_liquid.png');
+    if (compact.includes('elflic')) return assetUrl('/images/brands/elflic/elflic_liquid_20260306.jpg');
+    if (compact.includes('elfbar') || cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
+    if (compact.includes('geekvape') || cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
+    if (compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
+    return '';
+  };
+  const { bundleGroups, standaloneItems } = React.useMemo(() => {
+    const groups = new Map<string, any[]>();
+    const standalone: any[] = [];
+    for (const item of cart?.items || []) {
+      const bundleId = String((item as any).bundle_id || '').trim();
+      if (bundleId) {
+        const arr = groups.get(bundleId) || [];
+        arr.push(item);
+        groups.set(bundleId, arr);
+      } else {
+        standalone.push(item);
+      }
+    }
+    return { bundleGroups: groups, standaloneItems: standalone };
+  }, [cart?.items]);
 
   const styles = {
     title: {
@@ -261,7 +384,9 @@ const Cart: React.FC = () => {
       height: 64,
       borderRadius: 999,
       border: '1px solid rgba(255,255,255,0.14)',
-      background: `linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.65) 100%), url(${img}) center/cover`,
+      background: img
+        ? `linear-gradient(135deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.45) 100%), url(${img}) center/cover`
+        : 'linear-gradient(135deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.04) 100%)',
       flex: '0 0 auto',
       boxShadow: '0 14px 30px rgba(0,0,0,0.35)',
     }),
@@ -441,8 +566,37 @@ const Cart: React.FC = () => {
       <div style={styles.title}>Корзина</div>
 
       <div style={styles.list}>
-        {cart.items.map((item) => (
+        {Array.from(bundleGroups.entries()).map(([bundleId, items]) => {
+          const pod = items.find((x: any) => String(x.bundle_role || '') === 'pod') || items[0];
+          const liquids = items.filter((x: any) => String(x.bundle_role || '') === 'liquid');
+          const total = items.reduce((s: number, x: any) => s + Number(x.price || 0) * Number(x.quantity || 0), 0);
+          return (
+            <div key={bundleId} style={styles.itemCard}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing.sm }}>
+                <div style={{ fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase' as const }}>Набор</div>
+                <div style={styles.pricePill}>{formatCurrency(total)}</div>
+              </div>
+              <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: 6 }}>
+                Под: {String(pod?.name || '—')}
+              </div>
+              <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: 6 }}>
+                Жидкость: {String(liquids[0]?.name || '—')} {String(liquids[0]?.variant || '')}
+              </div>
+              <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, marginBottom: theme.spacing.md }}>
+                Жидкость: {String(liquids[1]?.name || '—')} {String(liquids[1]?.variant || '')}
+              </div>
+              <SecondaryButton fullWidth onClick={() => removeBundle(bundleId)} style={{ borderRadius: 12 }}>
+                Убрать набор
+              </SecondaryButton>
+            </div>
+          );
+        })}
+        {standaloneItems.map((item: any) => (
           <div key={item.id} style={styles.itemCard}>
+            {(() => {
+              const itemImage = resolveCartImage(item);
+              return (
+                <>
             <div style={styles.trash}>
               <button
                 onClick={() => removeItem(item.id)}
@@ -454,7 +608,9 @@ const Cart: React.FC = () => {
             </div>
 
             <div style={styles.row}>
-              <div style={styles.avatar(item.image)} />
+              <div style={{ ...styles.avatar(itemImage), display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                {!itemImage ? <CherryMascot variant="pink" size={44} /> : null}
+              </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm, marginBottom: 6 }}>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -480,6 +636,9 @@ const Cart: React.FC = () => {
                 {formatCurrency(item.price * item.quantity)}
               </div>
             </div>
+                </>
+              );
+            })()}
           </div>
         ))}
       </div>
@@ -589,9 +748,58 @@ const Cart: React.FC = () => {
                 </option>
               ))}
             </select>
+            <input
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              placeholder="Адрес доставки"
+              style={styles.courierSelect}
+            />
           </div>
         </div>
       ) : null}
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
+        <GlassCard padding="md" variant="elevated">
+          <div style={{ marginBottom: theme.spacing.sm, fontSize: theme.typography.fontSize.xs, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)' }}>
+            Оплата
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.sm }}>
+            {paymentMethod === 'cash' ? (
+              <PrimaryButton fullWidth onClick={() => setPaymentMethod('cash')} style={{ borderRadius: 999 }}>
+                Наличные
+              </PrimaryButton>
+            ) : (
+              <SecondaryButton fullWidth onClick={() => setPaymentMethod('cash')} style={{ borderRadius: 999, opacity: 0.7 }}>
+                Наличные
+              </SecondaryButton>
+            )}
+            {paymentMethod === 'card' ? (
+              <PrimaryButton fullWidth onClick={() => setPaymentMethod('card')} style={{ borderRadius: 999 }}>
+                Карта / Онлайн
+              </PrimaryButton>
+            ) : (
+              <SecondaryButton fullWidth onClick={() => setPaymentMethod('card')} style={{ borderRadius: 999, opacity: 0.7 }}>
+                Карта / Онлайн
+              </SecondaryButton>
+            )}
+          </div>
+        </GlassCard>
+      </div>
+
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
+        <GlassCard padding="md" variant="elevated">
+          <div style={{ marginBottom: theme.spacing.sm, fontSize: theme.typography.fontSize.xs, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)' }}>
+            Комментарий
+          </div>
+          <textarea
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            placeholder="Комментарий к заказу"
+            maxLength={500}
+            style={{ ...styles.promoInput, borderRadius: 12, minHeight: 84, resize: 'none' as const }}
+          />
+        </GlassCard>
+      </div>
 
       {/* Total and Pricing */}
       <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
@@ -642,8 +850,8 @@ const Cart: React.FC = () => {
       </div>
 
       <div style={styles.checkout}>
-        <PrimaryButton fullWidth onClick={goCheckout} disabled={!canCheckout}>
-          Оформление заказа
+        <PrimaryButton fullWidth onClick={placeOrder} disabled={!canCheckout}>
+          {placing ? 'Оформление…' : 'Заказать'}
         </PrimaryButton>
       </div>
     </div>

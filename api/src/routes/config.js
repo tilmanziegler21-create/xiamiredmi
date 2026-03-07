@@ -125,6 +125,10 @@ router.get('/', (_req, res) => {
     },
     bonusMultiplier,
     quantityDiscount,
+    bundleConfig: {
+      enabled: String(process.env.BUNDLE_ENABLED || '1') === '1',
+      price: Number(process.env.BUNDLE_PRICE || 50),
+    },
     promos: promos.map((p) => ({
       id: String(p.id || ''),
       title: String(p.title || ''),

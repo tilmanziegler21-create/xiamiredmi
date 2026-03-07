@@ -11,6 +11,7 @@ export type AppConfig = {
   reservationTtlMs: number;
   bonusMultiplier?: number;
   quantityDiscount?: { minQty: number; unitPrice: number };
+  bundleConfig?: { enabled: boolean; price: number };
   support: {
     managerUsername: string;
     managerPhone: string;

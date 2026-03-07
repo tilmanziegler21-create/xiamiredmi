@@ -6,6 +6,8 @@ interface CartItem {
   id: string;
   productId: string;
   variant?: string;
+  bundle_id?: string;
+  bundle_role?: string;
   name: string;
   category: string;
   brand: string;

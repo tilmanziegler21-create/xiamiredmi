@@ -193,6 +193,12 @@ export const cartAPI = {
   updateItem: (itemId: string, quantity: number) =>
     api.post('/cart/update', { itemId, quantity }),
 
+  addBundle: (data: { city: string; podProductId: string; liquidProducts: Array<{ productId: string; variant?: string }> }) =>
+    api.post('/cart/add-bundle', data),
+
+  removeBundle: (bundleId: string) =>
+    api.post('/cart/remove-bundle', { bundleId }),
+
   clear: (city: string) =>
     api.post('/cart/clear', { city }),
 };
