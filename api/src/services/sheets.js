@@ -75,7 +75,7 @@ function sheetsApi() {
 
 let cachedSpreadsheetMeta = null;
 async function spreadsheetMeta(spreadsheetId) {
-  const ttl = Number(getEnv('SHEETS_CACHE_TTL_SECONDS', '600')) * 1000;
+  const ttl = Number(getEnv('SHEETS_CACHE_TTL_SECONDS', '30')) * 1000;
   if (cachedSpreadsheetMeta && cachedSpreadsheetMeta.id === spreadsheetId && Date.now() - cachedSpreadsheetMeta.ts < ttl) {
     return cachedSpreadsheetMeta.data;
   }
@@ -223,7 +223,7 @@ function sheetCandidates(base, city) {
 const cache = new Map();
 const inflight = new Map();
 function cacheGet(key) {
-  const ttl = Number(getEnv('SHEETS_CACHE_TTL_SECONDS', '600')) * 1000;
+  const ttl = Number(getEnv('SHEETS_CACHE_TTL_SECONDS', '30')) * 1000;
   const v = cache.get(key);
   if (!v) return null;
   if (Date.now() - v.ts > ttl) return null;
@@ -440,7 +440,7 @@ export async function getProducts(city) {
   const activeIdx = headerIndexAny(headers, ['active', 'is_active', 'активен', 'активный']);
   const isNewIdx = headerIndexAny(headers, ['is_new', 'new', 'новинка']);
   const discountIdx = headerIndexAny(headers, ['discount', 'sale', 'скидка']);
-  const imageIdx = headerIndexAny(headers, ['image', 'photo', 'img', 'картинка', 'фото', 'изображение']);
+  const imageIdx = headerIndexAny(headers, ['image', 'image_url', 'imageurl', 'photo', 'img', 'картинка', 'фото', 'изображение', 'ссылка_на_фото', 'ссылка_на_картинку']);
   const descIdx = headerIndexAny(headers, ['description', 'desc', 'описание']);
   const tasteSweetIdx = headerIndexAny(headers, ['sweet', 'sweetness']);
   const tasteSourIdx = headerIndexAny(headers, ['sour']);
