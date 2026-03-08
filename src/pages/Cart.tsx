@@ -305,7 +305,7 @@ const Cart: React.FC = () => {
       .replace(/[^a-z0-9 ]/g, '');
     const compact = cleaned.replace(/\s+/g, '');
     if (compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
-    if (compact.includes('elflic') || compact.includes('elfic')) return assetUrl('/images/brands/elflic_liquid.png?v=' + Date.now());
+    if (compact.includes('elflic') || compact.includes('elfic')) return assetUrl('/images/brands/ELFLIC_IMAGE.png?v=' + Date.now());
     if (compact.includes('elfbar') || cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
     if (compact.includes('geekvape') || cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
     if (compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
