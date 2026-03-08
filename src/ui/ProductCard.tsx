@@ -108,8 +108,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const k = brandKey(brand);
 
     if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
-    if (k.compact.includes('elfic')) return assetUrl('/images/brands/elfic_liquid.png');
-    if (k.compact.includes('elflic')) return assetUrl('/images/brands/elflic_liquid.jpg?v=20260311');
+    if (k.compact.includes('elflic') || k.compact.includes('elfic')) return assetUrl('/images/brands/elflic/elflic_liquid.jpg?v=20260308');
     if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
     if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
     if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
@@ -122,8 +121,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     if (!brand) return 'linear-gradient(135deg, #333 0%, #666 100%)';
     const k = brandKey(brand);
     if (k.compact.includes('elfliq')) return theme.gradients.primary;
-    if (k.compact.includes('elfic')) return theme.gradients.primary;
-    if (k.compact.includes('elflic')) return theme.gradients.primary;
+    if (k.compact.includes('elflic') || k.compact.includes('elfic')) return theme.gradients.primary;
     if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return theme.gradients.primary;
     if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return theme.gradients.secondary;
     if (k.compact.includes('vaporesso')) return theme.gradients.secondary;
@@ -178,25 +176,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const currencySymbol = (import.meta.env?.VITE_CURRENCY_SYMBOL as string) || '€';
   const amount = Math.round(Number(price || 0)).toLocaleString();
-  const normalizedCategory = norm(category);
-  const isColorCategory =
-    normalizedCategory === 'поды' ||
-    normalizedCategory === 'pods' ||
-    normalizedCategory === 'electronics' ||
-    normalizedCategory === 'одноразки' ||
-    normalizedCategory === 'disposables';
   const cleanBrand = String(brand || '').trim();
-  const cleanName = String(name || '').trim();
-  const detailFromName = (() => {
-    if (!cleanName) return '';
-    if (!cleanBrand) return cleanName;
-    const escaped = cleanBrand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return cleanName
-      .replace(new RegExp(`^${escaped}\\s*[-–—:|•]?\\s*`, 'i'), '')
-      .trim();
-  })();
-  const detailText = detailFromName || cleanName;
-  const detailLabel = isColorCategory ? 'ЦВЕТ' : 'ВКУС';
 
   const styles = {
     card: {
@@ -291,19 +271,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       WebkitBoxOrient: 'vertical' as const,
       overflow: 'hidden',
     },
-    topDetail: {
-      marginTop: 2,
-      fontSize: 10,
-      fontWeight: 700,
-      letterSpacing: '0.08em',
-      color: 'rgba(255,255,255,0.7)',
-      textTransform: 'uppercase' as const,
-      textShadow: '0 1px 4px rgba(0,0,0,0.75)',
-      display: '-webkit-box',
-      WebkitLineClamp: 1,
-      WebkitBoxOrient: 'vertical' as const,
-      overflow: 'hidden',
-    },
     outOfStock: {
       background: 'rgba(15,8,10,0.8)',
       color: '#c0193a',
@@ -390,10 +357,9 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             {stock === 0 ? 'нет в наличии' : stock <= 5 ? `осталось ${stock}` : 'в наличии'}
           </div>
         ) : null}
-        {cleanBrand || detailText ? (
+        {cleanBrand ? (
           <div style={styles.topMeta}>
-            {cleanBrand ? <div style={styles.topBrand}>{cleanBrand}</div> : null}
-            {detailText ? <div style={styles.topDetail}>{detailLabel}: {detailText}</div> : null}
+            <div style={styles.topBrand}>{cleanBrand}</div>
           </div>
         ) : null}
 
