@@ -87,7 +87,7 @@ const getBrandImage = (brand: string, productImage: string) => {
 
   const k = brandKey(brand);
   if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
-  if (k.compact.includes('elflic') || k.compact.includes('elfic')) return assetUrl('/images/brands/ELFLIC_IMAGE.png?v=' + Date.now());
+  if (k.compact.includes('elflic') || k.compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=' + Date.now());
   if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
   if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
   if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
