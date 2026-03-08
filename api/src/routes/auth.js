@@ -44,9 +44,10 @@ async function resolveStatus(tgId, existingStatus) {
 
 router.post('/verify', verifyTelegramAuth, async (req, res) => {
   try {
-    const { tgId, username, firstName, lastName } = req.user;
+    const { tgId, username, firstName, lastName, startParam } = req.user;
 
     const existing = db.prepare('SELECT * FROM users WHERE tg_id = ?').get(tgId);
+    const isNewUser = !existing;
     const ageVerified = existing ? Boolean(existing.age_verified) : false;
     const existingStatus = existing ? String(existing.status || 'regular') : '';
     const status = await resolveStatus(tgId, existingStatus);
@@ -55,6 +56,12 @@ router.post('/verify', verifyTelegramAuth, async (req, res) => {
       'INSERT OR IGNORE INTO users (tg_id, username, first_name, last_name, age_verified, status, bonus_balance) VALUES (?, ?, ?, ?, ?, ?, 0)',
     ).run(tgId, username, firstName, lastName, ageVerified ? 1 : 0, status);
     db.prepare('UPDATE users SET username=?, first_name=?, last_name=?, status=? WHERE tg_id=?').run(username, firstName, lastName, status, tgId);
+    if (isNewUser) {
+      const referrerId = String(startParam || '').trim();
+      if (referrerId && referrerId !== String(tgId)) {
+        db.claimReferral(tgId, referrerId);
+      }
+    }
     let secret = String(process.env.JWT_SECRET || '').trim();
     if (!secret) {
       if (String(process.env.NODE_ENV || '') === 'production') {

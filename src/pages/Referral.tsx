@@ -39,7 +39,7 @@ const Referral: React.FC = () => {
 
   const refCode = String(info?.referralCode || user?.tgId || '');
   const botUsername = String(import.meta.env.VITE_BOT_USERNAME || '').trim();
-  const link = botUsername ? `https://t.me/${botUsername}?startapp=ref_${encodeURIComponent(refCode || 'unknown')}` : '';
+  const link = botUsername ? `https://t.me/${botUsername}?start=${encodeURIComponent(refCode || 'unknown')}` : '';
 
   const stage = String(info?.stage || 'partner') as 'partner' | 'ambassador';
   const invited = Math.max(0, Number(info?.invited || 0));

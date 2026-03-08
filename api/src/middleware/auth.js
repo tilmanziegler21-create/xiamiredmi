@@ -42,7 +42,8 @@ export const verifyTelegramAuth = (req, res, next) => {
       tgId: userData.id.toString(),
       username: userData.username,
       firstName: userData.first_name,
-      lastName: userData.last_name
+      lastName: userData.last_name,
+      startParam: String(params.get('start_param') || '').trim(),
     };
 
     next();

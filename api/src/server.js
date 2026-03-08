@@ -22,6 +22,7 @@ import adminRoutes from './routes/admin.js';
 import courierPanelRoutes from './routes/courier.js';
 import referralRoutes from './routes/referral.js';
 import fortuneRoutes from './routes/fortune.js';
+import userRoutes from './routes/user.js';
 import cron from 'node-cron';
 import db from './services/database.js';
 import { updateOrderRowByOrderId, readSheetTable, listSheetTabs, getProducts } from './services/sheets.js';
@@ -166,6 +167,7 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/courier', courierPanelRoutes);
 app.use('/api/referral', referralRoutes);
 app.use('/api/fortune', fortuneRoutes);
+app.use('/api/user', userRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

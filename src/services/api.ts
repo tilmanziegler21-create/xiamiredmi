@@ -164,6 +164,11 @@ export const authAPI = {
   dev: () => api.post('/auth/dev'),
 };
 
+export const userAPI = {
+  start: (data: { user_id: string; referrer_id?: string }) =>
+    api.post('/user/start', data),
+};
+
 export const catalogAPI = {
   getProducts: (params: any) =>
     api.get('/catalog', { params }),

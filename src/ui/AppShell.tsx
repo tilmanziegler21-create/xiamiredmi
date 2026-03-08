@@ -10,7 +10,7 @@ import { useConfigStore } from '../store/useConfigStore';
 import { useCityStore } from '../store/useCityStore';
 import { CityPickerModal } from './CityPickerModal';
 import { useToastStore } from '../store/useToastStore';
-import { cartAPI, referralAPI } from '../services/api';
+import { cartAPI, userAPI } from '../services/api';
 import { theme } from './theme';
 import WebApp from '@twa-dev/sdk';
 
@@ -78,35 +78,14 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
     (async () => {
       try {
         if (!user?.tgId) return;
-        const params = new URLSearchParams(location.search || '');
-        let ref = String(params.get('ref') || '').trim();
-        if (!ref) {
-          try {
-            const startParam = String((WebApp as any)?.initDataUnsafe?.start_param || '').trim();
-            if (startParam.startsWith('ref_')) {
-              ref = startParam.slice('ref_'.length);
-              try {
-                ref = decodeURIComponent(ref);
-              } catch {
-              }
-              ref = String(ref || '').trim();
-            }
-          } catch {
-          }
-        }
-        if (!ref) return;
-        const key = `ref_claimed:${user.tgId}:${ref}`;
-        if (localStorage.getItem(key)) return;
-        await referralAPI.claim(ref);
-        localStorage.setItem(key, '1');
-        if (params.get('ref')) {
-          params.delete('ref');
-          navigate({ pathname: location.pathname, search: params.toString() ? `?${params.toString()}` : '' }, { replace: true });
-        }
+        const startParam = String((WebApp as any)?.initDataUnsafe?.start_param || '').trim();
+        const referrerId = /^\d+$/.test(startParam) ? startParam : '';
+        if (!referrerId) return;
+        await userAPI.start({ user_id: String(user.tgId), referrer_id: referrerId });
       } catch {
       }
     })();
-  }, [location.pathname, location.search, navigate, user?.tgId]);
+  }, [user?.tgId]);
 
   React.useEffect(() => {
     setShowProgress(true);
