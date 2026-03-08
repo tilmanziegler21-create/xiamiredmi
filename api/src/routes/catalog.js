@@ -39,7 +39,7 @@ function categoryMatches(query, productCategory) {
   if (!q) return true;
   const aliases = {
     'жидкости': ['жидкости', 'жидкость', 'liquids', 'liquid'],
-    'одноразки': ['одноразки', 'одноразка', 'disposables', 'disposable'],
+    'одноразки': ['одноразки', 'одноразка', 'disposables', 'disposable', 'electronics', 'electronic', 'электронки', 'электронка'],
     'поды': ['поды', 'под', 'pods', 'pod'],
     'картриджи': ['картриджи', 'картридж', 'cartridges', 'cartridge'],
   };
