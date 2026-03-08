@@ -87,7 +87,7 @@ const getBrandImage = (brand: string, productImage: string) => {
   const k = brandKey(brand);
   if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
   if (k.compact.includes('elfic')) return assetUrl('/images/brands/elfic_liquid.png');
-  if (k.compact.includes('elflic')) return assetUrl('/images/brands/elflic/elflic_liquid_20260306.jpg');
+  if (k.compact.includes('elflic')) return assetUrl('/images/brands/elflic/elflic_liquid_new.PNG?v=20260310');
   if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
   if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
   if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
@@ -259,13 +259,12 @@ const Product: React.FC = () => {
     posterBottle: {
       position: 'absolute' as const,
       inset: 0,
-      padding: '16px 14px 18px',
       height: '100%',
       width: '100%',
-      objectFit: 'contain' as const,
+      objectFit: 'cover' as const,
       pointerEvents: 'none' as const,
       zIndex: 2,
-      filter: 'drop-shadow(0 20px 34px rgba(0,0,0,0.55))',
+      filter: 'none',
     },
     card: {
       margin: `${theme.spacing.md} ${theme.padding.screen}`,
@@ -366,9 +365,11 @@ const Product: React.FC = () => {
   return (
     <div style={{ paddingBottom: theme.spacing.xl }}>
       <div style={styles.poster}>
-        <div style={styles.posterMascot}>
-          <CherryMascot variant="pink" size={180} />
-        </div>
+        {!posterImage ? (
+          <div style={styles.posterMascot}>
+            <CherryMascot variant="pink" size={180} />
+          </div>
+        ) : null}
         {posterImage ? <img src={posterImage} alt="" style={styles.posterBottle} /> : null}
         <div style={styles.posterScrim} />
       </div>

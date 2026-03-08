@@ -109,7 +109,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
     if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
     if (k.compact.includes('elfic')) return assetUrl('/images/brands/elfic_liquid.png');
-    if (k.compact.includes('elflic')) return assetUrl('/images/brands/elflic/elflic_liquid.jpg?v=20260309');
+    if (k.compact.includes('elflic')) return assetUrl('/images/brands/elflic/elflic_liquid_new.PNG?v=20260310');
     if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
     if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
     if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
@@ -370,11 +370,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 2, borderRadius: 'inherit', pointerEvents: 'none' }} />
       ) : null}
       <div style={styles.content}>
-        <div style={styles.mascot}>
-          <div style={{ height: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-            <CherryMascot variant={mascotVariant} size={140} />
+        {!resolvedImage ? (
+          <div style={styles.mascot}>
+            <div style={{ height: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+              <CherryMascot variant={mascotVariant} size={140} />
+            </div>
           </div>
-        </div>
+        ) : null}
         {resolvedImage ? <img src={resolvedImage} alt="" style={styles.bottle} loading="lazy" decoding="async" /> : null}
 
         {stock !== undefined ? (
