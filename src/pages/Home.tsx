@@ -477,28 +477,6 @@ const Home: React.FC = () => {
               <h2 style={styles.bannerTitle}>{banners[currentBanner].title}</h2>
               <p style={styles.bannerSubtitle}>{banners[currentBanner].subtitle}</p>
             </div>
-            <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, zIndex: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-              {banners.map((_, idx) => (
-                <button
-                  key={idx}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setCurrentBanner(idx);
-                  }}
-                  style={{
-                    width: idx === currentBanner ? 16 : 7,
-                    height: 7,
-                    borderRadius: 999,
-                    border: 'none',
-                    background: idx === currentBanner ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)',
-                    transition: 'all 140ms ease',
-                    cursor: 'pointer',
-                    padding: 0,
-                  }}
-                  aria-label={`banner-${idx + 1}`}
-                />
-              ))}
-            </div>
           </div>
         ) : (
           <div style={{ marginBottom: theme.spacing.lg }}>
@@ -507,6 +485,30 @@ const Home: React.FC = () => {
             </GlassCard>
           </div>
         )}
+        {banners.length ? (
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+            {banners.map((_, idx) => (
+              <button
+                key={idx}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setCurrentBanner(idx);
+                }}
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: 999,
+                  border: 'none',
+                  background: idx === currentBanner ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.36)',
+                  transition: 'all 120ms ease',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+                aria-label={`banner-${idx + 1}`}
+              />
+            ))}
+          </div>
+        ) : null}
       </div>
 
       {config?.bundleConfig?.enabled ? (
