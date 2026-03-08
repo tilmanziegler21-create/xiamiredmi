@@ -64,6 +64,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
   const normalizeProvidedImage = (v: string) => {
     const raw = String(v || '').trim();
+    const withBust = (p: string) => (/[?&]v=/.test(p) ? p : `${p}${p.includes('?') ? '&' : '?'}v=${Date.now()}`);
     if (!raw) return '';
     const lower = raw.toLowerCase();
     if (['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower)) return '';
@@ -83,8 +84,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const isImageUrl = /\.(png|jpe?g|webp|gif|svg)$/.test(base);
     if (!isImageUrl) return '';
     if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-    if (raw.startsWith('/')) return assetUrl(raw);
-    if (raw.startsWith('images/')) return assetUrl(`/${raw}`);
+    if (raw.startsWith('/')) return assetUrl(withBust(raw));
+    if (raw.startsWith('images/')) return assetUrl(withBust(`/${raw}`));
     return '';
   };
 
