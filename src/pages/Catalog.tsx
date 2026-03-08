@@ -37,10 +37,11 @@ const assetUrl = (p: string) => {
   const path = p.startsWith('/') ? p : `/${p}`;
   return `${prefix}${path}`;
 };
+const imageCacheKey = (import.meta.env?.VITE_IMAGE_CACHE_KEY as string) || '20260309';
 
 const normalizeProvidedImage = (v: string) => {
   const raw = String(v || '').trim();
-  const withBust = (p: string) => (/[?&]v=/.test(p) ? p : `${p}${p.includes('?') ? '&' : '?'}v=${Date.now()}`);
+  const withBust = (p: string) => (/[?&]v=/.test(p) ? p : `${p}${p.includes('?') ? '&' : '?'}v=${imageCacheKey}`);
   if (!raw) return '';
   const lower = raw.toLowerCase();
   if (['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower)) return '';
@@ -57,7 +58,7 @@ const fallbackBrandImage = (brand: string, image: string) => {
   const cleaned = String(brand || '').toLowerCase().trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '');
   const compact = cleaned.replace(/\s+/g, '');
   if (compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
-  if (compact.includes('elflic') || compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=' + Date.now());
+  if (compact.includes('elflic') || compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=' + imageCacheKey);
   if (compact.includes('elfbar') || cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
   if (compact.includes('geekvape') || cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
   if (compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');

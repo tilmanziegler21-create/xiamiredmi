@@ -61,10 +61,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     const path = p.startsWith('/') ? p : `/${p}`;
     return `${prefix}${path}`;
   };
+  const imageCacheKey = (import.meta.env?.VITE_IMAGE_CACHE_KEY as string) || '20260309';
 
   const normalizeProvidedImage = (v: string) => {
     const raw = String(v || '').trim();
-    const withBust = (p: string) => (/[?&]v=/.test(p) ? p : `${p}${p.includes('?') ? '&' : '?'}v=${Date.now()}`);
+    const withBust = (p: string) => (/[?&]v=/.test(p) ? p : `${p}${p.includes('?') ? '&' : '?'}v=${imageCacheKey}`);
     if (!raw) return '';
     const lower = raw.toLowerCase();
     if (['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower)) return '';
@@ -108,11 +109,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
 
     const k = brandKey(brand);
 
-    if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=' + Date.now());
-    if (k.compact.includes('elflic') || k.compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=' + Date.now());
-    if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png?v=' + Date.now());
-    if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png?v=' + Date.now());
-    if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png?v=' + Date.now());
+    if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=' + imageCacheKey);
+    if (k.compact.includes('elflic') || k.compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=' + imageCacheKey);
+    if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png?v=' + imageCacheKey);
+    if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png?v=' + imageCacheKey);
+    if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png?v=' + imageCacheKey);
 
     return '';
   };
