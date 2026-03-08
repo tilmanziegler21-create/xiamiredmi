@@ -35,7 +35,6 @@ const Home: React.FC = () => {
   const { config } = useConfigStore();
   const bannerTouch = React.useRef<{ x: number; y: number } | null>(null);
   const bannerSwiped = React.useRef(false);
-  const autoBannerTimer = React.useRef<number | null>(null);
 
   const ultraLite = (() => {
     try {
@@ -82,24 +81,6 @@ const Home: React.FC = () => {
       },
     };
   }, []);
-
-  const restartBannerAuto = React.useCallback(() => {
-    if (autoBannerTimer.current != null) {
-      window.clearTimeout(autoBannerTimer.current);
-      autoBannerTimer.current = null;
-    }
-    if (ultraLite || banners.length <= 1) return;
-    autoBannerTimer.current = window.setTimeout(() => {
-      setCurrentBanner((prev) => (banners.length ? (prev + 1) % banners.length : 0));
-    }, 4000);
-  }, [banners.length, ultraLite]);
-
-  useEffect(() => {
-    restartBannerAuto();
-    return () => {
-      if (autoBannerTimer.current != null) window.clearTimeout(autoBannerTimer.current);
-    };
-  }, [currentBanner, restartBannerAuto]);
 
   const onBannerClick = () => {
     const b = banners[currentBanner];
@@ -243,7 +224,7 @@ const Home: React.FC = () => {
       marginBottom: theme.spacing.lg,
     },
     banner: {
-      height: 240,
+      height: 230,
       borderRadius: theme.radius.lg,
       overflow: 'hidden',
       position: 'relative' as const,
@@ -253,7 +234,7 @@ const Home: React.FC = () => {
     },
     bannerContent: {
       position: 'absolute' as const,
-      bottom: 40,
+      bottom: 28,
       left: theme.spacing.lg,
       right: theme.spacing.lg,
       zIndex: 4,
@@ -463,7 +444,6 @@ const Home: React.FC = () => {
               bannerSwiped.current = true;
               if (dx < 0) setCurrentBanner((p) => (banners.length ? (p + 1) % banners.length : 0));
               if (dx > 0) setCurrentBanner((p) => (banners.length ? (p - 1 + banners.length) % banners.length : 0));
-              restartBannerAuto();
             }}
           >
             {!ultraLite && banners[currentBanner].image ? (
@@ -497,25 +477,27 @@ const Home: React.FC = () => {
               <h2 style={styles.bannerTitle}>{banners[currentBanner].title}</h2>
               <p style={styles.bannerSubtitle}>{banners[currentBanner].subtitle}</p>
             </div>
-            <div
-              style={{ position: 'absolute', top: '50%', left: 12, transform: 'translateY(-50%)', zIndex: 6, width: 34, height: 34, borderRadius: 999, background: 'rgba(0,0,0,0.34)', border: '1px solid rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentBanner((p) => (p - 1 + banners.length) % banners.length);
-                restartBannerAuto();
-              }}
-            >
-              ←
-            </div>
-            <div
-              style={{ position: 'absolute', top: '50%', right: 12, transform: 'translateY(-50%)', zIndex: 6, width: 34, height: 34, borderRadius: 999, background: 'rgba(0,0,0,0.34)', border: '1px solid rgba(255,255,255,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', userSelect: 'none' }}
-              onClick={(e) => {
-                e.stopPropagation();
-                setCurrentBanner((p) => (p + 1) % banners.length);
-                restartBannerAuto();
-              }}
-            >
-              →
+            <div style={{ position: 'absolute', bottom: 10, left: 0, right: 0, zIndex: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              {banners.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentBanner(idx);
+                  }}
+                  style={{
+                    width: idx === currentBanner ? 16 : 7,
+                    height: 7,
+                    borderRadius: 999,
+                    border: 'none',
+                    background: idx === currentBanner ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.45)',
+                    transition: 'all 140ms ease',
+                    cursor: 'pointer',
+                    padding: 0,
+                  }}
+                  aria-label={`banner-${idx + 1}`}
+                />
+              ))}
             </div>
           </div>
         ) : (
@@ -538,30 +520,30 @@ const Home: React.FC = () => {
               position: 'relative',
               background: 'linear-gradient(135deg, rgba(59,130,246,0.8) 0%, rgba(15,12,26,0.95) 100%)',
               border: '1px solid rgba(255,255,255,0.14)',
-              padding: 16,
+              padding: 12,
               cursor: 'pointer',
             }}
           >
-            <div style={{ fontSize: 18, fontWeight: 800, color: '#fff', marginBottom: 4 }}>
+            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 2 }}>
               Вместе дешевле
             </div>
-            <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.65)', marginBottom: 14 }}>
+            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 8 }}>
               Под + 2 жидкости
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <div style={{ width: 72, height: 72, borderRadius: 12, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CherryMascot variant="cosmic" size={54} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <div style={{ width: 54, height: 54, borderRadius: 10, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CherryMascot variant="cosmic" size={40} />
               </div>
-              <div style={{ width: 24, height: 24, borderRadius: 12, border: '2px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 700 }}>+</div>
-              <div style={{ width: 72, height: 72, borderRadius: 12, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CherryMascot variant="green" size={54} />
+              <div style={{ width: 20, height: 20, borderRadius: 10, border: '2px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700 }}>+</div>
+              <div style={{ width: 54, height: 54, borderRadius: 10, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <CherryMascot variant="green" size={40} />
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
-              <span style={{ fontSize: 22, fontWeight: 800 }}>{config?.bundleConfig?.price || 50} €</span>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+              <span style={{ fontSize: 20, fontWeight: 800 }}>{config?.bundleConfig?.price || 50} €</span>
               <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 6, background: 'rgba(34,197,94,0.18)', color: '#22c55e' }}>ВЫГОДНО</span>
             </div>
-            <div style={{ width: '100%', padding: '10px 0', borderRadius: 12, background: 'rgba(255,255,255,0.10)', textAlign: 'center', fontSize: 12, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+            <div style={{ width: '100%', padding: '8px 0', borderRadius: 10, background: 'rgba(255,255,255,0.10)', textAlign: 'center', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
               Собрать набор →
             </div>
           </div>

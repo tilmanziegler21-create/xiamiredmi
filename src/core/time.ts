@@ -5,6 +5,18 @@ export function formatDate(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+export function formatDateInTimezone(date: Date, timeZone: string): string {
+  return new Intl.DateTimeFormat("sv-SE", { timeZone }).format(date);
+}
+
+export function dateInTimezone(timeZone: string): string {
+  return formatDateInTimezone(new Date(), timeZone);
+}
+
+export function addDaysInTimezone(timeZone: string, days: number): string {
+  return formatDateInTimezone(new Date(Date.now() + days * 86400000), timeZone);
+}
+
 export function formatTime(d: Date): string {
   const h = String(d.getHours()).padStart(2, "0");
   const m = String(d.getMinutes()).padStart(2, "0");

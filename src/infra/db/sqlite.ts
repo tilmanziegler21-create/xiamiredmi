@@ -20,6 +20,8 @@ export async function initDb() {
   db = new Database(env.DB_PATH);
   db.pragma("journal_mode = WAL");
   db.pragma("foreign_keys = ON");
+  db.pragma("busy_timeout = 5000");
+  db.pragma("synchronous = NORMAL");
   db.exec(`
     CREATE TABLE IF NOT EXISTS orders (
       order_id INTEGER PRIMARY KEY,
@@ -53,6 +55,8 @@ export async function initDb() {
       released INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_res_order ON reservations(order_id);
+    CREATE INDEX IF NOT EXISTS idx_res_product_release_expiry ON reservations(product_id, released, expiry_timestamp);
+    CREATE INDEX IF NOT EXISTS idx_res_expiry_release ON reservations(expiry_timestamp, released);
     
     CREATE TABLE IF NOT EXISTS users (
       user_id INTEGER PRIMARY KEY,
@@ -80,6 +84,7 @@ export async function initDb() {
       payload TEXT
     );
     CREATE INDEX IF NOT EXISTS idx_events_date_type ON events(date, type);
+    CREATE INDEX IF NOT EXISTS idx_events_user_date ON events(user_id, date);
   `);
   logger.info("SQLite initialized", { path: env.DB_PATH });
   try {

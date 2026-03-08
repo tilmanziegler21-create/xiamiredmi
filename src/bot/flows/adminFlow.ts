@@ -10,6 +10,7 @@ import { getDb } from "../../infra/db/sqlite";
 import { ReportService } from "../../services/ReportService";
 import { getDefaultCity } from "../../infra/backend";
 import { sendDailySummary, generateDailySummaryText } from "../../infra/cron/scheduler";
+import { addDaysInTimezone, dateInTimezone } from "../../core/time";
 
 function isAdmin(id: number) {
   const list = (env.TELEGRAM_ADMIN_IDS || "").split(",").map((s) => Number(s.trim())).filter((x) => x);
@@ -56,7 +57,7 @@ export function registerAdminFlow(bot: TelegramBot) {
   bot.onText(/\/test_report\s+(\d{4}-\d{2}-\d{2})/, async (msg, match) => {
     const adminIds = process.env.TELEGRAM_ADMIN_IDS?.split(',') || [];
     if (!adminIds.includes(msg.from?.id.toString() || '')) return;
-    const date = match?.[1] || new Date().toISOString().slice(0,10);
+    const date = match?.[1] || dateInTimezone(env.TIMEZONE);
     try {
       await bot.sendMessage(msg.chat.id, `⏳ Генерирую отчёт за ${date}...`);
       const text = await generateDailySummaryText(date);
@@ -129,7 +130,7 @@ export function registerAdminFlow(bot: TelegramBot) {
   bot.onText(/\/whoami/, async (msg) => {
     const id = msg.from?.id || 0;
     const adminList = (env.TELEGRAM_ADMIN_IDS || "").split(",").map((s) => Number(s.trim())).filter((x) => x);
-    const is = adminList.includes(id) || id === 8358091146;
+    const is = adminList.includes(id);
     await bot.sendMessage(msg.chat.id, `Ваш tg_id: ${id}\nАдмин: ${is ? "да" : "нет"}`);
   });
 
@@ -172,6 +173,7 @@ export function registerAdminFlow(bot: TelegramBot) {
     const data = q.data || "";
     const dec = decodeCb(data);
     const finalData = dec === "__expired__" ? data : dec;
+    if (!finalData.startsWith("admin_")) return;
     if (finalData === "admin_open") {
       const keyboard = [
         [{ text: "Список заказов", callback_data: "admin_orders" }],
@@ -198,15 +200,15 @@ export function registerAdminFlow(bot: TelegramBot) {
       try {
         const parts = finalData.split(":");
         let dateFrom = "";
-        let dateTo = new Date().toISOString().slice(0,10);
+        let dateTo = dateInTimezone(env.TIMEZONE);
         if (parts[1] === "today") {
           dateFrom = dateTo;
         } else if (parts[1] === "yesterday") {
-          dateFrom = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+          dateFrom = addDaysInTimezone(env.TIMEZONE, -1);
           dateTo = dateFrom;
         } else if (parts[1] === "days" && parts[2]) {
           const d = Number(parts[2]);
-          dateFrom = new Date(Date.now() - d * 86400000).toISOString().slice(0,10);
+          dateFrom = addDaysInTimezone(env.TIMEZONE, -d);
         } else {
           dateFrom = dateTo;
         }
@@ -264,7 +266,7 @@ export function registerAdminFlow(bot: TelegramBot) {
     }
     if (finalData === "admin_upsell_stats") {
       const db = getDb();
-      const today = new Date().toISOString().slice(0,10);
+      const today = dateInTimezone(env.TIMEZONE);
       const offers = db.prepare("SELECT COUNT(1) AS c FROM events WHERE type='upsell_offer' AND substr(date,1,10)=?").get(today) as any;
       const acceptsRows = db.prepare("SELECT payload FROM events WHERE type='upsell_accept' AND substr(date,1,10)=?").all(today) as any[];
       const accepts = acceptsRows.length;
@@ -380,8 +382,8 @@ export function registerAdminFlow(bot: TelegramBot) {
     } else if (finalData === "admin_migrate_items") {
       try {
         const db = getDb();
-        const today = new Date().toISOString().slice(0,10);
-        const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().slice(0,10);
+        const today = dateInTimezone(env.TIMEZONE);
+        const dayAfter = addDaysInTimezone(env.TIMEZONE, 2);
         const rows = db.prepare("SELECT order_id, items_json FROM orders WHERE status IN ('pending','confirmed','courier_assigned') AND delivery_date >= ? AND delivery_date <= ? ORDER BY order_id DESC").all(today, dayAfter) as any[];
         const products = await getProducts();
         const pmap = new Map<number, string>();

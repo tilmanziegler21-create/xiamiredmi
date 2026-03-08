@@ -1,4 +1,5 @@
 import fs from "fs";
+import { TIMEZONE as DEFAULT_TIMEZONE } from "../core/constants";
 
 type Env = {
   TELEGRAM_BOT_TOKEN: string;
@@ -33,6 +34,16 @@ function requireEnvAny(keys: string[]): string {
   throw new Error(`Missing env ${keys.join(" or ")}`);
 }
 
+function resolveTimezone(value: string | undefined): string {
+  const tz = String(value || DEFAULT_TIMEZONE).trim() || DEFAULT_TIMEZONE;
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: tz }).format(new Date());
+    return tz;
+  } catch {
+    return DEFAULT_TIMEZONE;
+  }
+}
+
 const DATA_BACKEND = (process.env.DATA_BACKEND as Env["DATA_BACKEND"]) || "mock";
 const SA_PATH = process.env.GOOGLE_SERVICE_ACCOUNT_JSON_PATH || "service-account.json";
 let SA_EMAIL = "";
@@ -59,7 +70,7 @@ export const env: Env = {
       ? ((SA_KEY && SA_KEY.length) ? SA_KEY : requireEnv("GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY").replace(/\\n/g, "\n"))
       : (process.env.GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
   DB_PATH: process.env.DB_PATH || "./data/app.db",
-  TIMEZONE: process.env.TIMEZONE || "Europe/Moscow",
+  TIMEZONE: resolveTimezone(process.env.TIMEZONE),
   DATA_BACKEND,
   GROUP_URL: process.env.GROUP_URL || "",
   REVIEWS_URL: process.env.REVIEWS_URL || "",

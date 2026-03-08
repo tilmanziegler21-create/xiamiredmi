@@ -2,13 +2,14 @@ import cron from "node-cron";
 import { getDb, initDb } from "../db/sqlite";
 import { expireOrder } from "../../domain/orders/OrderService";
 import { computeDailyMetrics, writeDailyMetricsRow } from "../../domain/metrics/MetricsService";
-import { formatDate } from "../../core/time";
+import { addDaysInTimezone, dateInTimezone } from "../../core/time";
 import { logger } from "../logger";
 import { getBot } from "../../bot/Bot";
 import { updateUser } from "../data";
 import { getBackend, getDefaultCity } from "../backend";
 import { purgeNotIssuedOlderThan } from "../../domain/orders/OrderService";
-import { NOT_ISSUED_DELETE_AFTER_MINUTES } from "../../core/constants";
+import { DAY_MS, NOT_ISSUED_DELETE_AFTER_MINUTES, SHEETS_REPAIR_BATCH_SIZE } from "../../core/constants";
+import { env } from "../config";
 import { shopConfig } from "../../config/shopConfig";
 import { ReportService } from "../../services/ReportService";
 import { batchGet } from "../sheets/SheetsClient";
@@ -18,12 +19,12 @@ import { getProductsMap, normalizeProductId, formatProductName } from "../../uti
 export async function generateDailySummaryText(dateOverride?: string): Promise<string> {
   let db = getDb();
   if (!db) { try { await initDb(); db = getDb(); } catch {} }
-  const tz = process.env.TIMEZONE || "Europe/Berlin";
+  const tz = env.TIMEZONE;
   const today = (dateOverride && /^\d{4}-\d{2}-\d{2}$/.test(dateOverride))
     ? dateOverride
     : new Intl.DateTimeFormat("sv-SE", { timeZone: tz }).format(new Date());
   const start = Date.parse(`${today}T00:00:00.000Z`);
-  const end = start + 86400000;
+  const end = start + DAY_MS;
   const sheetCity = shopConfig.cityCode;
   const sheetName = (process.env.GOOGLE_SHEETS_MODE === "TABS_PER_CITY") ? `orders_${sheetCity}` : "orders";
   let valuesOrders: string[][] = [];
@@ -394,7 +395,7 @@ export async function sendDailySummary() {
       const deliveredAtIdx = (idx("delivered_at") >= 0 ? idx("delivered_at") : idx("delivered_timestamp"));
       const statusIdx = idx("status");
       const itemsIdx = idx("items_json");
-      const today = new Date().toISOString().slice(0,10);
+      const today = dateInTimezone(env.TIMEZONE);
       const deliveredRows = rows.filter(r => {
         const d = String(deliveredAtIdx>=0 ? r[deliveredAtIdx]||"" : "").slice(0,10);
         const st = String(statusIdx>=0 ? r[statusIdx]||"" : "").toLowerCase();
@@ -451,7 +452,7 @@ export async function sendDailySummary() {
 }
 
 export async function registerCron() {
-  const timezone = "Europe/Berlin";
+  const timezone = env.TIMEZONE;
   cron.schedule("*/1 * * * *", async () => {
     const db = getDb();
     const nowIso = new Date().toISOString();
@@ -461,7 +462,7 @@ export async function registerCron() {
 
   cron.schedule("0 10 * * *", async () => {
     const db = getDb();
-    const users = db.prepare("SELECT user_id FROM users WHERE next_reminder_date = ?").all(formatDate(new Date())) as any[];
+    const users = db.prepare("SELECT user_id FROM users WHERE next_reminder_date = ?").all(dateInTimezone(timezone)) as any[];
     const bot = getBot();
     for (const u of users) {
       try {
@@ -475,7 +476,7 @@ export async function registerCron() {
   cron.schedule("5 10 * * *", async () => {
     const db = getDb();
     const bot = getBot();
-    const target = formatDate(new Date(Date.now() - 3 * 86400000));
+    const target = addDaysInTimezone(timezone, -3);
     const rows = db.prepare("SELECT user_id FROM users WHERE last_purchase_date IS NULL AND first_seen = ?").all(target) as any[];
     for (const r of rows) {
       try { await bot.sendMessage(Number(r.user_id), "👋 Возвращайтесь — посмотрите каталог и соберите заказ. Жидкости ELFIC/CHASER и электроника. Нажмите /start или кнопку ниже."); } catch {}
@@ -525,7 +526,7 @@ export async function registerCron() {
     try {
       const db = getDb();
       const bot = getBot();
-      const yesterdayLocal = new Intl.DateTimeFormat("sv-SE", { timeZone: timezone }).format(new Date(Date.now() - 86400000));
+      const yesterdayLocal = addDaysInTimezone(timezone, -1);
       console.log(`🔍 Auto-cancelling overdue orders (${yesterdayLocal})`);
       const overdue = db.prepare(`
         SELECT order_id, courier_id, delivery_date, total_with_discount
@@ -550,7 +551,7 @@ export async function registerCron() {
 
   cron.schedule("0 0 * * *", async () => {
     try {
-      const date = formatDate(new Date());
+      const date = dateInTimezone(timezone);
       const row = await computeDailyMetrics(date);
       await writeDailyMetricsRow(row);
       const backend = getBackend();
@@ -604,7 +605,7 @@ export async function registerCron() {
   cron.schedule("0 * * * *", async () => {
     try {
       const db = getDb();
-      const cutoff = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const cutoff = new Date(Date.now() - DAY_MS).toISOString();
       const rows = db.prepare("SELECT order_id FROM orders WHERE status='pending' AND reserve_timestamp < ?").all(cutoff) as any[];
       const sheet = (process.env.GOOGLE_SHEETS_MODE === "TABS_PER_CITY") ? `orders_${shopConfig.cityCode}` : "orders";
       const { batchGet } = await import("../sheets/SheetsClient");
@@ -649,8 +650,8 @@ export async function registerCron() {
     try {
       const db = getDb();
       const backend = getBackend();
-      const today = new Date().toISOString().slice(0,10);
-      const dayAfter = new Date(Date.now() + 2 * 86400000).toISOString().slice(0,10);
+      const today = dateInTimezone(timezone);
+      const dayAfter = addDaysInTimezone(timezone, 2);
       const rows = db.prepare("SELECT order_id, items_json FROM orders WHERE status IN ('pending','confirmed','courier_assigned') AND delivery_date >= ? AND delivery_date <= ?").all(today, dayAfter) as any[];
       for (const r of rows) {
         try {
@@ -667,7 +668,7 @@ export async function registerCron() {
   cron.schedule("*/2 * * * *", async () => {
     try {
       const db = getDb();
-      const rows = db.prepare("SELECT id, order_id, updates_json, city_code, attempts FROM sheets_repair_queue ORDER BY id ASC LIMIT 20").all() as any[];
+      const rows = db.prepare(`SELECT id, order_id, updates_json, city_code, attempts FROM sheets_repair_queue ORDER BY id ASC LIMIT ${SHEETS_REPAIR_BATCH_SIZE}`).all() as any[];
       if (!rows.length) return;
       const { getBot } = await import("../../bot/Bot");
       for (const r of rows) {

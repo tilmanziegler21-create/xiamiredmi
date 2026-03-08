@@ -11,10 +11,11 @@ import { google } from "googleapis";
 import { getProductsMap, formatProductName, normalizeProductId } from "../../utils/products";
 import { getUsername as loadUsername } from "../../utils/users";
 import { updateRange } from "../../infra/sheets/SheetsClient";
+import { PRODUCTS_CACHE_TTL_MS } from "../../core/constants";
+import { addDaysInTimezone } from "../../core/time";
 
 function getDateString(offset: number) {
-  const d = new Date(Date.now() + offset * 86400000);
-  return d.toISOString().slice(0, 10);
+  return addDaysInTimezone(env.TIMEZONE, offset);
 }
 
 function sheetsApiAuthed() {
@@ -96,8 +97,6 @@ export async function updateOrderInSheets(orderId: number, updates: Record<strin
 }
 
 const productsCityCache: Map<string, { ts: number; map: Map<string, string> }> = new Map();
-const PRODUCTS_CACHE_TTL_MS = 5 * 60 * 1000;
-
 async function getProductsMapByCity(cityCode: string): Promise<Map<string, string>> {
   const now = Date.now();
   const cached = productsCityCache.get(cityCode);
@@ -456,13 +455,13 @@ export function registerCourierFlow(bot: TelegramBot) {
   bot.on("callback_query", async (q) => {
     try { await bot.answerCallbackQuery(q.id); } catch {}
     try { logger.info("COURIER_CLICK", { data: q.data, courier_id: q.from?.id }); } catch {}
-    let data = q.data || "";
-    data = decodeCb(data);
+    const data = decodeCb(q.data || "");
     if (data === "__expired__") {
       const chatId = q.message?.chat.id || 0;
       await bot.sendMessage(chatId, "Кнопка устарела. Откройте /courier для актуального списка.");
       return;
     }
+    if (!String(data || "").startsWith("courier_")) return;
     const chatId = q.message?.chat.id || 0;
     if (data === "courier_refresh") {
       await refreshCourierPanel(bot, chatId, q.message?.message_id, q.from.id);

@@ -102,6 +102,7 @@ export function registerClientFlow(bot: TelegramBot) {
     let data = q.data || "";
     data = decodeCb(data);
     try { logger.info("CLIENT_CLICK", { data }); } catch {}
+    if (String(data || "").startsWith("admin_") || String(data || "").startsWith("courier_")) return;
     if (data === "__expired__") {
       const chatId = q.message?.chat.id || 0;
       await bot.sendMessage(chatId, "Кнопка устарела. Нажмите /start, чтобы обновить меню.");
