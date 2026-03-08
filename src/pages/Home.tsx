@@ -33,8 +33,9 @@ const Home: React.FC = () => {
   const [loadError, setLoadError] = useState<string | null>(null);
   const { city } = useCityStore();
   const { config } = useConfigStore();
-  const bannerTouch = React.useRef<{ x: number; y: number } | null>(null);
-  const bannerSwiped = React.useRef(false);
+  const bannerCarouselRef = React.useRef<HTMLDivElement | null>(null);
+  const bannerDragStartX = React.useRef<number | null>(null);
+  const bannerDragging = React.useRef(false);
 
   const ultraLite = (() => {
     try {
@@ -82,8 +83,8 @@ const Home: React.FC = () => {
     };
   }, []);
 
-  const onBannerClick = () => {
-    const b = banners[currentBanner];
+  const onBannerClick = (index: number) => {
+    const b = banners[index];
     if (!b) return;
     const type = String(b.linkType || '');
     const target = String(b.linkTarget || '');
@@ -180,9 +181,9 @@ const Home: React.FC = () => {
     return Array.from(map.entries()).map(([brand, count]) => ({ brand, count })).sort((a, b) => a.brand.localeCompare(b.brand));
   }, [allProducts, brandDirectory]);
 
-  const bannerBottleUrl = useMemo(() => {
+  const bannerBottleUrl = (index: number) => {
     const norm = (v: any) => String(v || '').trim().toLowerCase();
-    const current = banners[currentBanner];
+    const current = banners[index];
     const target = current?.linkType === 'category' ? String(current?.linkTarget || '') : '';
     const categoryHint = target ? norm(target) : '';
     const byHint =
@@ -192,7 +193,7 @@ const Home: React.FC = () => {
         ? allProducts.find((p) => p.image && norm(p.category) === 'одноразки')
         : allProducts.find((p) => p.image);
     return byHint?.image ? String(byHint.image) : '';
-  }, [allProducts, banners, currentBanner]);
+  };
 
   const styles = {
     container: {
@@ -222,6 +223,24 @@ const Home: React.FC = () => {
     hero: {
       padding: `0 ${theme.padding.screen}`,
       marginBottom: theme.spacing.lg,
+    },
+    bannerViewport: {
+      overflowX: 'auto' as const,
+      overflowY: 'hidden' as const,
+      scrollSnapType: 'x mandatory' as const,
+      WebkitOverflowScrolling: 'touch' as const,
+      scrollbarWidth: 'none' as const,
+      msOverflowStyle: 'none' as const,
+      touchAction: 'pan-x' as const,
+    },
+    bannerTrack: {
+      display: 'flex',
+      gap: 10,
+      paddingRight: 12,
+    },
+    bannerSlide: {
+      flex: '0 0 calc(100% - 30px)',
+      scrollSnapAlign: 'start' as const,
     },
     banner: {
       height: 230,
@@ -401,81 +420,83 @@ const Home: React.FC = () => {
       <div style={styles.hero}>
         {banners.length ? (
           <div
-            className="home-banner"
-            style={{
-              ...styles.banner,
-              background: banners[currentBanner].gradient,
-              cursor: 'pointer',
+            ref={bannerCarouselRef}
+            style={styles.bannerViewport}
+            className="hide-scrollbar"
+            onScroll={(e) => {
+              const el = e.currentTarget;
+              const slideW = el.clientWidth - 30 + 10;
+              if (slideW <= 0) return;
+              const idx = Math.max(0, Math.min(banners.length - 1, Math.round(el.scrollLeft / slideW)));
+              if (idx !== currentBanner) setCurrentBanner(idx);
             }}
-            onClick={() => {
-              if (bannerSwiped.current) {
-                bannerSwiped.current = false;
-                return;
-              }
-              onBannerClick();
-            }}
-            role="button"
             onTouchStart={(e) => {
-              if (!e.touches?.length) return;
-              bannerSwiped.current = false;
-              bannerTouch.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+              bannerDragStartX.current = e.touches?.[0]?.clientX ?? null;
+              bannerDragging.current = false;
             }}
             onTouchMove={(e) => {
-              const start = bannerTouch.current;
-              if (!start) return;
-              if (!e.touches?.length) return;
-              const dx = e.touches[0].clientX - start.x;
-              const dy = e.touches[0].clientY - start.y;
-              if (Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 8) {
-                try {
-                  e.preventDefault();
-                } catch {
-                }
-              }
+              const startX = bannerDragStartX.current;
+              const x = e.touches?.[0]?.clientX ?? null;
+              if (startX == null || x == null) return;
+              if (Math.abs(x - startX) > 8) bannerDragging.current = true;
             }}
-            onTouchEnd={(e) => {
-              const start = bannerTouch.current;
-              bannerTouch.current = null;
-              if (!start) return;
-              const changed = e.changedTouches?.[0];
-              if (!changed) return;
-              const dx = changed.clientX - start.x;
-              if (Math.abs(dx) < 40) return;
-              bannerSwiped.current = true;
-              if (dx < 0) setCurrentBanner((p) => (banners.length ? (p + 1) % banners.length : 0));
-              if (dx > 0) setCurrentBanner((p) => (banners.length ? (p - 1 + banners.length) % banners.length : 0));
+            onTouchEnd={() => {
+              bannerDragStartX.current = null;
+              window.setTimeout(() => {
+                bannerDragging.current = false;
+              }, 120);
             }}
           >
-            {!ultraLite && banners[currentBanner].image ? (
-              <img
-                className="home-banner-media"
-                src={banners[currentBanner].image}
-                alt=""
-                loading="lazy"
-                decoding="async"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-              />
-            ) : null}
-            <div className="home-banner-overlay" />
-            <div className="home-banner-shine" />
-            {!ultraLite && bannerBottleUrl ? (
-              <img
-                className="home-banner-product"
-                src={bannerBottleUrl}
-                alt=""
-                loading="lazy"
-                decoding="async"
-              />
-            ) : null}
-            <div className="home-banner-mascot">
-              <CherryMascot
-                variant={currentBanner % 5 === 1 ? 'green' : currentBanner % 5 === 2 ? 'gold' : currentBanner % 5 === 3 ? 'cosmic' : currentBanner % 5 === 4 ? 'pink' : 'classic'}
-                size={210}
-              />
-            </div>
-            <div style={styles.bannerContent}>
-              <h2 style={styles.bannerTitle}>{banners[currentBanner].title}</h2>
-              <p style={styles.bannerSubtitle}>{banners[currentBanner].subtitle}</p>
+            <div style={styles.bannerTrack}>
+              {banners.map((b, idx) => (
+                <div key={`${b.title}-${idx}`} style={styles.bannerSlide}>
+                  <div
+                    className="home-banner"
+                    style={{
+                      ...styles.banner,
+                      background: b.gradient,
+                      cursor: 'pointer',
+                    }}
+                    onClick={() => {
+                      if (bannerDragging.current) return;
+                      onBannerClick(idx);
+                    }}
+                    role="button"
+                  >
+                    {!ultraLite && b.image ? (
+                      <img
+                        className="home-banner-media"
+                        src={b.image}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+                      />
+                    ) : null}
+                    <div className="home-banner-overlay" />
+                    <div className="home-banner-shine" />
+                    {!ultraLite && bannerBottleUrl(idx) ? (
+                      <img
+                        className="home-banner-product"
+                        src={bannerBottleUrl(idx)}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                      />
+                    ) : null}
+                    <div className="home-banner-mascot">
+                      <CherryMascot
+                        variant={idx % 5 === 1 ? 'green' : idx % 5 === 2 ? 'gold' : idx % 5 === 3 ? 'cosmic' : idx % 5 === 4 ? 'pink' : 'classic'}
+                        size={210}
+                      />
+                    </div>
+                    <div style={styles.bannerContent}>
+                      <h2 style={styles.bannerTitle}>{b.title}</h2>
+                      <p style={styles.bannerSubtitle}>{b.subtitle}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         ) : (
@@ -486,17 +507,21 @@ const Home: React.FC = () => {
           </div>
         )}
         {banners.length ? (
-          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
             {banners.map((_, idx) => (
               <button
                 key={idx}
                 onClick={(e) => {
                   e.stopPropagation();
                   setCurrentBanner(idx);
+                  const el = bannerCarouselRef.current;
+                  if (!el) return;
+                  const slideW = el.clientWidth - 30 + 10;
+                  el.scrollTo({ left: slideW * idx, behavior: 'smooth' });
                 }}
                 style={{
-                  width: 8,
-                  height: 8,
+                  width: 6,
+                  height: 6,
                   borderRadius: 999,
                   border: 'none',
                   background: idx === currentBanner ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.36)',
