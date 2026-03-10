@@ -10,6 +10,7 @@ import { useToastStore } from '../store/useToastStore';
 import { formatCurrency } from '../lib/currency';
 import { useCityStore } from '../store/useCityStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
+import { getBrandGradient, getBrandImageUrl } from '../lib/brandAssets';
 
 type ProductEntity = {
   id: string;
@@ -33,78 +34,6 @@ type SimilarProduct = {
   price: number;
   image: string;
   sku?: string;
-};
-
-const assetUrl = (p: string) => {
-  const base = String(import.meta.env.BASE_URL || '/');
-  const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
-  const path = p.startsWith('/') ? p : `/${p}`;
-  return `${prefix}${path}`;
-};
-const imageCacheKey = (import.meta.env?.VITE_IMAGE_CACHE_KEY as string) || '20260309';
-
-const normalizeProvidedImage = (v: string) => {
-  const raw = String(v || '').trim();
-  const withBust = (p: string) => (/[?&]v=/.test(p) ? p : `${p}${p.includes('?') ? '&' : '?'}v=${imageCacheKey}`);
-  if (!raw) return '';
-  const lower = raw.toLowerCase();
-  if (['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower)) return '';
-  if (lower.includes('via.placeholder.com')) return '';
-  if (lower.startsWith('data:image/')) return raw;
-  if (raw.startsWith('http://') || raw.startsWith('https://')) {
-    if (lower.includes('googleusercontent.com') || lower.includes('lh3.googleusercontent.com')) return raw;
-    if (lower.includes('drive.google.com')) {
-      const m1 = raw.match(/\/file\/d\/([^/]+)\//);
-      const m2 = raw.match(/[?&]id=([^&]+)/);
-      const id = (m1 && m1[1]) || (m2 && m2[1]) || '';
-      if (id) return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(id)}`;
-      return raw;
-    }
-  }
-  const base = lower.split('#')[0].split('?')[0];
-  const isImageUrl = /\.(png|jpe?g|webp|gif|svg)$/.test(base);
-  if (!isImageUrl) return '';
-  if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-  if (raw.startsWith('/')) return assetUrl(withBust(raw));
-  if (raw.startsWith('images/')) return assetUrl(withBust(`/${raw}`));
-  return '';
-};
-
-const brandKey = (s: string) => {
-  const cleaned = String(s || '')
-    .toLowerCase()
-    .trim()
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/[^a-z0-9 ]/g, '');
-  return { cleaned, compact: cleaned.replace(/\s+/g, '') };
-};
-
-const getBrandImage = (brand: string, productImage: string) => {
-  const normalized = normalizeProvidedImage(productImage);
-  if (normalized) return normalized;
-  
-  if (!brand) return '';
-
-  const k = brandKey(brand);
-  if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
-  if (k.compact.includes('elflic') || k.compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=' + imageCacheKey);
-  if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
-  if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
-  if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
-  return '';
-};
-
-const getBrandGradient = (brand: string) => {
-  if (!brand) return 'linear-gradient(135deg, #333 0%, #666 100%)';
-  const k = brandKey(brand);
-  if (k.compact.includes('elfliq')) return theme.gradients.primary;
-  if (k.compact.includes('elfic')) return theme.gradients.primary;
-  if (k.compact.includes('elflic')) return theme.gradients.primary;
-  if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return theme.gradients.primary;
-  if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return theme.gradients.secondary;
-  if (k.compact.includes('vaporesso')) return theme.gradients.secondary;
-  return 'linear-gradient(135deg, #333 0%, #666 100%)';
 };
 
 const Product: React.FC = () => {
@@ -214,8 +143,8 @@ const Product: React.FC = () => {
   }
 
   const posterToken = product.brand || product.name;
-  const posterImage = getBrandImage(posterToken, product.image);
-  const posterGradient = getBrandGradient(posterToken);
+  const posterImage = getBrandImageUrl(posterToken, product.image);
+  const posterGradient = getBrandGradient(posterToken, theme.gradients.primary, theme.gradients.secondary);
   const volumeMatch = String(product.description || '').match(/(\d+\s?(?:мл|ml))/i);
   const nicotineMatch = String(product.description || '').match(/(\d+\s?(?:мг|mg))/i);
   const volume = volumeMatch ? volumeMatch[1] : '';

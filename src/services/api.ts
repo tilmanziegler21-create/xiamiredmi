@@ -1,6 +1,5 @@
 import axios from 'axios';
 import WebApp from '@twa-dev/sdk';
-import { useToastStore } from '../store/useToastStore';
 import { useAuthStore } from '../store/useAuthStore';
 
 const API_BASE_URL = (import.meta.env?.VITE_API_URL as string) || '/api';
@@ -93,10 +92,7 @@ api.interceptors.response.use(
     console.error('API error:', error);
     try {
       const url = String(error?.config?.url || '');
-      const isNetwork = !error?.response;
-      const isTimeout = error?.code === 'ECONNABORTED' || String(error?.message || '').toLowerCase().includes('timeout');
       const status = error?.response?.status;
-      const data = error?.response?.data;
       if (status === 401 && (url.includes('/auth/dev') || url.includes('/auth/verify') || url.includes('/auth/me'))) {
         if (url.includes('/auth/me')) {
           try {
@@ -119,35 +115,11 @@ api.interceptors.response.use(
         try { useAuthStore.getState().logout(); } catch {
         }
       }
-      const serverMessage = typeof data?.error === 'string' ? data.error : '';
-      const code = typeof data?.code === 'string' ? data.code : '';
-      const missing = Array.isArray(data?.missing) ? data.missing : [];
-
-      let message: string;
-      // 401 on non-auth endpoints: token is invalid, force logout + generic message
       if (status === 401) {
         try { useAuthStore.getState().logout(); } catch {
         }
-        message = 'Требуется авторизация';
-      } else if (isTimeout) {
-        message = 'Сервер не отвечает (таймаут)';
-      } else if (isNetwork) {
-        message = 'Нет соединения с сервером';
-      } else if (status === 403) {
-        message = 'Доступ запрещён';
-      } else if (status === 404) {
-        message = 'Не найдено';
-      } else if (status === 409) {
-        message = serverMessage || 'Недостаточно товара на складе';
-      } else if (status === 503 && code === 'SHEETS_NOT_CONFIGURED') {
-        message = missing.length ? `Sheets не настроен: ${missing.join(', ')}` : 'Sheets не настроен';
-      } else {
-        message = serverMessage || 'Ошибка запроса';
       }
-
-      useToastStore.getState().push(message, 'error');
     } catch {
-      // ignore
     }
     return Promise.reject(error);
   },

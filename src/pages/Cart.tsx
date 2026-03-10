@@ -12,6 +12,7 @@ import { useCityStore } from '../store/useCityStore';
 import { useConfigStore } from '../store/useConfigStore';
 import { blurStyle } from '../ui/blur';
 import { useAuthStore } from '../store/useAuthStore';
+import { getBrandImageUrl } from '../lib/brandAssets';
 
 type Fulfillment = 'delivery' | 'pickup';
 type PaymentMethod = 'cash' | 'card';
@@ -283,33 +284,8 @@ const Cart: React.FC = () => {
     setQty(item.id, item.quantity - 1);
   };
 
-  const assetUrl = (p: string) => {
-    const base = String(import.meta.env.BASE_URL || '/');
-    const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
-    const path = p.startsWith('/') ? p : `/${p}`;
-    return `${prefix}${path}`;
-  };
   const resolveCartImage = (item: { image?: string; brand?: string; name?: string }) => {
-    const raw = String(item.image || '').trim();
-    const lower = raw.toLowerCase();
-    if (raw && !['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower) && !lower.includes('via.placeholder.com')) {
-      if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:image/')) return raw;
-      if (raw.startsWith('/')) return assetUrl(raw);
-      if (raw.startsWith('images/')) return assetUrl(`/${raw}`);
-    }
-    const cleaned = String(item.brand || item.name || '')
-      .toLowerCase()
-      .trim()
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .replace(/[^a-z0-9 ]/g, '');
-    const compact = cleaned.replace(/\s+/g, '');
-    if (compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
-    if (compact.includes('elflic') || compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=20260309');
-    if (compact.includes('elfbar') || cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
-    if (compact.includes('geekvape') || cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
-    if (compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
-    return '';
+    return getBrandImageUrl(item.brand || item.name || '', item.image || '');
   };
   const { bundleGroups, standaloneItems } = React.useMemo(() => {
     const groups = new Map<string, any[]>();

@@ -6,6 +6,7 @@ import { GlassCard, SectionDivider, theme } from '../ui';
 import { useToastStore } from '../store/useToastStore';
 import { useCityStore } from '../store/useCityStore';
 import { blurStyle } from '../ui/blur';
+import { getBrandImageUrl } from '../lib/brandAssets';
 
 type BrandRow = {
   brand: string;
@@ -13,31 +14,8 @@ type BrandRow = {
   logo?: string;
 };
 
-const assetUrl = (p: string) => {
-  const base = String(import.meta.env.BASE_URL || '/');
-  const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
-  const path = p.startsWith('/') ? p : `/${p}`;
-  return `${prefix}${path}`;
-};
-
-const brandKey = (s: string) => {
-  const cleaned = String(s || '')
-    .toLowerCase()
-    .trim()
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ')
-    .replace(/[^a-z0-9 ]/g, '');
-  return { cleaned, compact: cleaned.replace(/\s+/g, '') };
-};
-
 const brandLogo = (brand: string) => {
-  const k = brandKey(brand);
-  if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
-  if (k.compact.includes('elflic') || k.compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=20260309');
-  if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
-  if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
-  if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
-  return '';
+  return getBrandImageUrl(brand, '');
 };
 
 const Brands: React.FC = () => {

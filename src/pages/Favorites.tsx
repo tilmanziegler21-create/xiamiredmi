@@ -113,6 +113,7 @@ const Favorites: React.FC = () => {
               name={p.name}
               price={p.price}
               image={p.image}
+              brand={p.brand}
               isFavorite
               onClick={() => setAddItem(p)}
               onToggleFavorite={() => remove(p.id)}
@@ -141,7 +142,7 @@ const Favorites: React.FC = () => {
 
       <AddToCartModal
         open={addOpen}
-        product={addItem ? { id: addItem.id, name: addItem.name, price: addItem.price, image: addItem.image } : null}
+        product={addItem ? { id: addItem.id, name: addItem.name, price: addItem.price, image: addItem.image, brand: addItem.brand, category: addItem.category } : null}
         onClose={() => setAddOpen(false)}
         onConfirm={async ({ quantity, variant }) => {
           if (!addItem) return;

@@ -7,6 +7,7 @@ import WebApp from '@twa-dev/sdk';
 import { formatCurrency } from '../lib/currency';
 import { blurStyle } from './blur';
 import { CherryMascot } from './CherryMascot';
+import { getBrandImageUrl } from '../lib/brandAssets';
 
 export type AddToCartModalProduct = {
   id: string;
@@ -30,28 +31,8 @@ export const AddToCartModal: React.FC<Props> = ({ open, product, onClose, onConf
   const [variant, setVariant] = React.useState<string | undefined>(undefined);
   const [busy, setBusy] = React.useState(false);
   const variants = product?.variants || [];
-  const assetUrl = (p: string) => {
-    const base = String(import.meta.env.BASE_URL || '/');
-    const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
-    const path = p.startsWith('/') ? p : `/${p}`;
-    return `${prefix}${path}`;
-  };
   const fallbackBrandImage = () => {
-    const raw = String(product?.image || '').trim();
-    if (raw) return raw;
-    const cleaned = String(product?.brand || product?.name || '')
-      .toLowerCase()
-      .trim()
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .replace(/[^a-z0-9 ]/g, '');
-    const compact = cleaned.replace(/\s+/g, '');
-    if (compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
-    if (compact.includes('elflic') || compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=20260309');
-    if (compact.includes('elfbar') || cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
-    if (compact.includes('geekvape') || cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
-    if (compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
-    return '';
+    return getBrandImageUrl(String(product?.brand || product?.name || ''), String(product?.image || ''));
   };
   const previewImage = fallbackBrandImage();
 

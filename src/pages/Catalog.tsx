@@ -11,6 +11,27 @@ import { useCityStore } from '../store/useCityStore';
 import { useFavoritesStore } from '../store/useFavoritesStore';
 import { usePullToRefresh } from '../hooks/usePullToRefresh';
 import { blurStyle } from '../ui/blur';
+import { getBrandImageUrl } from '../lib/brandAssets';
+
+class ProductCardBoundary extends React.Component<{ children: React.ReactNode }, { failed: boolean }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { failed: false };
+  }
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  render() {
+    if (this.state.failed) {
+      return (
+        <GlassCard padding="md" variant="elevated" style={{ minHeight: 230, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.xs }}>Карточка недоступна</div>
+        </GlassCard>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface Product {
   id: string;
@@ -31,38 +52,8 @@ interface Product {
   };
 }
 
-const assetUrl = (p: string) => {
-  const base = String(import.meta.env.BASE_URL || '/');
-  const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
-  const path = p.startsWith('/') ? p : `/${p}`;
-  return `${prefix}${path}`;
-};
-const imageCacheKey = (import.meta.env?.VITE_IMAGE_CACHE_KEY as string) || '20260309';
-
-const normalizeProvidedImage = (v: string) => {
-  const raw = String(v || '').trim();
-  const withBust = (p: string) => (/[?&]v=/.test(p) ? p : `${p}${p.includes('?') ? '&' : '?'}v=${imageCacheKey}`);
-  if (!raw) return '';
-  const lower = raw.toLowerCase();
-  if (['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower)) return '';
-  if (lower.includes('via.placeholder.com')) return '';
-  if (raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('data:image/')) return raw;
-  if (raw.startsWith('/')) return assetUrl(withBust(raw));
-  if (raw.startsWith('images/')) return assetUrl(withBust(`/${raw}`));
-  return '';
-};
-
 const fallbackBrandImage = (brand: string, image: string) => {
-  const normalized = normalizeProvidedImage(image);
-  if (normalized) return normalized;
-  const cleaned = String(brand || '').toLowerCase().trim().replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').replace(/[^a-z0-9 ]/g, '');
-  const compact = cleaned.replace(/\s+/g, '');
-  if (compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=20260306');
-  if (compact.includes('elflic') || compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=' + imageCacheKey);
-  if (compact.includes('elfbar') || cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png');
-  if (compact.includes('geekvape') || cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png');
-  if (compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png');
-  return '';
+  return getBrandImageUrl(brand, image);
 };
 
 const Catalog: React.FC = () => {
@@ -487,43 +478,44 @@ const Catalog: React.FC = () => {
             </GlassCard>
           ) : null}
           {visible.map((p) => (
-            <ProductCard
-              key={p.id}
-              id={p.id}
-              name={p.name}
-              price={p.price}
-              image={p.image || ''}
-              brand={p.brand}
-              isNew={Boolean((p as any).isNew)}
-              stock={(p as any).qtyAvailable || 0}
-              onClick={(id) => navigate(`/product/${id}`)}
-              onAddToCart={() => openAdd(p)}
-              isFavorite={favorites.isFavorite(p.id)}
-              onToggleFavorite={async () => {
-                if (!city) {
-                  toast.push('Выберите город', 'error');
-                  return;
-                }
-                const enabled = !favorites.isFavorite(p.id);
-                try {
-                  await favorites.toggle({
-                    city,
-                    product: {
-                      id: p.id,
-                      name: p.name,
-                      category: p.category,
-                      brand: p.brand,
-                      price: p.price,
-                      image: p.image,
-                    },
-                    enabled,
-                  });
-                  toast.push(enabled ? 'Добавлено в избранное' : 'Удалено из избранного', 'success');
-                } catch {
-                  toast.push('Ошибка избранного', 'error');
-                }
-              }}
-            />
+            <ProductCardBoundary key={p.id}>
+              <ProductCard
+                id={p.id}
+                name={p.name}
+                price={p.price}
+                image={p.image || ''}
+                brand={p.brand}
+                isNew={Boolean((p as any).isNew)}
+                stock={(p as any).qtyAvailable || 0}
+                onClick={(id) => navigate(`/product/${id}`)}
+                onAddToCart={() => openAdd(p)}
+                isFavorite={favorites.isFavorite(p.id)}
+                onToggleFavorite={async () => {
+                  if (!city) {
+                    toast.push('Выберите город', 'error');
+                    return;
+                  }
+                  const enabled = !favorites.isFavorite(p.id);
+                  try {
+                    await favorites.toggle({
+                      city,
+                      product: {
+                        id: p.id,
+                        name: p.name,
+                        category: p.category,
+                        brand: p.brand,
+                        price: p.price,
+                        image: p.image,
+                      },
+                      enabled,
+                    });
+                    toast.push(enabled ? 'Добавлено в избранное' : 'Удалено из избранного', 'success');
+                  } catch {
+                    toast.push('Ошибка избранного', 'error');
+                  }
+                }}
+              />
+            </ProductCardBoundary>
           ))}
           {visibleCount < filtered.length ? (
             <div ref={loadMoreRef} style={{ height: 1 }} />

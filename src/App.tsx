@@ -1,30 +1,30 @@
-import React, { useEffect } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import WebApp from '@twa-dev/sdk';
 import { useAuthStore } from './store/useAuthStore';
 import { authAPI } from './services/api';
 import { SafeAreaProvider, AppShell, GlassCard, PrimaryButton, theme } from './ui';
-import AgeVerify from './pages/AgeVerify';
-import Home from './pages/Home';
-import Catalog from './pages/Catalog';
-import Product from './pages/Product';
-import Cart from './pages/Cart';
-import Checkout from './pages/Checkout';
-import Account from './pages/Account';
-import Orders from './pages/Orders';
-import OrderDetails from './pages/OrderDetails';
-import Favorites from './pages/Favorites';
-import Referral from './pages/Referral';
-import Support from './pages/Support';
-import Categories from './pages/Categories';
-import Brands from './pages/Brands';
-import Admin from './pages/Admin';
-import Courier from './pages/Courier';
-import Promotions from './pages/Promotions';
-import Bonuses from './pages/Bonuses';
-import FortuneWheel from './pages/FortuneWheel';
-import CourierRegistration from './pages/CourierRegistration';
-import BundleBuilder from './pages/BundleBuilder';
+const AgeVerify = lazy(() => import('./pages/AgeVerify'));
+const Home = lazy(() => import('./pages/Home'));
+const Catalog = lazy(() => import('./pages/Catalog'));
+const Product = lazy(() => import('./pages/Product'));
+const Cart = lazy(() => import('./pages/Cart'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const Account = lazy(() => import('./pages/Account'));
+const Orders = lazy(() => import('./pages/Orders'));
+const OrderDetails = lazy(() => import('./pages/OrderDetails'));
+const Favorites = lazy(() => import('./pages/Favorites'));
+const Referral = lazy(() => import('./pages/Referral'));
+const Support = lazy(() => import('./pages/Support'));
+const Categories = lazy(() => import('./pages/Categories'));
+const Brands = lazy(() => import('./pages/Brands'));
+const Admin = lazy(() => import('./pages/Admin'));
+const Courier = lazy(() => import('./pages/Courier'));
+const Promotions = lazy(() => import('./pages/Promotions'));
+const Bonuses = lazy(() => import('./pages/Bonuses'));
+const FortuneWheel = lazy(() => import('./pages/FortuneWheel'));
+const CourierRegistration = lazy(() => import('./pages/CourierRegistration'));
+const BundleBuilder = lazy(() => import('./pages/BundleBuilder'));
 
 class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean }> {
   constructor(props: { children: React.ReactNode }) {
@@ -286,6 +286,13 @@ function App() {
     );
   }
 
+  const routeFallback = (
+    <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ width: 36, height: 36, border: '3px solid rgba(255,255,255,0.12)', borderTop: `3px solid ${theme.colors.dark.primary}`, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+    </div>
+  );
+  const withBoundary = (node: React.ReactNode) => <ErrorBoundary>{node}</ErrorBoundary>;
+
   return (
     <SafeAreaProvider>
       <Router>
@@ -298,39 +305,39 @@ function App() {
           <div className="hitech-scan" />
           <div className="hitech-vignette" />
           <div className="app-content">
-            <ErrorBoundary>
+            <Suspense fallback={routeFallback}>
               {!user.ageVerified ? (
                 <Routes>
-                  <Route path="/age" element={<AgeVerify />} />
+                  <Route path="/age" element={withBoundary(<AgeVerify />)} />
                   <Route path="*" element={<Navigate to="/age" replace />} />
                 </Routes>
               ) : (
                 <Routes>
                   <Route path="/" element={<Navigate to="/home" replace />} />
-                  <Route path="/home" element={<AppShell><Home /></AppShell>} />
-                  <Route path="/categories" element={<AppShell><Categories /></AppShell>} />
-                  <Route path="/brands" element={<AppShell><Brands /></AppShell>} />
-                  <Route path="/catalog" element={<AppShell><Catalog /></AppShell>} />
-                  <Route path="/product/:id" element={<AppShell showMenu={false}><Product /></AppShell>} />
-                  <Route path="/cart" element={<AppShell showMenu={false}><Cart /></AppShell>} />
-                  <Route path="/checkout" element={<AppShell showMenu={false}><Checkout /></AppShell>} />
-                  <Route path="/orders" element={<AppShell><Orders /></AppShell>} />
-                  <Route path="/order/:id" element={<AppShell showMenu={false}><OrderDetails /></AppShell>} />
-                  <Route path="/favorites" element={<AppShell><Favorites /></AppShell>} />
-                  <Route path="/referral" element={<AppShell><Referral /></AppShell>} />
-                  <Route path="/support" element={<AppShell><Support /></AppShell>} />
-                  <Route path="/promotions" element={<AppShell><Promotions /></AppShell>} />
-                  <Route path="/bonuses" element={<AppShell><Bonuses /></AppShell>} />
-                  <Route path="/fortune" element={<AppShell><FortuneWheel /></AppShell>} />
-                  <Route path="/bundle" element={<AppShell showMenu={false}><BundleBuilder /></AppShell>} />
-                  <Route path="/profile" element={<AppShell><Account /></AppShell>} />
-                  <Route path="/courier" element={(user.status === 'courier' || user.status === 'admin') ? <AppShell><Courier /></AppShell> : <Navigate to="/home" replace />} />
-                  <Route path="/admin" element={user.status === 'admin' ? <AppShell><Admin /></AppShell> : <Navigate to="/home" replace />} />
-                  <Route path="/courier-registration" element={user.status === 'admin' ? <AppShell><CourierRegistration /></AppShell> : <Navigate to="/home" replace />} />
+                  <Route path="/home" element={withBoundary(<AppShell><Home /></AppShell>)} />
+                  <Route path="/categories" element={withBoundary(<AppShell><Categories /></AppShell>)} />
+                  <Route path="/brands" element={withBoundary(<AppShell><Brands /></AppShell>)} />
+                  <Route path="/catalog" element={withBoundary(<AppShell><Catalog /></AppShell>)} />
+                  <Route path="/product/:id" element={withBoundary(<AppShell showMenu={false}><Product /></AppShell>)} />
+                  <Route path="/cart" element={withBoundary(<AppShell showMenu={false}><Cart /></AppShell>)} />
+                  <Route path="/checkout" element={withBoundary(<AppShell showMenu={false}><Checkout /></AppShell>)} />
+                  <Route path="/orders" element={withBoundary(<AppShell><Orders /></AppShell>)} />
+                  <Route path="/order/:id" element={withBoundary(<AppShell showMenu={false}><OrderDetails /></AppShell>)} />
+                  <Route path="/favorites" element={withBoundary(<AppShell><Favorites /></AppShell>)} />
+                  <Route path="/referral" element={withBoundary(<AppShell><Referral /></AppShell>)} />
+                  <Route path="/support" element={withBoundary(<AppShell><Support /></AppShell>)} />
+                  <Route path="/promotions" element={withBoundary(<AppShell><Promotions /></AppShell>)} />
+                  <Route path="/bonuses" element={withBoundary(<AppShell><Bonuses /></AppShell>)} />
+                  <Route path="/fortune" element={withBoundary(<AppShell><FortuneWheel /></AppShell>)} />
+                  <Route path="/bundle" element={withBoundary(<AppShell showMenu={false}><BundleBuilder /></AppShell>)} />
+                  <Route path="/profile" element={withBoundary(<AppShell><Account /></AppShell>)} />
+                  <Route path="/courier" element={(user.status === 'courier' || user.status === 'admin') ? withBoundary(<AppShell><Courier /></AppShell>) : <Navigate to="/home" replace />} />
+                  <Route path="/admin" element={user.status === 'admin' ? withBoundary(<AppShell><Admin /></AppShell>) : <Navigate to="/home" replace />} />
+                  <Route path="/courier-registration" element={user.status === 'admin' ? withBoundary(<AppShell><CourierRegistration /></AppShell>) : <Navigate to="/home" replace />} />
                   <Route path="*" element={<Navigate to="/home" replace />} />
                 </Routes>
               )}
-            </ErrorBoundary>
+            </Suspense>
           </div>
         </div>
       </Router>

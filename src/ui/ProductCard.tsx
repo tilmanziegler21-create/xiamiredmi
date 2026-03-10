@@ -6,6 +6,7 @@ import { Bell, ShoppingCart, Heart } from 'lucide-react';
 import { blurStyle } from './blur';
 import { CherryMascot } from './CherryMascot';
 import { useToastStore } from '../store/useToastStore';
+import { getBrandGradient, getBrandImageUrl } from '../lib/brandAssets';
 
 interface ProductCardProps {
   id: string;
@@ -55,84 +56,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   showTrustIndicators = false,
 }) => {
   const toast = useToastStore();
-  const assetUrl = (p: string) => {
-    const base = String(import.meta.env.BASE_URL || '/');
-    const prefix = base.endsWith('/') ? base.slice(0, -1) : base;
-    const path = p.startsWith('/') ? p : `/${p}`;
-    return `${prefix}${path}`;
-  };
-  const imageCacheKey = (import.meta.env?.VITE_IMAGE_CACHE_KEY as string) || '20260309';
-
-  const normalizeProvidedImage = (v: string) => {
-    const raw = String(v || '').trim();
-    const withBust = (p: string) => (/[?&]v=/.test(p) ? p : `${p}${p.includes('?') ? '&' : '?'}v=${imageCacheKey}`);
-    if (!raw) return '';
-    const lower = raw.toLowerCase();
-    if (['-', '—', '–', 'null', 'undefined', '0', 'нет', 'no', 'n/a', 'na'].includes(lower)) return '';
-    if (lower.includes('via.placeholder.com')) return '';
-    if (lower.startsWith('data:image/')) return raw;
-    if (raw.startsWith('http://') || raw.startsWith('https://')) {
-      if (lower.includes('googleusercontent.com') || lower.includes('lh3.googleusercontent.com')) return raw;
-      if (lower.includes('drive.google.com')) {
-        const m1 = raw.match(/\/file\/d\/([^/]+)\//);
-        const m2 = raw.match(/[?&]id=([^&]+)/);
-        const id = (m1 && m1[1]) || (m2 && m2[1]) || '';
-        if (id) return `https://drive.google.com/uc?export=view&id=${encodeURIComponent(id)}`;
-        return raw;
-      }
-    }
-    const base = lower.split('#')[0].split('?')[0];
-    const isImageUrl = /\.(png|jpe?g|webp|gif|svg)$/.test(base);
-    if (!isImageUrl) return '';
-    if (raw.startsWith('http://') || raw.startsWith('https://')) return raw;
-    if (raw.startsWith('/')) return assetUrl(withBust(raw));
-    if (raw.startsWith('images/')) return assetUrl(withBust(`/${raw}`));
-    return '';
-  };
-
-  const brandKey = (s: string) => {
-    const cleaned = String(s || '')
-      .toLowerCase()
-      .trim()
-      .replace(/[_-]+/g, ' ')
-      .replace(/\s+/g, ' ')
-      .replace(/[^a-z0-9 ]/g, '');
-    return { cleaned, compact: cleaned.replace(/\s+/g, '') };
-  };
-
-  // Brand-based image logic with gradient fallback
-  const getBrandImage = (brand: string, productImage: string) => {
-    const normalized = normalizeProvidedImage(productImage);
-    if (normalized) return normalized;
-    
-    if (!brand) return '';
-
-    const k = brandKey(brand);
-
-    if (k.compact.includes('elfliq')) return assetUrl('/images/brands/elfliq/elfliq_liquid.jpg?v=' + imageCacheKey);
-    if (k.compact.includes('elflic') || k.compact.includes('elfic')) return assetUrl('/images/brands/elflic.png?v=' + imageCacheKey);
-    if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return assetUrl('/images/brands/elfbar/elfbar_liquid.png?v=' + imageCacheKey);
-    if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return assetUrl('/images/brands/geekvape/geekvape_liquid.png?v=' + imageCacheKey);
-    if (k.compact.includes('vaporesso')) return assetUrl('/images/brands/vaporesso/vaporesso_liquid.png?v=' + imageCacheKey);
-
-    return '';
-  };
-
-  // Brand-based gradient backgrounds as fallback
-  const getBrandGradient = (brand: string) => {
-    if (!brand) return 'linear-gradient(135deg, #333 0%, #666 100%)';
-    const k = brandKey(brand);
-    if (k.compact.includes('elfliq')) return theme.gradients.primary;
-    if (k.compact.includes('elflic') || k.compact.includes('elfic')) return theme.gradients.primary;
-    if (k.compact.includes('elfbar') || k.cleaned.includes('elf bar')) return theme.gradients.primary;
-    if (k.compact.includes('geekvape') || k.cleaned.includes('geek vape')) return theme.gradients.secondary;
-    if (k.compact.includes('vaporesso')) return theme.gradients.secondary;
-    return 'linear-gradient(135deg, #333 0%, #666 100%)';
-  };
-
   const token = brand || name;
-  const resolvedImage = getBrandImage(token, image);
-  const resolvedGradient = getBrandGradient(token);
+  const resolvedImage = getBrandImageUrl(token, image);
+  const resolvedGradient = getBrandGradient(token, theme.gradients.primary, theme.gradients.secondary);
+  const [imageFailed, setImageFailed] = React.useState(false);
+  React.useEffect(() => {
+    setImageFailed(false);
+  }, [resolvedImage]);
 
   const hash01 = (s: string) => {
     let h = 2166136261;
@@ -339,14 +269,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.35)', zIndex: 2, borderRadius: 'inherit', pointerEvents: 'none' }} />
       ) : null}
       <div style={styles.content}>
-        {!resolvedImage ? (
-          <div style={styles.mascot}>
-            <div style={{ height: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-              <CherryMascot variant={mascotVariant} size={140} />
-            </div>
+        <div style={styles.mascot}>
+          <div style={{ height: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+            <CherryMascot variant={mascotVariant} size={140} />
           </div>
-        ) : null}
-        {resolvedImage ? <img src={resolvedImage} alt="" style={styles.bottle} loading="lazy" decoding="async" /> : null}
+        </div>
+        {resolvedImage && !imageFailed ? <img src={resolvedImage} alt="" style={styles.bottle} loading="lazy" decoding="async" onError={() => setImageFailed(true)} /> : null}
 
         {stock !== undefined ? (
           <div 
