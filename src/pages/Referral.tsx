@@ -90,7 +90,7 @@ const Referral: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: theme.padding.screen }}>
+    <div className="content-fade-in" style={{ padding: theme.padding.screen }}>
       <div style={{ textAlign: 'center', marginTop: theme.spacing.md, marginBottom: theme.spacing.lg }}>
         <div style={{ fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, fontSize: 34, letterSpacing: '0.14em', textTransform: 'uppercase' }}>
           Зарабатывай на друзьях

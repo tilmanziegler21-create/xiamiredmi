@@ -91,7 +91,7 @@ const Favorites: React.FC = () => {
       <div style={styles.title}>Избранное</div>
       <SectionDivider title="Товары" />
 
-      <div style={styles.grid}>
+      <div className="content-fade-in" style={styles.grid}>
         {favorites.isLoading ? (
           [...Array(6)].map((_, i) => (
             <div

@@ -114,7 +114,7 @@ const BundleBuilder: React.FC = () => {
   }
 
   return (
-    <div style={{ paddingBottom: theme.spacing.xl }}>
+    <div className="content-fade-in" style={{ paddingBottom: theme.spacing.xl }}>
       <SectionDivider title="Собрать набор" />
       <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.lg }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 28px 1fr 28px 1fr', alignItems: 'center', gap: 8 }}>

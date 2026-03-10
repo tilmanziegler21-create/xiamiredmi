@@ -98,6 +98,10 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
     };
   }, [location.key]);
 
+  React.useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [location.key]);
+
   return (
     <>
       {showProgress ? (

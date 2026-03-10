@@ -270,7 +270,7 @@ const Bonuses: React.FC = () => {
   }
 
   return (
-    <div style={styles.container}>
+    <div className="content-fade-in" style={styles.container}>
       <div style={styles.hero}>
         <div style={styles.heroInner}>
           <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,45,85,0.20)', border: '1px solid rgba(255,45,85,0.35)', display: 'grid', placeItems: 'center' as const }}>

@@ -118,7 +118,7 @@ const OrderDetails: React.FC = () => {
   };
 
   return (
-    <div>
+    <div className="content-fade-in">
       <div style={{
         display: 'flex',
         alignItems: 'center',

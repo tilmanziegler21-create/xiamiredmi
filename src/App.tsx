@@ -287,7 +287,7 @@ function App() {
   }
 
   const routeFallback = (
-    <div style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div className="page-transition" style={{ minHeight: '40vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ width: 36, height: 36, border: '3px solid rgba(255,255,255,0.12)', borderTop: `3px solid ${theme.colors.dark.primary}`, borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
     </div>
   );

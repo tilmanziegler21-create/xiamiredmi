@@ -143,7 +143,7 @@ const Orders: React.FC = () => {
 
       <SectionDivider title="Последние заказы" />
 
-      <div style={styles.list}>
+      <div className="content-fade-in" style={styles.list}>
         {loading ? (
           [...Array(6)].map((_, i) => (
             <div

@@ -293,7 +293,7 @@ const Product: React.FC = () => {
   };
 
   return (
-    <div style={{ paddingBottom: theme.spacing.xl }}>
+    <div className="content-fade-in" style={{ paddingBottom: theme.spacing.xl }}>
       <div style={styles.poster}>
         {!posterImage ? (
           <div style={styles.posterMascot}>
