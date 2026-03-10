@@ -125,9 +125,9 @@ const Catalog: React.FC = () => {
       return Number.isFinite(n) ? n : NaN;
     };
     const norm = (v: any) => String(v || '').trim().toLowerCase();
-    const categoryAlias: Record<string, string> = {
+    const categoryAlias: Record<string, string | string[]> = {
       'жидкости': 'liquids',
-      'одноразки': 'disposables',
+      'одноразки': ['disposables', 'electronics', 'electronic', 'электронки', 'электронка'],
       'поды': 'pods',
       'картриджи': 'cartridges',
     };
@@ -148,7 +148,12 @@ const Catalog: React.FC = () => {
     } else if (catKey === 'хиты') {
       // no-op: avoid empty catalog due to mismatched labels
     } else if (rawCategory) {
-      out = out.filter((p) => norm(p.category) === norm(mappedCategory));
+      if (Array.isArray(mappedCategory)) {
+        const set = new Set(mappedCategory.map((c) => norm(c)));
+        out = out.filter((p) => set.has(norm(p.category)));
+      } else {
+        out = out.filter((p) => norm(p.category) === norm(mappedCategory));
+      }
     }
     if (filters.brand) out = out.filter((p) => norm(p.brand) === norm(filters.brand));
     if (Number.isFinite(priceMin)) out = out.filter((p) => Number(p.price || 0) >= priceMin);
