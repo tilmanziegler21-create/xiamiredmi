@@ -49,19 +49,21 @@ const Product: React.FC = () => {
   const [addOpen, setAddOpen] = React.useState(false);
   const favorites = useFavoritesStore();
 
-  const load = async () => {
+  const load = async (cancelledRef?: { current: boolean }) => {
     try {
       setLoading(true);
       if (!city) {
-        toast.push('Выберите город', 'error');
+        if (!cancelledRef?.current) toast.push('Выберите город', 'error');
         return;
       }
       const resp = await productAPI.getById(String(id || ''), city);
+      if (cancelledRef?.current) return;
       const p: ProductEntity = resp.data.product;
       setProduct(p);
       setSimilar(resp.data.similar || []);
       trackProductView(p.id, p.name, p.category);
     } catch (e) {
+      if (cancelledRef?.current) return;
       console.error('Failed to load product:', e);
       try {
         WebApp.showAlert('Ошибка загрузки товара');
@@ -69,12 +71,16 @@ const Product: React.FC = () => {
         toast.push('Ошибка загрузки товара', 'error');
       }
     } finally {
-      setLoading(false);
+      if (!cancelledRef?.current) setLoading(false);
     }
   };
 
   React.useEffect(() => {
-    load();
+    const cancelledRef = { current: false };
+    load(cancelledRef);
+    return () => {
+      cancelledRef.current = true;
+    };
   }, [id, city]);
 
   const toggleFavorite = async () => {
@@ -293,7 +299,7 @@ const Product: React.FC = () => {
   };
 
   return (
-    <div className="content-fade-in" style={{ paddingBottom: theme.spacing.xl }}>
+    <div style={{ paddingBottom: theme.spacing.xl }}>
       <div style={styles.poster}>
         {!posterImage ? (
           <div style={styles.posterMascot}>

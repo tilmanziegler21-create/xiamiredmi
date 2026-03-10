@@ -69,6 +69,7 @@ const Catalog: React.FC = () => {
   const [categories, setCategories] = useState<string[]>([]);
   const [brands, setBrands] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
@@ -158,25 +159,23 @@ const Catalog: React.FC = () => {
     return out;
   };
 
-  const loadCatalog = React.useCallback(async () => {
+  const loadCatalog = React.useCallback(async (cancelledRef?: { current: boolean }) => {
     if (!city) {
-      setLoading(false);
-      setAllProducts([]);
-      setProducts([]);
-      setCategories([]);
-      setBrands([]);
       return;
     }
-    favorites.load(city);
+    setLoading(true);
+    setLoadError('');
+    favorites.load(city).catch(() => {});
     try {
-      setLoading(true);
       const response = await catalogAPI.getProducts({ city });
+      if (cancelledRef?.current) return;
       const list: Product[] = response.data.products || [];
       setAllProducts(list);
       setProducts(list);
       setCategories(Array.from(new Set(list.map((p) => String(p.category || '')).filter(Boolean))).sort());
       setBrands(Array.from(new Set(list.map((p) => String(p.brand || '')).filter(Boolean))).sort());
     } catch (error) {
+      if (cancelledRef?.current) return;
       console.error('Failed to load catalog:', error);
       try {
         const status = (error as any)?.response?.status;
@@ -185,11 +184,9 @@ const Catalog: React.FC = () => {
       } catch {
         toast.push('Ошибка загрузки каталога', 'error');
       }
-      setAllProducts([]);
-      setProducts([]);
-      setCategories([]);
-      setBrands([]);
+      setLoadError('Ошибка загрузки каталога');
     } finally {
+      if (cancelledRef?.current) return;
       setLoading(false);
     }
   }, [city]);
@@ -197,13 +194,17 @@ const Catalog: React.FC = () => {
   const { pull, refreshing: ptrRefreshing, armed: ptrArmed } = usePullToRefresh(loadCatalog, false);
 
   useEffect(() => {
-    loadCatalog();
-  }, [city]);
+    const cancelledRef = { current: false };
+    loadCatalog(cancelledRef);
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, [city, loadCatalog]);
 
   useEffect(() => {
     if (!city) return;
     setVisibleCount(40);
-    const id = window.setTimeout(() => setProducts(applyFilters(allProducts)), 60);
+    setProducts(applyFilters(allProducts));
     // Track filter usage
     if (filters.category) trackCategoryView(filters.category);
     if (filters.brand) trackFilterUse('brand', filters.brand);
@@ -212,7 +213,6 @@ const Catalog: React.FC = () => {
     if (filters.price_min || filters.price_max) {
       trackFilterUse('price_range', `${filters.price_min || 0}-${filters.price_max || '∞'}`);
     }
-    return () => window.clearTimeout(id);
   }, [city, filters, allProducts]);
 
   const openAdd = (product: Product) => {
@@ -271,7 +271,7 @@ const Catalog: React.FC = () => {
     );
     obs.observe(el);
     return () => obs.disconnect();
-  }, [filtered.length, liteCards, visibleCount]);
+  }, [filtered.length, liteCards]);
 
   const styles = {
     container: {
@@ -433,30 +433,20 @@ const Catalog: React.FC = () => {
         </div>
       ) : (
         <div style={styles.grid}>
-          {allProducts.length > 0 && filtered.length === 0 ? (
+          {loadError && !loading ? (
             <GlassCard padding="lg" variant="elevated" style={{ gridColumn: '1 / -1' }}>
               <div style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.semibold, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: theme.spacing.sm }}>
-                Ничего не найдено
+                Ошибка загрузки
               </div>
               <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, lineHeight: '1.45', marginBottom: theme.spacing.md }}>
-                Похоже, фильтры или категория не совпадают с данными. Сбросьте фильтры и попробуйте снова.
+                {loadError}
               </div>
-              <PrimaryButton
-                fullWidth
-                onClick={() => {
-                  setQuery('');
-                  resetFilters();
-                  try {
-                    navigate('/catalog', { replace: true });
-                  } catch {
-                  }
-                }}
-              >
-                Сбросить фильтры
+              <PrimaryButton fullWidth onClick={() => loadCatalog()}>
+                Повторить
               </PrimaryButton>
             </GlassCard>
           ) : null}
-          {allProducts.length === 0 && !loading ? (
+          {allProducts.length === 0 && !loading && !!city && !loadError ? (
             <GlassCard padding="lg" variant="elevated" style={{ gridColumn: '1 / -1' }}>
               <div style={{ color: theme.colors.dark.text, fontWeight: theme.typography.fontWeight.semibold, letterSpacing: '0.06em', textTransform: 'uppercase' as const, marginBottom: theme.spacing.sm }}>
                 Каталог пуст
@@ -683,7 +673,7 @@ const Catalog: React.FC = () => {
         </div>
       ) : null}
 
-      {filtered.length === 0 && !loading ? (
+      {filtered.length === 0 && !loading && allProducts.length > 0 ? (
         <div style={{ padding: theme.padding.screen }}>
           <GlassCard padding="lg" variant="elevated">
             <div style={{ color: theme.colors.dark.textSecondary, fontSize: theme.typography.fontSize.sm, textAlign: 'center' }}>

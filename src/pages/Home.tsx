@@ -113,25 +113,20 @@ const Home: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadProducts();
-  }, [city]);
-
-  const { pull, refreshing: ptrRefreshing, armed: ptrArmed } = usePullToRefresh(async () => {
-    await loadProducts();
-  }, false);
-
-  const loadProducts = async () => {
+  const loadProducts = async (cancelledRef?: { current: boolean }) => {
     try {
       setLoading(true);
       setLoadError(null);
       if (!city) {
-        setLoadError('Выберите город');
-        setAllProducts([]);
-        setBrandDirectory([]);
+        if (!cancelledRef?.current) {
+          setLoadError('Выберите город');
+          setAllProducts([]);
+          setBrandDirectory([]);
+        }
         return;
       }
       const response = await catalogAPI.getProducts({ city });
+      if (cancelledRef?.current) return;
       const list: Product[] = (response.data.products || []).map((p: any) => ({
         id: p.id,
         name: p.name,
@@ -146,11 +141,14 @@ const Home: React.FC = () => {
       setAllProducts(list);
       try {
         const b = await catalogAPI.getBrands(city);
+        if (cancelledRef?.current) return;
         setBrandDirectory(Array.isArray(b.data?.brands) ? b.data.brands : []);
       } catch {
+        if (cancelledRef?.current) return;
         setBrandDirectory([]);
       }
     } catch (error) {
+      if (cancelledRef?.current) return;
       console.error('Failed to load products:', error);
       const status = (error as any)?.response?.status;
       if (status === 503) {
@@ -162,9 +160,21 @@ const Home: React.FC = () => {
       setAllProducts([]);
       setBrandDirectory([]);
     } finally {
-      setLoading(false);
+      if (!cancelledRef?.current) setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const cancelledRef = { current: false };
+    loadProducts(cancelledRef);
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, [city]);
+
+  const { pull, refreshing: ptrRefreshing, armed: ptrArmed } = usePullToRefresh(async () => {
+    await loadProducts();
+  }, false);
 
   const brandRows = useMemo(() => {
     const map = new Map<string, number>();

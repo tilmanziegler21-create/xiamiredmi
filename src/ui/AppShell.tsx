@@ -11,7 +11,6 @@ import { useCityStore } from '../store/useCityStore';
 import { CityPickerModal } from './CityPickerModal';
 import { useToastStore } from '../store/useToastStore';
 import { cartAPI, userAPI } from '../services/api';
-import { theme } from './theme';
 import WebApp from '@twa-dev/sdk';
 
 type Props = {
@@ -29,8 +28,6 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
   const { config, load } = useConfigStore();
   const { city, setCity, ensureCity } = useCityStore();
   const [cityModalOpen, setCityModalOpen] = React.useState(false);
-  const [showProgress, setShowProgress] = React.useState(false);
-  const [progressDone, setProgressDone] = React.useState(false);
 
   const cityTitle = React.useMemo(() => {
     if (!city) return '';
@@ -88,36 +85,12 @@ export const AppShell: React.FC<Props> = ({ children, showMenu = true }) => {
   }, [user?.tgId]);
 
   React.useEffect(() => {
-    setShowProgress(true);
-    setProgressDone(false);
-    const t1 = window.setTimeout(() => setProgressDone(true), 220);
-    const t2 = window.setTimeout(() => setShowProgress(false), 520);
-    return () => {
-      window.clearTimeout(t1);
-      window.clearTimeout(t2);
-    };
-  }, [location.key]);
-
-  React.useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
   }, [location.key]);
 
   return (
     <>
-      {showProgress ? (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            height: 2,
-            width: progressDone ? '100%' : '70%',
-            background: theme.gradients.accent,
-            zIndex: 9999,
-            transition: 'width 0.3s ease',
-          }}
-        />
-      ) : null}
+      <div key={location.key} className="nav-progress" />
       <TopBar
         onMenuClick={showMenu ? () => setDrawerOpen(true) : () => undefined}
         onCartClick={() => navigate('/cart')}

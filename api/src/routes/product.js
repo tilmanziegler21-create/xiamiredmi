@@ -38,7 +38,6 @@ router.get('/:id', requireAuth, async (req, res) => {
 
     const reserved = db.getActiveReservationsByProduct(sku).reduce((s, r) => s + r.qty, 0);
     const qtyAvailable = Math.max(0, Number(p.stock) - reserved);
-    if (qtyAvailable <= 0) return res.status(404).json({ error: 'Out of stock' });
 
     const similar = products
       .filter((x) => x.active && String(x.sku) !== sku)
