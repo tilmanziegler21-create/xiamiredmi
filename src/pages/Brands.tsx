@@ -74,14 +74,16 @@ const Brands: React.FC = () => {
           directory = [];
         }
 
-        const out = directory.length
-          ? directory
-              .map((brand) => ({ brand: String(brand || '').trim(), count: map.get(String(brand || '').trim()) || 0 }))
-              .filter((r) => r.brand && r.count > 0)
-              .map((r) => ({ ...r, logo: brandLogo(r.brand) }))
-          : Array.from(map.entries())
-              .map(([brand, count]) => ({ brand, count, logo: brandLogo(brand) }))
-              .sort((a, b) => a.brand.localeCompare(b.brand));
+        const normalizedDirectory = directory.map((b) => String(b || '').trim()).filter(Boolean);
+        const directorySet = new Set(normalizedDirectory);
+        const fromDirectory = normalizedDirectory
+          .map((brand) => ({ brand, count: map.get(brand) || 0 }))
+          .filter((r) => r.brand && r.count > 0)
+          .map((r) => ({ ...r, logo: brandLogo(r.brand) }));
+        const extra = Array.from(map.entries())
+          .filter(([brand]) => brand && !directorySet.has(String(brand || '').trim()))
+          .map(([brand, count]) => ({ brand, count, logo: brandLogo(brand) }));
+        const out = (normalizedDirectory.length ? [...fromDirectory, ...extra] : extra).sort((a, b) => a.brand.localeCompare(b.brand));
         setRows(out);
       } catch (e) {
         console.error('Brands load error:', e);
