@@ -7,7 +7,7 @@ import { useCityStore } from '../store/useCityStore';
 import { useToastStore } from '../store/useToastStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { formatCurrency } from '../lib/currency';
-import { Package, MapPin, Clock, Phone, CheckCircle, XCircle, Truck, User } from 'lucide-react';
+import { Package, MapPin, Clock, Phone, CheckCircle, XCircle, User } from 'lucide-react';
 
 type CourierOrder = {
   id: string;
@@ -635,16 +635,7 @@ const Courier: React.FC = () => {
 
               {/* Action Buttons */}
               <div style={styles.actionButtons}>
-                {order.status === 'pending' && (
-                  <PrimaryButton
-                    size="sm"
-                    onClick={() => updateOrderStatus(order.id, 'assigned')}
-                  >
-                    <Truck size={16} style={{ marginRight: '4px' }} />
-                    Получил заказ
-                  </PrimaryButton>
-                )}
-                {(order.status === 'assigned' || order.status === 'picked_up') && (
+                {(order.status === 'pending' || order.status === 'assigned' || order.status === 'picked_up') && (
                   <PrimaryButton
                     size="sm"
                     onClick={() => updateOrderStatus(order.id, 'delivered')}
@@ -653,7 +644,7 @@ const Courier: React.FC = () => {
                     Выдал
                   </PrimaryButton>
                 )}
-                {(order.status === 'assigned' || order.status === 'picked_up') && (
+                {(order.status === 'pending' || order.status === 'assigned' || order.status === 'picked_up') && (
                   <SecondaryButton
                     size="sm"
                     onClick={() => updateOrderStatus(order.id, 'cancelled')}

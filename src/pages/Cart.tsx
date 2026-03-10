@@ -41,6 +41,7 @@ const Cart: React.FC = () => {
   const [couriers, setCouriers] = React.useState<Array<{ courier_id: string; name: string; tg_id: string; time_from?: string; time_to?: string; meeting_place?: string }>>([]);
   const [courierId, setCourierId] = React.useState('');
   const [deliveryTime, setDeliveryTime] = React.useState('');
+  const [deliveryDay, setDeliveryDay] = React.useState<'today' | 'tomorrow' | 'day_after'>('today');
   const [address, setAddress] = React.useState('');
   const [comment, setComment] = React.useState('');
   const [paymentMethod, setPaymentMethod] = React.useState<PaymentMethod>('cash');
@@ -200,7 +201,12 @@ const Cart: React.FC = () => {
     setPlacing(true);
     try {
       trackCheckout(cart.items, totalWithBonus);
-      const today = new Date().toISOString().slice(0, 10);
+      const selectedDate = (() => {
+        const d = new Date();
+        if (deliveryDay === 'tomorrow') d.setDate(d.getDate() + 1);
+        if (deliveryDay === 'day_after') d.setDate(d.getDate() + 2);
+        return d.toISOString().slice(0, 10);
+      })();
       const createResp = await orderAPI.createOrder(
         {
           city,
@@ -222,7 +228,7 @@ const Cart: React.FC = () => {
         city,
         promoCode: String(promoCode || '').trim(),
         courier_id: courierId,
-        delivery_date: today,
+        delivery_date: selectedDate,
         delivery_time: deliveryTime,
         courierData: {
           address: fulfillment === 'pickup' ? pickup : address,
@@ -502,6 +508,23 @@ const Cart: React.FC = () => {
       padding: '10px 14px',
       outline: 'none',
     },
+    dayRow: {
+      display: 'grid',
+      gridTemplateColumns: '1fr 1fr 1fr',
+      gap: theme.spacing.sm,
+      marginBottom: theme.spacing.sm,
+    },
+    dayBtn: (active: boolean) => ({
+      borderRadius: 999,
+      border: active ? '1px solid rgba(255,45,85,0.38)' : '1px solid rgba(255,255,255,0.14)',
+      background: active ? 'rgba(255,45,85,0.18)' : 'rgba(255,255,255,0.06)',
+      color: active ? theme.colors.dark.primary : theme.colors.dark.text,
+      padding: '10px 8px',
+      fontSize: theme.typography.fontSize.xs,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase' as const,
+      cursor: 'pointer',
+    }),
     checkout: {
       padding: `0 ${theme.padding.screen}`,
       marginBottom: theme.spacing.xl,
@@ -662,6 +685,24 @@ const Cart: React.FC = () => {
             style={styles.promoInput}
           />
         </div>
+      </div>
+      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
+        <GlassCard padding="md" variant="elevated">
+          <div style={{ marginBottom: theme.spacing.sm, fontSize: theme.typography.fontSize.xs, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.55)' }}>
+            День доставки
+          </div>
+          <div style={styles.dayRow}>
+            <button type="button" style={styles.dayBtn(deliveryDay === 'today')} onClick={() => setDeliveryDay('today')}>
+              Сегодня
+            </button>
+            <button type="button" style={styles.dayBtn(deliveryDay === 'tomorrow')} onClick={() => setDeliveryDay('tomorrow')}>
+              Завтра
+            </button>
+            <button type="button" style={styles.dayBtn(deliveryDay === 'day_after')} onClick={() => setDeliveryDay('day_after')}>
+              Послезавтра
+            </button>
+          </div>
+        </GlassCard>
       </div>
 
       {fulfillment === 'pickup' ? (
