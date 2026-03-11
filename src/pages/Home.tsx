@@ -485,7 +485,7 @@ const Home: React.FC = () => {
                     ) : null}
                     <div className="home-banner-overlay" />
                     <div className="home-banner-shine" />
-                    {!ultraLite && bannerBottleUrl(idx) ? (
+                    {!ultraLite && !b.image && bannerBottleUrl(idx) ? (
                       <img
                         className="home-banner-product"
                         src={bannerBottleUrl(idx)}
@@ -494,12 +494,14 @@ const Home: React.FC = () => {
                         decoding="async"
                       />
                     ) : null}
-                    <div className="home-banner-mascot">
-                      <CherryMascot
-                        variant={idx % 5 === 1 ? 'green' : idx % 5 === 2 ? 'gold' : idx % 5 === 3 ? 'cosmic' : idx % 5 === 4 ? 'pink' : 'classic'}
-                        size={210}
-                      />
-                    </div>
+                    {!b.image ? (
+                      <div className="home-banner-mascot">
+                        <CherryMascot
+                          variant={idx % 5 === 1 ? 'green' : idx % 5 === 2 ? 'gold' : idx % 5 === 3 ? 'cosmic' : idx % 5 === 4 ? 'pink' : 'classic'}
+                          size={210}
+                        />
+                      </div>
+                    ) : null}
                     <div style={styles.bannerContent}>
                       <h2 style={styles.bannerTitle}>{b.title}</h2>
                       <p style={styles.bannerSubtitle}>{b.subtitle}</p>
