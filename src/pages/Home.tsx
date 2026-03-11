@@ -473,7 +473,7 @@ const Home: React.FC = () => {
                     }}
                     role="button"
                   >
-                    {!ultraLite && b.image ? (
+                    {b.image ? (
                       <img
                         className="home-banner-media"
                         src={b.image}
