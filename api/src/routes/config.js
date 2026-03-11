@@ -90,7 +90,7 @@ router.get('/', (_req, res) => {
         title: 'НОВИНКИ В НАЛИЧИИ',
         subtitle: 'Лучшие вкусы • 24/7',
         gradient: 'linear-gradient(135deg, rgba(255,45,85,0.88) 0%, rgba(15,12,26,0.92) 100%)',
-        imageUrl: '/assets/elfcherry/banners/banner-1.jpg',
+        imageUrl: '/images/banners/new.png',
         linkType: 'category',
         linkTarget: 'Новинки',
       },
