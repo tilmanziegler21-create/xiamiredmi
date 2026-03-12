@@ -98,7 +98,7 @@ router.get('/', (_req, res) => {
         title: 'РЕФЕРАЛЬНАЯ СИСТЕМА',
         subtitle: 'Приведи друга • получи вишенки',
         gradient: 'linear-gradient(135deg, rgba(192,25,58,0.80) 0%, rgba(15,12,26,0.92) 60%, rgba(0,0,0,0.92) 100%)',
-        imageUrl: '/assets/elfcherry/banners/banner-2.jpg',
+        imageUrl: '/assets/elfcherry/banners/referall.png',
         linkType: 'route',
         linkTarget: '/referral',
       },
