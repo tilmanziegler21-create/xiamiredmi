@@ -106,7 +106,7 @@ router.get('/', (_req, res) => {
         title: 'ПОДДЕРЖКА',
         subtitle: 'Ответим в чате • 24/7',
         gradient: 'linear-gradient(135deg, rgba(255,77,109,0.82) 0%, rgba(15,12,26,0.92) 100%)',
-        imageUrl: '/assets/elfcherry/banners/banner-3.jpg',
+        imageUrl: '/assets/elfcherry/banners/support.png',
         linkType: 'url',
         linkTarget: supportUrl,
       },
