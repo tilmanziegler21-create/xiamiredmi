@@ -332,15 +332,16 @@ const Home: React.FC = () => {
       position: 'absolute' as const,
       left: 12,
       bottom: 12,
-      maxWidth: '55%',
-      fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily,
-      fontSize: String(title || '').length > 9 ? 17 : 22,
+      maxWidth: '64%',
+      fontFamily: theme.typography.fontFamily,
+      fontSize: String(title || '').length > 9 ? 15 : 18,
+      fontWeight: 700,
       color: '#fff',
-      textShadow: '0 2px 8px rgba(0,0,0,0.9)',
-      letterSpacing: '0.08em',
+      textShadow: '0 4px 12px rgba(0,0,0,0.55)',
+      letterSpacing: '0.03em',
       textTransform: 'uppercase' as const,
-      lineHeight: 0.95,
-      whiteSpace: 'nowrap' as const,
+      lineHeight: 1.05,
+      whiteSpace: 'normal' as const,
       zIndex: 2,
     }),
     categoryBadge: {
@@ -569,7 +570,7 @@ const Home: React.FC = () => {
               position: 'relative',
               background: 'rgba(12, 10, 26, 0.62)',
               border: '1px solid rgba(255,255,255,0.14)',
-              height: 104,
+              height: 132,
               cursor: 'pointer',
             }}
           >
@@ -580,6 +581,15 @@ const Home: React.FC = () => {
               decoding="async"
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
             />
+            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.56) 100%)' }} />
+            <div style={{ position: 'absolute', left: 14, bottom: 14, zIndex: 2, display: 'grid', gap: 2 }}>
+              <div style={{ fontFamily: theme.typography.fontFamily, fontSize: 22, fontWeight: 800, lineHeight: 1, letterSpacing: '0.03em', textTransform: 'uppercase', color: '#fff', textShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+                НАБОР {config?.bundleConfig?.price || 50} €
+              </div>
+              <div style={{ fontFamily: theme.typography.fontFamily, fontSize: 12, fontWeight: 600, letterSpacing: '0.03em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.92)', textShadow: '0 3px 10px rgba(0,0,0,0.5)' }}>
+                ПОД + 2 ЖИЖИ
+              </div>
+            </div>
           </div>
         </div>
       ) : null}
@@ -651,7 +661,9 @@ const Home: React.FC = () => {
                     style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: imageOnlyCategory ? 1 : 0.18, filter: imageOnlyCategory ? 'none' : 'saturate(1.1) contrast(1.05)' }}
                   />
                 ) : null}
-                {imageOnlyCategory ? null : (
+                {imageOnlyCategory ? (
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.02) 45%, rgba(0,0,0,0.52) 100%)', pointerEvents: 'none' }} />
+                ) : (
                   <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.68) 100%)', pointerEvents: 'none' }} />
                 )}
                 {!imageOnlyCategory ? (
@@ -664,7 +676,7 @@ const Home: React.FC = () => {
                 {!imageOnlyCategory && category.badgeText ? (
                   <div style={styles.categoryBadge}>{category.badgeText}</div>
                 ) : null}
-                {!imageOnlyCategory ? <div style={styles.categoryTitle(category.name)}>{category.name}</div> : null}
+                <div style={styles.categoryTitle(category.name)}>{category.name}</div>
               </div>
             );
           })
