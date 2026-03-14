@@ -99,6 +99,7 @@ const Categories: React.FC = () => {
             const a = atmos[String(t.slug)] || atmos[String(t.title)];
             const bg = a?.bg || 'linear-gradient(135deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.7) 100%)';
             const mascot = a?.mascot || 'classic';
+            const imageOnlyMain = isMainCategory(String(t.slug || ''));
             return (
           <GlassCard
             key={t.key}
@@ -120,14 +121,16 @@ const Categories: React.FC = () => {
                 alt=""
                 loading="lazy"
                 decoding="async"
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.22, filter: 'saturate(1.1) contrast(1.05)' }}
+                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: imageOnlyMain ? 1 : 0.22, filter: imageOnlyMain ? 'none' : 'saturate(1.1) contrast(1.05)' }}
               />
             ) : null}
-            <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.82) 100%)', pointerEvents: 'none' }} />
-            <div style={{ position: 'absolute', right: -36, bottom: -34, width: 220, height: 220, pointerEvents: 'none', zIndex: 1 }}>
-              <CherryMascot variant={mascot} size={196} />
-            </div>
-            {t.badgeText ? (
+            <div style={{ position: 'absolute', inset: 0, background: imageOnlyMain ? 'linear-gradient(180deg, rgba(0,0,0,0.02) 45%, rgba(0,0,0,0.52) 100%)' : 'linear-gradient(180deg, rgba(0,0,0,0.12) 0%, rgba(0,0,0,0.82) 100%)', pointerEvents: 'none' }} />
+            {!imageOnlyMain ? (
+              <div style={{ position: 'absolute', right: -36, bottom: -34, width: 220, height: 220, pointerEvents: 'none', zIndex: 1 }}>
+                <CherryMascot variant={mascot} size={196} />
+              </div>
+            ) : null}
+            {!imageOnlyMain && t.badgeText ? (
               <div style={{ position: 'absolute', top: theme.spacing.md, right: theme.spacing.md, zIndex: 3 }}>
                 <ChipBadge variant="new" size="sm">{t.badgeText}</ChipBadge>
               </div>
