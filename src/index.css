@@ -92,12 +92,12 @@
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.55;
+  opacity: 0.62;
   background-image:
-    linear-gradient(180deg, rgba(255,45,85,0.06) 0%, rgba(0,0,0,0) 45%, rgba(255,45,85,0.06) 100%),
-    repeating-linear-gradient(90deg, rgba(255,45,85,0.09) 0 1px, rgba(0,0,0,0) 1px 36px),
-    repeating-linear-gradient(180deg, rgba(255,45,85,0.09) 0 1px, rgba(0,0,0,0) 1px 36px);
-  mask-image: radial-gradient(circle at 50% 30%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.55) 55%, rgba(0,0,0,0) 78%);
+    radial-gradient(120% 90% at 18% 12%, rgba(255,45,85,0.20) 0%, rgba(255,45,85,0) 58%),
+    radial-gradient(110% 90% at 82% 26%, rgba(176,0,58,0.18) 0%, rgba(176,0,58,0) 62%),
+    linear-gradient(120deg, rgba(255,45,85,0.12) 0%, rgba(255,45,85,0) 44%, rgba(255,45,85,0.10) 100%);
+  mask-image: radial-gradient(circle at 50% 30%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.62) 60%, rgba(0,0,0,0) 84%);
   animation: gridMove 18s linear infinite;
   mix-blend-mode: screen;
 }
