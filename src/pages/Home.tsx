@@ -642,6 +642,7 @@ const Home: React.FC = () => {
             const a = (categoryAtmos as any)[String(category.slug || category.name)] || (categoryAtmos as any)[String(category.name)];
             const bg = a?.bg || 'linear-gradient(160deg, rgba(8,6,14,0.90) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)';
             const mascot = a?.mascot || 'classic';
+            const imageOnlyCategory = ['Жидкости', 'Поды'].includes(String(category.slug || category.name));
             return (
               <div
                 key={category.name}
@@ -662,19 +663,23 @@ const Home: React.FC = () => {
                     alt=""
                     loading="lazy"
                     decoding="async"
-                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.18, filter: 'saturate(1.1) contrast(1.05)' }}
+                    style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: imageOnlyCategory ? 1 : 0.18, filter: imageOnlyCategory ? 'none' : 'saturate(1.1) contrast(1.05)' }}
                   />
                 ) : null}
-                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.68) 100%)', pointerEvents: 'none' }} />
-                <div style={styles.categoryMascot}>
-                  <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
-                    <CherryMascot variant={mascot} size={140} />
+                {imageOnlyCategory ? null : (
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.10) 0%, rgba(0,0,0,0.68) 100%)', pointerEvents: 'none' }} />
+                )}
+                {!imageOnlyCategory ? (
+                  <div style={styles.categoryMascot}>
+                    <div style={{ height: '100%', width: '100%', display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end' }}>
+                      <CherryMascot variant={mascot} size={140} />
+                    </div>
                   </div>
-                </div>
-                {category.badgeText ? (
+                ) : null}
+                {!imageOnlyCategory && category.badgeText ? (
                   <div style={styles.categoryBadge}>{category.badgeText}</div>
                 ) : null}
-                <div style={styles.categoryTitle(category.name)}>{category.name}</div>
+                {!imageOnlyCategory ? <div style={styles.categoryTitle(category.name)}>{category.name}</div> : null}
               </div>
             );
           })
@@ -685,15 +690,16 @@ const Home: React.FC = () => {
         <GlassCard
           padding="md"
           variant="elevated"
-          style={{ height: 100, borderRadius: 16, cursor: 'pointer', position: 'relative', overflow: 'hidden', background: 'radial-gradient(120% 90% at 18% 18%, rgba(251,113,133,0.28) 0%, rgba(0,0,0,0) 58%), linear-gradient(160deg, rgba(8,6,14,0.88) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)' }}
+          style={{ height: 100, borderRadius: 16, cursor: 'pointer', position: 'relative', overflow: 'hidden', background: 'rgba(12, 10, 26, 0.62)' }}
           onClick={() => navigate('/catalog?category=наборы')}
         >
-          <div style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontFamily: '"Bebas Neue", ' + theme.typography.fontFamily, fontSize: 30, letterSpacing: '0.12em', textTransform: 'uppercase' as const, zIndex: 2 }}>
-            НАБОРЫ
-          </div>
-          <div style={{ position: 'absolute', right: -12, bottom: -14, zIndex: 1 }}>
-            <CherryMascot variant="pink" size={120} />
-          </div>
+          <img
+            src="/assets/elfcherry/banners/set.png"
+            alt=""
+            loading="lazy"
+            decoding="async"
+            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+          />
         </GlassCard>
       </div>
 
@@ -718,7 +724,7 @@ const Home: React.FC = () => {
             border: '1px solid rgba(255,255,255,0.14)',
           }}
         >
-          ВКУСЫ
+          ЦВЕТА
         </div>
       </div>
 
@@ -747,7 +753,7 @@ const Home: React.FC = () => {
             >
               <div style={{ minWidth: 0 }}>
                 <div style={styles.brandTitle}>{r.brand}</div>
-                <div style={styles.brandMeta}>{r.count} вкусов</div>
+                <div style={styles.brandMeta}>{r.count} цветов</div>
               </div>
               <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: 18, paddingRight: 4 }}>→</div>
             </div>

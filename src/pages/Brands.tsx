@@ -26,6 +26,7 @@ const Brands: React.FC = () => {
   const category = String(searchParams.get('category') || '');
   const [loading, setLoading] = React.useState(true);
   const [rows, setRows] = React.useState<BrandRow[]>([]);
+  const isPodsCategory = /^(поды|pods)$/i.test(String(category || '').trim());
 
   React.useEffect(() => {
     (async () => {
@@ -121,7 +122,7 @@ const Brands: React.FC = () => {
                       {r.brand}
                     </div>
                     <div style={{ fontSize: 12, color: theme.colors.dark.textSecondary, letterSpacing: '0.06em' }}>
-                      {r.count} вкусов
+                      {r.count} {isPodsCategory ? 'цветов' : 'вкусов'}
                     </div>
                   </div>
                 </div>

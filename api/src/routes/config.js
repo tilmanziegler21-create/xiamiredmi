@@ -112,9 +112,9 @@ router.get('/', (_req, res) => {
       },
     ],
     categoryTiles: [
-      { slug: 'Жидкости', title: 'ЖИДКОСТИ', imageUrl: '/assets/elfcherry/categories/category-liquids.jpg', badgeText: 'NEW DROP' },
+      { slug: 'Жидкости', title: 'ЖИДКОСТИ', imageUrl: '/assets/elfcherry/categories/liquids.png', badgeText: 'NEW DROP' },
       { slug: 'Одноразки', title: 'ОДНОРАЗКИ', imageUrl: '/assets/elfcherry/categories/category-disposables.jpg', badgeText: 'HOT' },
-      { slug: 'Поды', title: 'ПОДЫ', imageUrl: '/assets/elfcherry/categories/category-pods.jpg', badgeText: 'PREMIUM' },
+      { slug: 'Поды', title: 'ПОДЫ', imageUrl: '/assets/elfcherry/categories/pods.png', badgeText: 'PREMIUM' },
       { slug: 'Картриджи', title: 'КАРТРИДЖИ', imageUrl: '/assets/elfcherry/categories/category-cartridges.jpg', badgeText: 'TOP' },
     ],
     pickupPoints: pickupPoints(),
