@@ -543,8 +543,8 @@ const Home: React.FC = () => {
                   el.scrollTo({ left: slideW * idx, behavior: 'smooth' });
                 }}
                 style={{
-                  width: 3,
-                  height: 3,
+                  width: 4,
+                  height: 4,
                   minWidth: 0,
                   minHeight: 0,
                   appearance: 'none',
