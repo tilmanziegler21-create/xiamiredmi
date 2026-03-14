@@ -98,7 +98,7 @@
     radial-gradient(110% 90% at 82% 26%, rgba(176,0,58,0.18) 0%, rgba(176,0,58,0) 62%),
     linear-gradient(120deg, rgba(255,45,85,0.12) 0%, rgba(255,45,85,0) 44%, rgba(255,45,85,0.10) 100%);
   mask-image: radial-gradient(circle at 50% 30%, rgba(0,0,0,1) 0%, rgba(0,0,0,0.62) 60%, rgba(0,0,0,0) 84%);
-  animation: gridMove 18s linear infinite;
+  animation: gridMove 12s linear infinite;
   mix-blend-mode: screen;
 }
 
@@ -107,9 +107,9 @@
   inset: 0;
   pointer-events: none;
   z-index: 0;
-  background: linear-gradient(180deg, rgba(255,45,85,0) 0%, rgba(255,45,85,0.18) 48%, rgba(255,45,85,0) 100%);
+  background: linear-gradient(180deg, rgba(255,45,85,0) 0%, rgba(255,45,85,0.26) 48%, rgba(255,45,85,0) 100%);
   opacity: 0;
-  animation: scanMove 7.5s ease-in-out infinite;
+  animation: scanMove 5.5s ease-in-out infinite;
   mix-blend-mode: screen;
 }
 
@@ -188,15 +188,22 @@ html.tg-webview .page-transition {
   }
 }
 
-html.tg-webview .aurora,
-html.tg-webview .hitech-grid,
-html.tg-webview .hitech-scan {
+html.tg-webview .aurora {
   animation: none !important;
 }
 
 html.tg-webview .aurora {
   filter: none;
   opacity: 0.15;
+}
+
+html.tg-webview .hitech-grid {
+  opacity: 0.72;
+  animation: gridMove 10s linear infinite !important;
+}
+
+html.tg-webview .hitech-scan {
+  animation: scanMove 4.8s ease-in-out infinite !important;
 }
 
 html.tg-webview .noise {
