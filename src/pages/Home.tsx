@@ -570,7 +570,6 @@ const Home: React.FC = () => {
               position: 'relative',
               background: 'rgba(12, 10, 26, 0.62)',
               border: '1px solid rgba(255,255,255,0.14)',
-              height: 132,
               cursor: 'pointer',
             }}
           >
@@ -579,7 +578,7 @@ const Home: React.FC = () => {
               alt=""
               loading="lazy"
               decoding="async"
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+              style={{ display: 'block', width: '100%', height: 'auto' }}
             />
             <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.56) 100%)' }} />
             <div style={{ position: 'absolute', left: 14, bottom: 14, zIndex: 2, display: 'grid', gap: 2 }}>
