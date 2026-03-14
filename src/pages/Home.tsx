@@ -567,34 +567,19 @@ const Home: React.FC = () => {
               borderRadius: 16,
               overflow: 'hidden',
               position: 'relative',
-              background: 'linear-gradient(135deg, rgba(59,130,246,0.8) 0%, rgba(15,12,26,0.95) 100%)',
+              background: 'rgba(12, 10, 26, 0.62)',
               border: '1px solid rgba(255,255,255,0.14)',
-              padding: 12,
+              height: 104,
               cursor: 'pointer',
             }}
           >
-            <div style={{ fontSize: 16, fontWeight: 800, color: '#fff', marginBottom: 2 }}>
-              Вместе дешевле
-            </div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 8 }}>
-              Под + 2 жидкости
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-              <div style={{ width: 54, height: 54, borderRadius: 10, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CherryMascot variant="cosmic" size={40} />
-              </div>
-              <div style={{ width: 20, height: 20, borderRadius: 10, border: '2px solid rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 12, fontWeight: 700 }}>+</div>
-              <div style={{ width: 54, height: 54, borderRadius: 10, background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <CherryMascot variant="green" size={40} />
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
-              <span style={{ fontSize: 20, fontWeight: 800 }}>{config?.bundleConfig?.price || 50} €</span>
-              <span style={{ fontSize: 10, padding: '2px 7px', borderRadius: 6, background: 'rgba(34,197,94,0.18)', color: '#22c55e' }}>ВЫГОДНО</span>
-            </div>
-            <div style={{ width: '100%', padding: '8px 0', borderRadius: 10, background: 'rgba(255,255,255,0.10)', textAlign: 'center', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-              Собрать набор →
-            </div>
+            <img
+              src="/assets/elfcherry/banners/set.png"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
+            />
           </div>
         </div>
       ) : null}
@@ -657,7 +642,7 @@ const Home: React.FC = () => {
                 }
                 role="button"
               >
-                {!ultraLite && category.image ? (
+                {category.image ? (
                   <img
                     src={category.image}
                     alt=""
@@ -684,23 +669,6 @@ const Home: React.FC = () => {
             );
           })
         )}
-      </div>
-
-      <div style={{ padding: `0 ${theme.padding.screen}`, marginBottom: theme.spacing.md }}>
-        <GlassCard
-          padding="md"
-          variant="elevated"
-          style={{ height: 100, borderRadius: 16, cursor: 'pointer', position: 'relative', overflow: 'hidden', background: 'rgba(12, 10, 26, 0.62)' }}
-          onClick={() => navigate('/catalog?category=наборы')}
-        >
-          <img
-            src="/assets/elfcherry/banners/set.png"
-            alt=""
-            loading="lazy"
-            decoding="async"
-            style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }}
-          />
-        </GlassCard>
       </div>
 
       <div style={{ padding: `0 ${theme.padding.screen}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md }}>
