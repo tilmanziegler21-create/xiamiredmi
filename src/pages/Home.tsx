@@ -530,7 +530,7 @@ const Home: React.FC = () => {
           </div>
         )}
         {banners.length ? (
-          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 3 }}>
             {banners.map((_, idx) => (
               <button
                 key={idx}
@@ -543,8 +543,8 @@ const Home: React.FC = () => {
                   el.scrollTo({ left: slideW * idx, behavior: 'smooth' });
                 }}
                 style={{
-                  width: 6,
-                  height: 6,
+                  width: 2,
+                  height: 2,
                   borderRadius: 999,
                   border: 'none',
                   background: idx === currentBanner ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.36)',
