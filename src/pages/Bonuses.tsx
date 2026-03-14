@@ -105,7 +105,7 @@ const Bonuses: React.FC = () => {
       borderRadius: 26,
       overflow: 'hidden' as const,
       border: '1px solid rgba(255,45,85,0.22)',
-      backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.35) 40%, rgba(0,0,0,0.65) 100%), url(${assetUrl('/assets/elfcherry/tiles/tile-bonuses.jpg')})`,
+      backgroundImage: `linear-gradient(180deg, rgba(0,0,0,0.48) 0%, rgba(0,0,0,0.26) 40%, rgba(0,0,0,0.48) 100%), url(${assetUrl('/assets/elfcherry/banners/bonus.png')})`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
       boxShadow: theme.shadow.card,
