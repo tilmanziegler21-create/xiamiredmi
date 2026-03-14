@@ -543,8 +543,14 @@ const Home: React.FC = () => {
                   el.scrollTo({ left: slideW * idx, behavior: 'smooth' });
                 }}
                 style={{
-                  width: 2,
-                  height: 2,
+                  width: 3,
+                  height: 3,
+                  minWidth: 0,
+                  minHeight: 0,
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  display: 'block',
+                  lineHeight: 0,
                   borderRadius: 999,
                   border: 'none',
                   background: idx === currentBanner ? 'rgba(255,255,255,0.95)' : 'rgba(255,255,255,0.36)',
