@@ -642,7 +642,7 @@ const Home: React.FC = () => {
             const a = (categoryAtmos as any)[String(category.slug || category.name)] || (categoryAtmos as any)[String(category.name)];
             const bg = a?.bg || 'linear-gradient(160deg, rgba(8,6,14,0.90) 0%, rgba(15,12,26,1) 55%, rgba(8,6,14,0.92) 100%)';
             const mascot = a?.mascot || 'classic';
-            const imageOnlyCategory = ['Жидкости', 'Поды'].includes(String(category.slug || category.name));
+            const imageOnlyCategory = ['Жидкости', 'Поды', 'Одноразки', 'Картриджи'].includes(String(category.slug || category.name));
             return (
               <div
                 key={category.name}
